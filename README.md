@@ -47,18 +47,18 @@ target_link_libraries(your_project PRIVATE glfw-vk::glfw-vk)
 ```cpp
 #include <glfw-vk/GLFWvk.hpp>
 
-int main() {
+int main()
+{
     // Manages GLFW init/destroy
-    glfw_vk::Context context;
-    struct WindowDesc windowDesc
-    {
-        std::string title = "My App";
-        uint32_t width = 1280;
-        uint32_t height = 720;
+    auto& context = glfwvk::GlfwContext::Get();
+    glfwvk::WindowDesc windowDesc{
+        .title = "My App",
+        .width = 1280,
+        .height = 720,
     };
 
     // Create a managed window
-    glfw_vk::Window window(windowDesc);
+    glfwvk::Window window(windowDesc);
 
     while (!window.shouldClose()) {
         window.pollEvents();
@@ -67,9 +67,9 @@ int main() {
 }
 ```
 
-### Vulkan Surface Hook
+### Vulkan Surface Creation
 
-Even though this library doesn't use Vulkan headers, you can create a surface by passing your instance pointer:
+You can create a vulkan surface by passing your instance pointer:
 
 ```cpp
 // Returns the raw VkSurfaceKHR handle as a uint64_t
@@ -85,4 +85,4 @@ Window::SurfaceHandle surface = window.createSurface(rawVkInstance);
 
 ## ⚖️ License
 
-Licensed under the MIT License. See the [LICENSE]LICENSE file for full text.
+Licensed under the MIT License. See the [LICENSE](LICENSE) file for full text.
