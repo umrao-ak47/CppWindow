@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Your Name
+ * Licensed under the MIT License.
+ * * Note: The implementation utilizes GLFW (zlib license).
+ */
+
 #include "internal/InputState.hpp"
 #include <glfw-vk/Events.hpp>
 

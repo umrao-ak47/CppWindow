@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Amit Kumar
+ * Licensed under the MIT License.
+ */
+
 #pragma once
 
 #pragma once
