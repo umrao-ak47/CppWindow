@@ -2,14 +2,6 @@
 
 A modern C++20 wrapper for GLFW designed to provide a clean, object-oriented interface while isolating windowing logic from your rendering engine.
 
-## 🚀 Goal
-
-`glfw-vk` encapsulates GLFW entirely within its implementation:
-
-- **Zero Header Leakage**: GLFW headers are used only in the `.cpp` files. Your public API remains pure C++.
-- **Vulkan-Ready, Not Vulkan-Dependent**: Provides the necessary hooks to create Vulkan surfaces without requiring the Vulkan SDK to build this library.
-- **RAII First**: Windows, contexts, and input states are managed via standard C++ lifecycles.
-
 ## ✨ Features
 
 - **Modern C++20 API**: Leverages modern C++20 features.
