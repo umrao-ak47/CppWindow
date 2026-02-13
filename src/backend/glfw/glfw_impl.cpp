@@ -6,6 +6,18 @@
 
 #include "glfw_impl.hpp"
 
+#if defined(CPPWINDOW_PLATFORM_WINDOWS)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(CPPWINDOW_PLATFORM_MACOS)
+#define GLFW_EXPOSE_NATIVE_COCOA
+#elif defined(CPPWINDOW_PLATFORM_LINUX)
+#define GLFW_EXPOSE_NATIVE_X11
+#define GLFW_EXPOSE_NATIVE_WAYLAND
+#else
+#error "Unknow Platform"
+#endif
+#include <GLFW/glfw3native.h>
+
 // Manually forward declare the Vulkan types GLFW needs
 // This prevents needing <vulkan.h> entirely.
 typedef struct VkInstance_T* VkInstance;
@@ -489,6 +501,32 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 void GLFWNativeWindow::handleEvent(Event&& event)
 {
     storage_->eventQueue.push_back(std::move(event));
+}
+
+NativeHandles GLFWNativeWindow::getNativeHandles() const
+{
+    NativeHandles handles{};
+
+#if defined(CPPWINDOW_PLATFORM_WINDOWS)
+    handles.system = NativeHandles::System::Win32;
+    handles.window = glfwGetWin32Window(handle_.get());
+#elif defined(CPPWINDOW_PLATFORM_MACOS)
+    handles.system = NativeHandles::System::Cocoa;
+    handles.window = glfwGetCocoaWindow(handle_.get());
+#elif defined(CPPWINDOW_PLATFORM_LINUX)
+    int platform = glfwGetPlatform();
+    if (platform == GLFW_PLATFORM_X11) {
+        handles.system = NativeHandles::System::X11;
+        handles.window = reinterpret_cast<void*>(glfwGetX11Window(m_window));
+        handles.display = glfwGetX11Display();
+    } else if (platform == GLFW_PLATFORM_WAYLAND) {
+        handles.system = NativeHandles::System::Wayland;
+        handles.window = glfwGetWaylandWindow(m_window);
+        handles.display = glfwGetWaylandDisplay();
+    }
+#endif
+
+    return handles;
 }
 
 VulkanHandle GLFWNativeWindow::createVulkanSurface(void* instance) const

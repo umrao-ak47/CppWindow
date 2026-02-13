@@ -154,6 +154,7 @@ public:
     void handleEvent(Event&& event);
     void registerCallbacks();
 
+    NativeHandles getNativeHandles() const override;
     VulkanHandle createVulkanSurface(void* instance) const override;
     void makeContextCurrent() override;
     void swapBuffers() override;

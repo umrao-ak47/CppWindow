@@ -69,6 +69,7 @@ class NativeWindow
 public:
     virtual ~NativeWindow() = default;
 
+    virtual NativeHandles getNativeHandles() const = 0;
     virtual VulkanHandle createVulkanSurface(void* instance) const = 0;
     virtual void makeContextCurrent() = 0;
     virtual void swapBuffers() = 0;

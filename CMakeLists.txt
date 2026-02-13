@@ -71,6 +71,12 @@ target_compile_features(cppwindow
         cxx_std_20
 )
 
+target_compile_definitions(cppwindow PRIVATE
+    $<$<PLATFORM_ID:Windows>:CPPWINDOW_PLATFORM_WINDOWS>
+    $<$<PLATFORM_ID:Darwin>:CPPWINDOW_PLATFORM_MACOS>
+    $<$<PLATFORM_ID:Linux>:CPPWINDOW_PLATFORM_LINUX>
+)
+
 # ------------------------------------------------------------------------------
 # Install rules
 # ------------------------------------------------------------------------------

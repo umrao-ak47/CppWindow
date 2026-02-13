@@ -74,6 +74,11 @@ Window::Window(Window&& other) noexcept
 
 Window::~Window() = default;
 
+NativeHandles Window::getNativeHandles() const
+{
+    return window_->getNativeHandles();
+}
+
 VulkanHandle Window::createVulkanSurface(void* instance) const
 {
     return window_->createVulkanSurface(instance);

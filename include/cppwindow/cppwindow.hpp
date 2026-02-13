@@ -20,6 +20,23 @@ using ProcLoader = void* (*)(const char*);
 // In Vulkan, handles are 64-bit integers.
 using VulkanHandle = uint64_t;
 
+// Native Handles
+struct NativeHandles
+{
+    enum class System
+    {
+        Win32,
+        Cocoa,
+        X11,
+        WayLand,
+        Unknown
+    };
+
+    System system = System::Unknown;
+    void* window;
+    void* display;
+};
+
 enum class GraphicsMode : uint8_t
 {
     None,
@@ -457,6 +474,7 @@ public:
     Window& operator=(const Window&) = delete;
     Window& operator=(Window&&) = delete;
 
+    NativeHandles getNativeHandles() const;
     VulkanHandle createVulkanSurface(void* instance) const;
     void makeContextCurrent();
     void swapBuffers();
