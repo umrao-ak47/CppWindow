@@ -1,13 +1,22 @@
-# glfw-vk
+# CppWindow
 
-A modern C++20 wrapper for GLFW designed to provide a clean, object-oriented interface while isolating windowing logic from your rendering engine.
+CppWindow is a modern C++20 windowing and input abstraction built on top of GLFW, designed for high-performance graphics applications and engine development.
+
+It provides a clean, type-safe API for window creation, event processing, and per-window input while keeping backend details fully hidden.
+
+CppWindow is not a rendering library - it is a platform layer intended to sit beneath Vulkan, OpenGL, or future graphics backends.
 
 ## ✨ Features
 
-- **Modern C++20 API**: Leverages modern C++20 features.
-- **Context Isolation**: Manage GLFW initialization and termination safely via the `Context` class.
-- **Input Management**: Dedicated `InputState` and `InputMap` for clean event handling.
-- **High Portability**: Designed to be used in Vulkan projects as a submodule.
+* Modern C++20 design (RAII, spans, variants, concepts)
+* Builder-based window creation
+* Per-window input state
+* Strongly typed event system
+* Vulkan surface support
+* OpenGL context support
+* Zero global input state
+* Backend abstraction (currently GLFW)
+* Minimal runtime overhead
 
 ## 📦 Requirements
 
@@ -22,58 +31,127 @@ A modern C++20 wrapper for GLFW designed to provide a clean, object-oriented int
 #### Add the submodule to your project:
 
 ```bash
-git submodule add [https://github.com/umrao-ak47/glfw-vk.git](https://github.com/umrao-ak47/glfw-vk.git) external/glfw-vk
+git submodule add [git@github.com:umrao-ak47/CppWindow.git](git@github.com:umrao-ak47/CppWindow.git) external/CppWindow
 ```
 
 #### Include it in your CMakeLists.txt:
 
 ```cmake
-add_subdirectory(external/glfw-vk)
-target_link_libraries(your_project PRIVATE glfw-vk::glfw-vk)
+add_subdirectory(external/CppWindow)
+target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 ```
 
-## 📖 Usage
+## 🚀 Quick Start
 
 ### Window Creation
 
+
 ```cpp
-#include <glfw-vk/GLFWvk.hpp>
+#include <cppwindow/window.hpp>
 
 int main()
 {
-    // Manages GLFW init/destroy
-    auto& context = glfwvk::GlfwContext::Get();
-    glfwvk::WindowDesc windowDesc{
-        .title = "My App",
-        .width = 1280,
-        .height = 720,
-    };
+    cppwindow::Window window =
+        cppwindow::WindowBuilder{}
+            .title("Basic Example")
+            .size(1280, 720)
+            .noAPI()
+            .build();
 
-    // Create a managed window
-    glfwvk::Window window(windowDesc);
+    auto& ctx = cppwindow::WindowContext::Get();
 
-    while (!window.shouldClose()) {
-        window.pollEvents();
-        // Your rendering here
+    while (!window.shouldClose())
+    {
+        ctx.pollEvents();
+
+        for (const auto& event : window.events())
+        {
+            if (event.is<cppwindow::Event::Closed>())
+                window.requestClose();
+        }
     }
 }
 ```
 
-### Vulkan Surface Creation
+### 🧱 Graphics Modes
 
-You can create a vulkan surface by passing your instance pointer:
+CppWindow supports two creation paths:
+
+#### No API (Recommended for Vulkan)
 
 ```cpp
-// Returns the raw VkSurfaceKHR handle as a uint64_t
-Window::SurfaceHandle surface = window.createSurface(rawVkInstance);
+auto window =
+    cppwindow::WindowBuilder{}
+        .noAPI()
+        .build();
 ```
 
-## 📂 Project Structure
+Create the surface later:
 
-- include/: Public C++ headers (No GLFW/Vulkan includes).
-- src/: Private implementation (Where GLFW lives).
-- src/Context.cpp: Manages the global GLFW lifecycle.
-- src/InputMap.cpp: Translates GLFW events into engine-friendly states.
+```cpp
+VkHandle surface =
+    window.createVulkanSurface(instance);
+```
+
+#### OpenGL
+
+CppWindow creates the context, but you must load OpenGL functions.
+
+Example using GLAD:
+```cpp
+auto window =
+    cppwindow::WindowBuilder{}
+        .openGL({4,5,true})
+        .build();
+
+gladLoadGLLoader(window.getGLLoader());
+```
+
+Render loop:
+
+```cpp
+while (!window.shouldClose())
+{
+    cppwindow::WindowContext::Get().pollEvents();
+
+    glClearColor(0.f,0.f,0.f,1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    window.swapBuffers();
+}
+```
+
+### 🎮 Input
+
+Input is tracked per window, avoiding hidden global state.
+
+```cpp
+const auto& input = window.getInput();
+
+if (input.isKeyPressed(cppwindow::Key::Escape))
+    window.requestClose();
+
+auto [x,y] = input.getMousePosition();
+```
+
+### 📬 Events
+
+Events are stored internally and exposed as a span to avoid allocations.
+
+```cpp
+for (const auto& event : window.events())
+{
+    event.visit([](auto&& e)
+    {
+        using T = std::decay_t<decltype(e)>;
+
+        if constexpr (std::is_same_v<T, cppwindow::Event::Resized>)
+        {
+            // handle resize
+        }
+    });
+}
+```
 
 ## ⚖️ License
 
