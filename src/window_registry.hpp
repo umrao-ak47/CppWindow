@@ -19,7 +19,7 @@ template <TypeHasResetFn T>
 class WindowStorageRegistry
 {
 public:
-    void registerWindow(const std::shared_ptr<T>& storage)
+    void registerStorage(const std::shared_ptr<T>& storage)
     {
         std::lock_guard lock(mtx_);
         if (tail_ < storageRefs_.size()) {

@@ -289,6 +289,17 @@ void GLFWInputState::reset()
 }
 
 //----------------------------------------------------------------------------
+//  GLFW Window Registry Implementation
+//----------------------------------------------------------------------------
+namespace {
+
+// store all refs to windows storage so we can clean it
+// per frame
+WindowStorageRegistry<WindowStorage> g_WindowRegistry;
+
+}  // namespace
+
+//----------------------------------------------------------------------------
 //  GLFW Window Implementation
 //----------------------------------------------------------------------------
 
@@ -337,6 +348,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
     glfwSetWindowCloseCallback(handle, [](GLFWwindow* window) {
         auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
         self->handleEvent(Event::Closed{});
+        glfwSetWindowShouldClose(window, GLFW_FALSE);
     });
 
     glfwSetWindowFocusCallback(handle, [](GLFWwindow* window, int focused) {
@@ -469,6 +481,9 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     registerGlfwCallbacks(handle_.get());
     // create storage and register to registry
     storage_ = std::make_shared<WindowStorage>();
+
+    // register to registry
+    g_WindowRegistry.registerStorage(storage_);
 }
 
 void GLFWNativeWindow::handleEvent(Event&& event)
@@ -581,6 +596,9 @@ GLFWWindowContext::~GLFWWindowContext()
 
 void GLFWWindowContext::pollEvents() noexcept
 {
+    // clear old event buffers
+    g_WindowRegistry.resetAll();
+    // poll new events
     glfwPollEvents();
 }
 
