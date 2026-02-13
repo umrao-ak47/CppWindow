@@ -12,7 +12,7 @@
 #include <string>
 #include <variant>
 
-namespace cppwindow {
+namespace cwin {
 
 // Proc loaders need a function pointer
 using ProcLoader = void* (*)(const char*);
@@ -548,4 +548,4 @@ private:
     std::unique_ptr<NativeWindowContext> context_{};
 };
 
-}  // namespace cppwindow
+}  // namespace cwin

@@ -8,11 +8,14 @@
 
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
 #define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
 #elif defined(CPPWINDOW_PLATFORM_MACOS)
 #define GLFW_EXPOSE_NATIVE_COCOA
+#define GLFW_EXPOSE_NATIVE_NSGL
 #elif defined(CPPWINDOW_PLATFORM_LINUX)
 #define GLFW_EXPOSE_NATIVE_X11
 #define GLFW_EXPOSE_NATIVE_WAYLAND
+#define GLFW_EXPOSE_NATIVE_GLX
 #else
 #error "Unknow Platform"
 #endif
@@ -31,7 +34,7 @@ extern "C" VkResult glfwCreateWindowSurface(
     const void* allocator,
     VkSurfaceKHR* surface);
 
-namespace cppwindow {
+namespace cwin {
 
 //----------------------------------------------------------------------------
 //  GLFW Input Mapping Implementation
@@ -676,4 +679,4 @@ std::unique_ptr<NativeWindow> createNativeWindow(WindowDesc desc)
 }
 
 }  // namespace factory
-}  // namespace cppwindow
+}  // namespace cwin

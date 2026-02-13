@@ -12,7 +12,7 @@
 #include <string>
 #include <variant>
 
-namespace cppwindow {
+namespace cwin {
 
 struct NoneGraphicsModeTag
 {};
@@ -113,4 +113,4 @@ std::unique_ptr<NativeWindow> createNativeWindow(WindowDesc builder);
 
 }  // namespace factory
 
-}  // namespace cppwindow
+}  // namespace cwin

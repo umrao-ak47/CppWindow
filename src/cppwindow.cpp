@@ -7,7 +7,7 @@
 
 #include "backend/native_impl.hpp"
 
-namespace cppwindow {
+namespace cwin {
 
 //----------------------------------------------------------------------------
 //  Input State Implemenation
@@ -264,4 +264,4 @@ std::vector<std::string> WindowContext::getRequiredGlfwVulkanExtensions() const
     return context_->getRequiredVulkanExtensions();
 }
 
-}  // namespace cppwindow
+}  // namespace cwin

@@ -8,7 +8,7 @@
 #include <array>
 #include <memory>
 
-namespace cppwindow {
+namespace cwin {
 
 template <class... Ts>
 struct Visitor : Ts...
@@ -67,4 +67,4 @@ struct StaticLookup
     }
 };
 
-}  // namespace cppwindow
+}  // namespace cwin

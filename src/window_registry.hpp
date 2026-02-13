@@ -8,7 +8,7 @@
 #include <mutex>
 #include <vector>
 
-namespace cppwindow {
+namespace cwin {
 
 template <typename T>
 concept TypeHasResetFn = requires(T t) {
@@ -56,4 +56,4 @@ private:
     std::mutex mtx_;
 };
 
-}  // namespace cppwindow
+}  // namespace cwin

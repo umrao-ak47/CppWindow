@@ -49,7 +49,7 @@ private:
     }
 };
 
-namespace cppwindow {
+namespace cwin {
 
 //----------------------------------------------------------------------------
 //  GLFW Input Mapping
@@ -193,4 +193,4 @@ public:
     std::vector<std::string> getRequiredVulkanExtensions() const override;
 };
 
-}  // namespace cppwindow
+}  // namespace cwin

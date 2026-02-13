@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace cppwindow;
+using namespace cwin;
 
 int main()
 {
