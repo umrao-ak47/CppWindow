@@ -31,7 +31,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 #### Add the submodule to your project:
 
 ```bash
-git submodule add [git@github.com:umrao-ak47/CppWindow.git](git@github.com:umrao-ak47/CppWindow.git) external/CppWindow
+git submodule add git@github.com:umrao-ak47/CppWindow.git external/CppWindow
 ```
 
 #### Include it in your CMakeLists.txt:
