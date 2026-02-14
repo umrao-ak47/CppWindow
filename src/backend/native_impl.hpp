@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-#pragma once
+#ifndef CPPWINDOW_HEADER_NATIVE_IMPL_HPP
+#define CPPWINDOW_HEADER_NATIVE_IMPL_HPP
 
 #include <cppwindow/cppwindow.hpp>
 
@@ -82,6 +83,8 @@ public:
 
     virtual void setTitle(const std::string& title) = 0;
     virtual void setSize(int width, int height) = 0;
+    virtual void setFocus(bool focus) const noexcept = 0;
+    virtual void setVisible(bool visible) const noexcept = 0;
     virtual std::pair<int, int> getSize() const noexcept = 0;
     virtual std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept = 0;
     virtual bool isFocused() const noexcept = 0;
@@ -114,3 +117,5 @@ std::unique_ptr<NativeWindow> createNativeWindow(WindowDesc builder);
 }  // namespace factory
 
 }  // namespace cwin
+
+#endif

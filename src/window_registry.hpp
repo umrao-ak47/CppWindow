@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-#pragma once
+#ifndef CPPWINDOW_HEADER_WINDOW_REGISTRY_HPP
+#define CPPWINDOW_HEADER_WINDOW_REGISTRY_HPP
 
 #include <mutex>
 #include <vector>
@@ -57,3 +58,5 @@ private:
 };
 
 }  // namespace cwin
+
+#endif

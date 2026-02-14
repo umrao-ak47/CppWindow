@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2026 Your Name
+ * Copyright (c) 2026 Amit Kumar
  * Licensed under the MIT License.
  */
 
-#pragma once
+#ifndef CPPWINDOW_HEADER_UTILS_HPP
+#define CPPWINDOW_HEADER_UTILS_HPP
 
 #include <array>
 #include <memory>
@@ -68,3 +69,5 @@ struct StaticLookup
 };
 
 }  // namespace cwin
+
+#endif

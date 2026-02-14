@@ -589,6 +589,16 @@ void GLFWNativeWindow::setSize(int width, int height)
     glfwSetWindowSize(handle_.get(), width, height);
 }
 
+void GLFWNativeWindow::setFocus(bool focus) const noexcept
+{
+    glfwSetWindowAttrib(handle_.get(), GLFW_FOCUSED, focus);
+}
+
+void GLFWNativeWindow::setVisible(bool visible) const noexcept
+{
+    glfwSetWindowAttrib(handle_.get(), GLFW_VISIBLE, visible);
+}
+
 std::pair<int, int> GLFWNativeWindow::getSize() const noexcept
 {
     int width, height;

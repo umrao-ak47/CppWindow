@@ -4,7 +4,10 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#pragma once
+#ifndef CPPWINDOW_HEADER_GLFW_IMPL_HPP
+#define CPPWINDOW_HEADER_GLFW_IMPL_HPP
+
+#include <cppwindow/utils.hpp>
 
 // Prevent GLFW from including OpenGL headers
 #define GLFW_INCLUDE_NONE
@@ -15,7 +18,6 @@
 #include <string>
 
 #include "../../window_registry.hpp"
-#include "../mapper.hpp"
 #include "../native_impl.hpp"
 
 class GLFWException : public std::runtime_error
@@ -167,6 +169,8 @@ public:
 
     void setTitle(const std::string& title) override;
     void setSize(int width, int height) override;
+    void setFocus(bool focus) const noexcept override;
+    void setVisible(bool visible) const noexcept override;
     std::pair<int, int> getSize() const noexcept override;
     std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept override;
     bool isFocused() const noexcept override;
@@ -194,3 +198,5 @@ public:
 };
 
 }  // namespace cwin
+
+#endif

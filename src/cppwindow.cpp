@@ -124,6 +124,16 @@ void Window::setSize(int width, int height)
     window_->setSize(width, height);
 }
 
+void Window::setFocus(bool focus) const noexcept
+{
+    window_->setFocus(focus);
+}
+
+void Window::setVisible(bool visible) const noexcept
+{
+    window_->setVisible(visible);
+}
+
 std::pair<int, int> Window::getSize() const noexcept
 {
     return window_->getSize();

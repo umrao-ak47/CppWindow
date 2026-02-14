@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-#pragma once
+#ifndef CPPWINDOW_HEADER_CPPWINDOW_HPP
+#define CPPWINDOW_HEADER_CPPWINDOW_HPP
 
 #include <functional>
 #include <memory>
@@ -489,6 +490,8 @@ public:
 
     void setTitle(const std::string& title);
     void setSize(int width, int height);
+    void setFocus(bool focus) const noexcept;
+    void setVisible(bool visible) const noexcept;
     std::pair<int, int> getSize() const noexcept;
     std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept;
     bool isFocused() const noexcept;
@@ -551,3 +554,5 @@ private:
 };
 
 }  // namespace cwin
+
+#endif
