@@ -13,13 +13,13 @@ int main()
     auto window = WindowBuilder{}
                       .title("OpenGL Example")
                       .size(1280, 720)
-                      .openGL({ 4, 5, true })
+                      .openGL({ 4, 1, true })
                       .resizable()
                       .build();
     window.makeContextCurrent();
 
     // Load OpenGL
-    if (!gladLoadGLLoader((GLADloadproc)ctx.getProcLoader())) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
 

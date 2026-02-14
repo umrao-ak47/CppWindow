@@ -14,8 +14,10 @@
 
 namespace cwin {
 
+// This represents the actual function being loaded
+using ProcFunction = void (*)();
 // Proc loaders need a function pointer
-using ProcLoader = void* (*)(const char*);
+using ProcLoader = ProcFunction (*)(const char*);
 
 // In Vulkan, handles are 64-bit integers.
 using VulkanHandle = uint64_t;

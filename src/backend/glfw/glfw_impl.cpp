@@ -324,9 +324,10 @@ void setupGlfwWindowHints(const WindowDesc& desc)
 {
     glfwDefaultWindowHints();
     // Common Window hints
-    glfwWindowHint(GLFW_RESIZABLE, desc.resizable ? GLFW_TRUE : GLFW_FALSE);
-    glfwWindowHint(GLFW_VISIBLE, desc.visible ? GLFW_TRUE : GLFW_FALSE);
-    glfwWindowHint(GLFW_FOCUSED, desc.focused ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, desc.resizable);
+    glfwWindowHint(GLFW_VISIBLE, desc.visible);
+    glfwWindowHint(GLFW_FOCUSED, desc.focused);
+    glfwWindowHint(GLFW_DECORATED, desc.decorated);
     // special Window Hints
     const auto visitor = Visitor{
         [](NoneGraphicsModeTag mode) {
@@ -336,9 +337,7 @@ void setupGlfwWindowHints(const WindowDesc& desc)
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, mode.config.major);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, mode.config.minor);
-            glfwWindowHint(
-                GLFW_OPENGL_CORE_PROFILE,
-                mode.config.coreProfile ? GLFW_TRUE : GLFW_FALSE);
+            glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, mode.config.coreProfile);
         },
     };
     std::visit(visitor, desc.mode);
@@ -645,7 +644,7 @@ void GLFWWindowContext::pollEvents() noexcept
 
 ProcLoader GLFWWindowContext::getProcLoader() const
 {
-    return [](const char* name) -> void* {
+    return [](const char* name) -> ProcFunction {
         return glfwGetProcAddress(name);
     };
 }
