@@ -173,10 +173,9 @@ int main()
     auto& ctx = WindowContext::Get();
 
     auto window = WindowBuilder{}
-                      .title("Particle Example")
+                      .title("Particle Example (OpenGL 4.1)")
                       .size(1280, 720)
                       .openGL({ 4, 1, true })
-                      .resizable()
                       .build();
 
     window.makeContextCurrent();

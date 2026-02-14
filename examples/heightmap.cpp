@@ -1,5 +1,6 @@
 #include <cppwindow/cppwindow.hpp>
 
+#include <chrono>
 #include <cmath>
 #include <glad/glad.h>
 #include <iostream>
@@ -193,7 +194,6 @@ int main()
                       .title("Orbit Camera + Vertex Heightmap (GL 4.1)")
                       .size(1280, 720)
                       .openGL({ 4, 1, true })
-                      .resizable()
                       .build();
 
     window.makeContextCurrent();
