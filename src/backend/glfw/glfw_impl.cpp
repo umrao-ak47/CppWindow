@@ -202,9 +202,7 @@ int toGlfwKey(Key k)
 
 Key toKey(int k)
 {
-    return (k >= KeyMapLookup::Traits::BackendMin && k < KeyMapLookup::Traits::BackendMax)
-               ? KeyMap.toWrapper(k)
-               : Key::Unknown;
+    return KeyMap.toWrapper(k);
 }
 
 // Two-way Mouse
@@ -215,9 +213,7 @@ int toGlfwMouseButton(MouseButton b)
 
 MouseButton toMouseButton(int b)
 {
-    return (b >= MouseMapLookup::Traits::BackendMin && b <= MouseMapLookup::Traits::BackendMax)
-               ? MouseMap.toWrapper(b)
-               : MouseButton::Unknown;
+    return MouseMap.toWrapper(b);
 }
 
 }  // namespace inputmap

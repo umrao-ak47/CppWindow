@@ -17,53 +17,95 @@ struct Visitor : Ts...
     using Ts::operator()...;
 };
 
-// template <class... Ts>
-// Visitor(Ts...) -> Visitor<Ts...>;
+template <typename T>
+concept Indexable = requires(T v) {
+    { static_cast<size_t>(v) } -> std::same_as<size_t>;
+};
 
-// General traits - will be specialized
-template <typename T, typename U>
-struct InputTraits;
+template <typename T>
+concept StaticLookupTraits = requires {
+    // required types
+    typename T::WrapperType;
+    typename T::BackendType;
 
-template <typename T, typename U>
+    // types must be indexable
+    requires Indexable<typename T::WrapperType>;
+    requires Indexable<typename T::BackendType>;
+
+    // required static bounds
+    { T::WrapperNone } -> std::same_as<const typename T::WrapperType&>;
+    { T::WrapperFirst } -> std::same_as<const typename T::WrapperType&>;
+    { T::WrapperLast } -> std::same_as<const typename T::WrapperType&>;
+    { T::BackendNone } -> std::same_as<const typename T::BackendType&>;
+    { T::BackendFirst } -> std::same_as<const typename T::BackendType&>;
+    { T::BackendLast } -> std::same_as<const typename T::BackendType&>;
+};
+
+template <StaticLookupTraits Traits>
 struct StaticLookup
 {
-    using Traits = InputTraits<T, U>;
+    using WrapperType = typename Traits::WrapperType;
+    using BackendType = typename Traits::BackendType;
 
-    // Mapper -> GLFW
-    std::array<U, Traits::WrapperMax> toBackendMap{};
-    // GLFW -> Mapper
-    std::array<T, Traits::BackendMax> toWrapperMap{};
+    static constexpr size_t WrapperMinVal = static_cast<size_t>(Traits::WrapperFirst);
+    static constexpr size_t WrapperMaxVal = static_cast<size_t>(Traits::WrapperLast);
+    static constexpr size_t WrapperCount = (WrapperMaxVal - WrapperMinVal + 1);
+
+    static constexpr size_t BackendMinVal = static_cast<size_t>(Traits::BackendFirst);
+    static constexpr size_t BackendMaxVal = static_cast<size_t>(Traits::BackendLast);
+    static constexpr size_t BackendCount = (BackendMaxVal - BackendMinVal + 1);
+
+    // Mapper -> Backend
+    std::array<BackendType, WrapperCount> toBackendMap;
+    // Backend -> Mapper
+    std::array<WrapperType, BackendCount> toWrapperMap;
 
     struct Entry
     {
-        T wrapperVal;
-        U backendVal;
+        WrapperType wrapperVal;
+        BackendType backendVal;
     };
 
-    constexpr StaticLookup(std::initializer_list<Entry> mappings)
+    template <size_t N>
+    constexpr StaticLookup(const Entry (&mapping)[N])
+        : toBackendMap{},
+          toWrapperMap{}
     {
         toWrapperMap.fill(Traits::WrapperNone);
         toBackendMap.fill(Traits::BackendNone);
-
-        for (const auto& m : mappings) {
-            // Fill Forward Map
-            toBackendMap[static_cast<size_t>(m.wrapperVal)] = m.backendVal;
-
-            // Fill Reverse Map (only if within bounds)
-            if (m.backendVal >= Traits::BackendMin && m.backendVal < Traits::BackendMax) {
-                toWrapperMap[static_cast<size_t>(m.backendVal)] = m.wrapperVal;
-            }
+        for (int i = 0; i < N; i++) {
+            addEntry(mapping[i]);
         }
+        //(..., addEntry<mapping>());
+    }
+
+    constexpr void addEntry(const Entry& entry)
+    {
+        size_t wIdx = static_cast<size_t>(entry.wrapperVal) - WrapperMinVal;
+        // static_assert(wIdx < WrapperMaxVal, "Wrapper out of range");
+        toBackendMap[wIdx] = entry.backendVal;
+
+        size_t bIdx = static_cast<size_t>(entry.backendVal) - BackendMinVal;
+        // static_assert(bIdx < BackendMaxVal, "Backend out of range");
+        toWrapperMap[bIdx] = entry.wrapperVal;
     }
 
     // Two-way Keyboard
-    inline int toBackend(T k) const noexcept
+    inline BackendType toBackend(WrapperType k) const noexcept
     {
-        return toBackendMap[static_cast<int>(k)];
+        size_t idx = static_cast<size_t>(k) - WrapperMinVal;
+        if (idx < 0 || idx > WrapperMaxVal) {
+            return Traits::BackendNone;
+        }
+        return toBackendMap[idx];
     }
 
-    inline T toWrapper(int k) const noexcept
+    inline WrapperType toWrapper(BackendType k) const noexcept
     {
+        size_t idx = static_cast<size_t>(k) - BackendMinVal;
+        if (idx < 0 || idx > BackendMaxVal) {
+            return Traits::WrapperNone;
+        }
         return toWrapperMap[k];
     }
 };

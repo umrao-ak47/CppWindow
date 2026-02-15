@@ -53,10 +53,11 @@ struct OpenGLConfig
     bool coreProfile = true;
 };
 
-enum class Key : int
+enum class Key : uint32_t
 {
-    Unknown = -1,
-    Space = 0,
+    Unknown = 0,
+    First = 1,
+    Space = First,
     Apostrophe,
     Comma,
     Minus,
@@ -176,6 +177,7 @@ enum class Key : int
     RAlt,
     RSuper,
     Menu,
+    Last = Menu,
 };
 
 enum class Action : int
@@ -185,23 +187,25 @@ enum class Action : int
     Repeat
 };
 
-enum class MouseButton : int
+enum class MouseButton : uint8_t
 {
-    Unknown = -1,
-    Left = 0,  //!< The left mouse button
-    Right,     //!< The right mouse button
-    Middle,    //!< The middle (wheel) mouse button
-    Button4,   //!< The first extra mouse button
-    Button5,   //!< The second extra mouse button
-    Button6,   //!< The third extra mouse button
-    Button7,   //!< The fourth extra mouse button
-    Button8,   //!< The fifth extra mouse button
+    Unknown = 0,
+    First = 1,
+    Left = First,   //!< The left mouse button
+    Right,          //!< The right mouse button
+    Middle,         //!< The middle (wheel) mouse button
+    Button4,        //!< The first extra mouse button
+    Button5,        //!< The second extra mouse button
+    Button6,        //!< The third extra mouse button
+    Button7,        //!< The fourth extra mouse button
+    Button8,        //!< The fifth extra mouse button
+    Last = Button8  // Count for MouseButton
 };
 
 //  The total number of keyboard keys, ignoring `Key::Unknown`
-inline constexpr unsigned int KeyCount{ static_cast<unsigned int>(Key::Menu) + 1 };
+inline constexpr unsigned int KeyCount{ static_cast<unsigned int>(Key::Last) };
 // The total number of mouse buttons, ignoring `MouseButton::Unknown`
-static constexpr unsigned int MouseButtonCount{ 8 };
+static constexpr unsigned int MouseButtonCount{ static_cast<unsigned int>(MouseButton::Last) };
 
 //----------------------------------------------------------------------------
 //  Events

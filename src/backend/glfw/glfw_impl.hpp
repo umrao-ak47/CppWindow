@@ -56,28 +56,34 @@ namespace cwin {
 //----------------------------------------------------------------------------
 //  GLFW Input Mapping
 //----------------------------------------------------------------------------
-template <>
-struct InputTraits<Key, int>
+struct GlfwKeyMapTraits
 {
+    using WrapperType = Key;
+    using BackendType = int;
+
     static constexpr Key WrapperNone = Key::Unknown;
-    static constexpr int BackendNone = -1;
-    static constexpr int BackendMin = 0;
-    static constexpr int BackendMax = GLFW_KEY_LAST + 1;
-    static constexpr unsigned int WrapperMax = KeyCount;
+    static constexpr Key WrapperFirst = Key::First;
+    static constexpr Key WrapperLast = Key::Last;
+    static constexpr int BackendNone = GLFW_KEY_UNKNOWN;
+    static constexpr int BackendFirst = GLFW_KEY_SPACE;
+    static constexpr int BackendLast = GLFW_KEY_LAST;
 };
 
-template <>
-struct InputTraits<MouseButton, int>
+struct GlfwMouseMapTraits
 {
+    using WrapperType = MouseButton;
+    using BackendType = int;
+
     static constexpr MouseButton WrapperNone = MouseButton::Unknown;
-    static constexpr int BackendNone = -1;
-    static constexpr int BackendMin = 0;
-    static constexpr int BackendMax = GLFW_MOUSE_BUTTON_LAST;
-    static constexpr unsigned int WrapperMax = MouseButtonCount;
+    static constexpr MouseButton WrapperFirst = MouseButton::First;
+    static constexpr MouseButton WrapperLast = MouseButton::Last;
+    static constexpr int BackendNone = GLFW_MOUSE_BUTTON_1;
+    static constexpr int BackendFirst = GLFW_MOUSE_BUTTON_1;
+    static constexpr int BackendLast = GLFW_MOUSE_BUTTON_LAST;
 };
 
-using KeyMapLookup = StaticLookup<Key, int>;
-using MouseMapLookup = StaticLookup<MouseButton, int>;
+using KeyMapLookup = StaticLookup<GlfwKeyMapTraits>;
+using MouseMapLookup = StaticLookup<GlfwMouseMapTraits>;
 
 namespace inputmap {
 
