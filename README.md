@@ -8,15 +8,15 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 
 ## ✨ Features
 
-* Modern C++20 design (RAII, spans, variants, concepts)
-* Builder-based window creation
-* Per-window input state
-* Strongly typed event system
-* Vulkan surface support
-* OpenGL context support
-* Zero global input state
-* Backend abstraction (currently GLFW)
-* Minimal runtime overhead
+- Modern C++20 design (RAII, spans, variants, concepts)
+- Builder-based window creation
+- Per-window input state
+- Strongly typed event system
+- Vulkan surface support
+- OpenGL context support
+- Zero global input state
+- Backend abstraction (currently GLFW)
+- Minimal runtime overhead
 
 ## 📦 Requirements
 
@@ -45,20 +45,19 @@ target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 
 ### Window Creation
 
-
 ```cpp
 #include <cppwindow/window.hpp>
 
 int main()
 {
-    cppwindow::Window window =
-        cppwindow::WindowBuilder{}
+    cwin::Window window =
+        cwin::WindowBuilder{}
             .title("Basic Example")
             .size(1280, 720)
             .noAPI()
             .build();
 
-    auto& ctx = cppwindow::WindowContext::Get();
+    auto& ctx = cwin::WindowContext::Get();
 
     while (!window.shouldClose())
     {
@@ -66,7 +65,7 @@ int main()
 
         for (const auto& event : window.events())
         {
-            if (event.is<cppwindow::Event::Closed>())
+            if (event.is<cwin::Event::Closed>())
                 window.requestClose();
         }
     }
@@ -81,7 +80,7 @@ CppWindow supports two creation paths:
 
 ```cpp
 auto window =
-    cppwindow::WindowBuilder{}
+    cwin::WindowBuilder{}
         .noAPI()
         .build();
 ```
@@ -98,9 +97,10 @@ VkHandle surface =
 CppWindow creates the context, but you must load OpenGL functions.
 
 Example using GLAD:
+
 ```cpp
 auto window =
-    cppwindow::WindowBuilder{}
+    cwin::WindowBuilder{}
         .openGL({4,5,true})
         .build();
 
@@ -112,7 +112,7 @@ Render loop:
 ```cpp
 while (!window.shouldClose())
 {
-    cppwindow::WindowContext::Get().pollEvents();
+    cwin::WindowContext::Get().pollEvents();
 
     glClearColor(0.f,0.f,0.f,1.f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -128,7 +128,7 @@ Input is tracked per window, avoiding hidden global state.
 ```cpp
 const auto& input = window.getInput();
 
-if (input.isKeyPressed(cppwindow::Key::Escape))
+if (input.isKeyPressed(cwin::Key::Escape))
     window.requestClose();
 
 auto [x,y] = input.getMousePosition();
@@ -145,7 +145,7 @@ for (const auto& event : window.events())
     {
         using T = std::decay_t<decltype(e)>;
 
-        if constexpr (std::is_same_v<T, cppwindow::Event::Resized>)
+        if constexpr (std::is_same_v<T, cwin::Event::Resized>)
         {
             // handle resize
         }
