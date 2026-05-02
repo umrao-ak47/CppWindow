@@ -66,12 +66,12 @@ Temporary working checklist. Remove this file after the planned work is complete
 
 ## Phase 3: App Utility APIs
 
-- [ ] Add clipboard text APIs.
-- [ ] Add file drag-and-drop events.
-- [ ] Add timer helpers that do not own the loop:
-  - [ ] `Clock`
-  - [ ] `FrameTimer`
-  - [ ] optional fixed-step accumulator helper
+- [x] Add clipboard text APIs.
+- [x] Add file drag-and-drop events.
+- [x] Add timer helpers that do not own the loop:
+  - [x] `Clock`
+  - [x] `FrameTimer`
+  - [x] optional fixed-step accumulator helper
 
 ## Phase 4: Documentation and Polish
 

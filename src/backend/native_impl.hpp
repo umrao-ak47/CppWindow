@@ -133,6 +133,8 @@ public:
     virtual std::pair<float, float> getContentScale(uint32_t monitorId) const = 0;
     virtual std::vector<GamepadInfo> getGamepads() const = 0;
     virtual std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const = 0;
+    virtual void setClipboardText(const std::string& text) const = 0;
+    virtual std::string getClipboardText() const = 0;
 };
 
 //----------------------------------------------------------------------------

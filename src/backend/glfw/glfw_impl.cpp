@@ -948,6 +948,28 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
             self->handleEvent(Event::MouseLeft{});
         }
     });
+
+    glfwSetDropCallback(handle, [](GLFWwindow* window, int count, const char** paths) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        std::vector<std::string> droppedPaths;
+        droppedPaths.reserve(static_cast<size_t>(std::max(count, 0)));
+
+        for (int i = 0; i < count; ++i) {
+            if (paths[i]) {
+                droppedPaths.emplace_back(paths[i]);
+            }
+        }
+
+        double xpos = 0.0;
+        double ypos = 0.0;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        self->handleEvent(
+            Event::FilesDropped{
+                .paths = std::move(droppedPaths),
+                .posX = xpos,
+                .posY = ypos,
+            });
+    });
 }
 
 }  // namespace
@@ -1560,6 +1582,17 @@ std::vector<GamepadInfo> GLFWWindowContext::getGamepads() const
 std::optional<GamepadState> GLFWWindowContext::getGamepadState(uint32_t gamepadId) const
 {
     return readStandardGamepadState(gamepadId);
+}
+
+void GLFWWindowContext::setClipboardText(const std::string& text) const
+{
+    glfwSetClipboardString(nullptr, text.c_str());
+}
+
+std::string GLFWWindowContext::getClipboardText() const
+{
+    const char* text = glfwGetClipboardString(nullptr);
+    return text ? std::string(text) : std::string();
 }
 
 //----------------------------------------------------------------------------

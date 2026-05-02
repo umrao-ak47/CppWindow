@@ -51,6 +51,7 @@ cmake --build build --target example_window_controls
 cmake --build build --target example_fullscreen_toggle
 cmake --build build --target example_text_input
 cmake --build build --target example_gamepad
+cmake --build build --target example_app_utilities
 cmake --build build --target example_particles
 ```
 
@@ -219,6 +220,7 @@ Common event types:
 - `GamepadConnected`, `GamepadDisconnected`
 - `GamepadButtonPressed`, `GamepadButtonReleased`
 - `GamepadAxisMoved`
+- `FilesDropped`
 
 `TextEntered` reports Unicode code points after keyboard layout and input
 method processing. Use it for text fields, and use `KeyPressed` for commands
@@ -252,6 +254,31 @@ devices with a standard mapping.
 
 Gamepad connection, button, and axis events are delivered to window event
 queues after `pollEvents()`.
+
+## Clipboard And File Drop
+
+Clipboard text is available on `WindowContext`:
+
+```cpp
+auto& ctx = cwin::WindowContext::Get();
+
+ctx.setClipboardText("Copied from my app");
+std::string pasted = ctx.getClipboardText();
+```
+
+Drag-and-drop files onto a window to receive `Event::FilesDropped`:
+
+```cpp
+for (const auto& event : window.events()) {
+    if (const auto* drop = event.getIf<cwin::Event::FilesDropped>()) {
+        for (const auto& path : drop->paths) {
+            loadFile(path);
+        }
+    }
+}
+```
+
+The drop event includes the cursor position in window coordinates.
 
 ## Window Controls
 
@@ -382,22 +409,36 @@ window.setWindowMode(cwin::WindowMode::ExclusiveFullscreen, monitorId, mode);
 CppWindow intentionally leaves the loop under your control.
 
 ```cpp
-auto previous = std::chrono::steady_clock::now();
+cwin::FrameTimer timer;
 
 while (!window.shouldClose()) {
-    auto now = std::chrono::steady_clock::now();
-    float dt = std::chrono::duration<float>(now - previous).count();
-    previous = now;
+    cwin::FrameTime frame = timer.tick();
 
     ctx.pollEvents();
     handleEvents(window.events());
-    update(dt, window.getInput());
+    update(frame.deltaSeconds, window.getInput());
     render(window);
 }
 ```
 
-For a fixed-step simulation, keep the accumulator in application code and use
-CppWindow only for polling, input, and presentation.
+For a fixed-step simulation, use `FixedStepAccumulator` in application code:
+
+```cpp
+cwin::FrameTimer timer;
+cwin::FixedStepAccumulator fixedStep(1.0 / 60.0);
+
+while (!window.shouldClose()) {
+    fixedStep.add(timer.tick().deltaSeconds);
+
+    while (fixedStep.consumeStep()) {
+        simulate(fixedStep.fixedDeltaSeconds());
+    }
+
+    renderInterpolated(fixedStep.alpha());
+}
+```
+
+`Clock`, `FrameTimer`, and `FixedStepAccumulator` do not own or run the loop.
 
 ## Native Handles
 
@@ -421,4 +462,5 @@ are backend/platform-specific and should only be used at integration boundaries.
 - `examples/mouse_capture.cpp`: captured cursor behavior with an OpenGL status bar.
 - `examples/text_input.cpp`: Unicode text input events.
 - `examples/gamepad.cpp`: standard gamepad queries and events.
+- `examples/app_utilities.cpp`: clipboard, file drop events, and timing helpers.
 - `examples/particles.cpp`: richer OpenGL rendering example.

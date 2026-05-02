@@ -46,6 +46,8 @@ cppwindow_add_example(example_text_input text_input.cpp)
 
 cppwindow_add_example(example_gamepad gamepad.cpp)
 
+cppwindow_add_example(example_app_utilities app_utilities.cpp)
+
 cppwindow_add_example(example_opengl opengl.cpp)
 target_link_libraries(example_opengl
     PRIVATE

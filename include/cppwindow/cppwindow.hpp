@@ -7,6 +7,7 @@
 #define CPPWINDOW_HEADER_CPPWINDOW_HPP
 
 #include <array>
+#include <chrono>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -324,6 +325,65 @@ struct GamepadState
 };
 
 //----------------------------------------------------------------------------
+//  Timing
+//----------------------------------------------------------------------------
+class Clock final
+{
+public:
+    using SteadyClock = std::chrono::steady_clock;
+    using Duration = SteadyClock::duration;
+    using TimePoint = SteadyClock::time_point;
+
+    Clock() noexcept;
+
+    void reset() noexcept;
+    [[nodiscard]] Duration elapsed() const noexcept;
+    [[nodiscard]] double elapsedSeconds() const noexcept;
+    [[nodiscard]] double restartSeconds() noexcept;
+
+private:
+    TimePoint start_;
+};
+
+struct FrameTime
+{
+    double deltaSeconds = 0.0;
+    double totalSeconds = 0.0;
+    uint64_t frameIndex = 0;
+};
+
+class FrameTimer final
+{
+public:
+    FrameTimer() noexcept;
+
+    void reset() noexcept;
+    [[nodiscard]] FrameTime tick() noexcept;
+
+private:
+    Clock clock_;
+    double lastSeconds_ = 0.0;
+    uint64_t frameIndex_ = 0;
+};
+
+class FixedStepAccumulator final
+{
+public:
+    explicit FixedStepAccumulator(double fixedDeltaSeconds = 1.0 / 60.0) noexcept;
+
+    void reset() noexcept;
+    void add(double deltaSeconds) noexcept;
+    [[nodiscard]] bool consumeStep() noexcept;
+    [[nodiscard]] double alpha() const noexcept;
+    [[nodiscard]] double accumulatedSeconds() const noexcept;
+    [[nodiscard]] double fixedDeltaSeconds() const noexcept;
+
+private:
+    double fixedDeltaSeconds_ = 1.0 / 60.0;
+    double accumulatedSeconds_ = 0.0;
+};
+
+//----------------------------------------------------------------------------
 //  Events
 //----------------------------------------------------------------------------
 namespace details {
@@ -484,6 +544,13 @@ public:
         float value{};
     };
 
+    struct FilesDropped
+    {
+        std::vector<std::string> paths;
+        double posX{};
+        double posY{};
+    };
+
     struct JoystickButtonPressed
     {
         unsigned int joystickId{};
@@ -563,6 +630,7 @@ public:
         GamepadButtonPressed,
         GamepadButtonReleased,
         GamepadAxisMoved,
+        FilesDropped,
         JoystickButtonPressed,
         JoystickButtonReleased,
         JoystickMoved,
@@ -766,6 +834,8 @@ public:
     std::pair<float, float> getContentScale(uint32_t monitorId = 0) const;
     std::vector<GamepadInfo> getGamepads() const;
     std::optional<GamepadState> getGamepadState(uint32_t gamepadId = 0) const;
+    void setClipboardText(const std::string& text) const;
+    std::string getClipboardText() const;
 
 private:
     WindowContext();

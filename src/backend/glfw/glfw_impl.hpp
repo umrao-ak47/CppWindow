@@ -263,6 +263,8 @@ public:
     std::pair<float, float> getContentScale(uint32_t monitorId) const override;
     std::vector<GamepadInfo> getGamepads() const override;
     std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const override;
+    void setClipboardText(const std::string& text) const override;
+    std::string getClipboardText() const override;
 };
 
 }  // namespace cwin

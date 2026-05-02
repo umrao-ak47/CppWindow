@@ -10,6 +10,104 @@
 namespace cwin {
 
 //----------------------------------------------------------------------------
+//  Timing Implementation
+//----------------------------------------------------------------------------
+Clock::Clock() noexcept
+    : start_(SteadyClock::now())
+{
+}
+
+void Clock::reset() noexcept
+{
+    start_ = SteadyClock::now();
+}
+
+Clock::Duration Clock::elapsed() const noexcept
+{
+    return SteadyClock::now() - start_;
+}
+
+double Clock::elapsedSeconds() const noexcept
+{
+    return std::chrono::duration<double>(elapsed()).count();
+}
+
+double Clock::restartSeconds() noexcept
+{
+    const auto now = SteadyClock::now();
+    const double seconds = std::chrono::duration<double>(now - start_).count();
+    start_ = now;
+    return seconds;
+}
+
+FrameTimer::FrameTimer() noexcept = default;
+
+void FrameTimer::reset() noexcept
+{
+    clock_.reset();
+    lastSeconds_ = 0.0;
+    frameIndex_ = 0;
+}
+
+FrameTime FrameTimer::tick() noexcept
+{
+    const double totalSeconds = clock_.elapsedSeconds();
+    const double deltaSeconds = frameIndex_ == 0 ? 0.0 : totalSeconds - lastSeconds_;
+    const uint64_t frameIndex = frameIndex_;
+
+    lastSeconds_ = totalSeconds;
+    ++frameIndex_;
+
+    return FrameTime{
+        .deltaSeconds = deltaSeconds,
+        .totalSeconds = totalSeconds,
+        .frameIndex = frameIndex,
+    };
+}
+
+FixedStepAccumulator::FixedStepAccumulator(double fixedDeltaSeconds) noexcept
+    : fixedDeltaSeconds_(fixedDeltaSeconds > 0.0 ? fixedDeltaSeconds : 1.0 / 60.0)
+{
+}
+
+void FixedStepAccumulator::reset() noexcept
+{
+    accumulatedSeconds_ = 0.0;
+}
+
+void FixedStepAccumulator::add(double deltaSeconds) noexcept
+{
+    if (deltaSeconds > 0.0) {
+        accumulatedSeconds_ += deltaSeconds;
+    }
+}
+
+bool FixedStepAccumulator::consumeStep() noexcept
+{
+    if (accumulatedSeconds_ < fixedDeltaSeconds_) {
+        return false;
+    }
+
+    accumulatedSeconds_ -= fixedDeltaSeconds_;
+    return true;
+}
+
+double FixedStepAccumulator::alpha() const noexcept
+{
+    return fixedDeltaSeconds_ > 0.0 ? accumulatedSeconds_ / fixedDeltaSeconds_ : 0.0;
+}
+
+double FixedStepAccumulator::accumulatedSeconds() const noexcept
+{
+    return accumulatedSeconds_;
+}
+
+double FixedStepAccumulator::fixedDeltaSeconds() const noexcept
+{
+    return fixedDeltaSeconds_;
+}
+
+//----------------------------------------------------------------------------
 //  Gamepad State Implementation
 //----------------------------------------------------------------------------
 namespace {
@@ -449,6 +547,16 @@ std::vector<GamepadInfo> WindowContext::getGamepads() const
 std::optional<GamepadState> WindowContext::getGamepadState(uint32_t gamepadId) const
 {
     return context_->getGamepadState(gamepadId);
+}
+
+void WindowContext::setClipboardText(const std::string& text) const
+{
+    context_->setClipboardText(text);
+}
+
+std::string WindowContext::getClipboardText() const
+{
+    return context_->getClipboardText();
 }
 
 }  // namespace cwin
