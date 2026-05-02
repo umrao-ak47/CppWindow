@@ -17,10 +17,6 @@ Delete items as they are completed and remove this file once the list is empty.
 
 ## Next Work
 
-- [ ] Package polish
-  - [ ] Add explicit project versioning.
-  - [ ] Add install/export consumer test using `find_package(cppwindow CONFIG REQUIRED)`.
-  - [ ] Add package/install checks to CI.
 - [ ] Testing and CI
   - [ ] Add sanitizer builds where supported.
   - [ ] Ensure CI compiles all examples on macOS, Linux, and Windows.

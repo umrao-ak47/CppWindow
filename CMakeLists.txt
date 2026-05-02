@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(CppWindow VERSION 0.1.0 LANGUAGES CXX)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" CPPWINDOW_VERSION)
+string(STRIP "${CPPWINDOW_VERSION}" CPPWINDOW_VERSION)
+
+project(CppWindow VERSION ${CPPWINDOW_VERSION} LANGUAGES CXX)
 
 include(FetchContent)
 include(GNUInstallDirs)

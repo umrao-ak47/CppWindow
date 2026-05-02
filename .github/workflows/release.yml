@@ -3,10 +3,6 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: Release tag to create, for example v0.1.0
-        required: true
-        type: string
       target_ref:
         description: Branch, tag, or commit SHA to release
         required: true
@@ -27,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ inputs.tag }}
+  group: release-${{ inputs.target_ref }}
   cancel-in-progress: false
 
 jobs:
@@ -42,15 +38,27 @@ jobs:
           ref: ${{ inputs.target_ref }}
           fetch-depth: 0
 
-      - name: Validate tag
+      - name: Read release version
+        id: version
         shell: bash
         run: |
           set -euo pipefail
-          tag="${{ inputs.tag }}"
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Release tag must look like v0.1.0 or v0.1.0-rc.1"
+          version="$(tr -d '[:space:]' < VERSION)"
+          tag="v${version}"
+          if [[ -z "$version" ]]; then
+            echo "::error::VERSION is empty"
             exit 1
           fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::VERSION must produce a tag like v0.1.0 or v0.1.0-rc.1"
+            exit 1
+          fi
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "::error::Tag ${tag} already exists"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: |
@@ -87,8 +95,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag="${{ inputs.tag }}"
-          version="${tag#v}"
+          version="${{ steps.version.outputs.version }}"
           mkdir -p dist
           git archive \
             --format=tar.gz \
@@ -106,7 +113,7 @@ jobs:
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cppwindow-${{ inputs.tag }}-release-artifacts
+          name: cppwindow-${{ steps.version.outputs.tag }}-release-artifacts
           path: dist/*
           if-no-files-found: error
 
@@ -116,7 +123,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag="${{ inputs.tag }}"
+          tag="${{ steps.version.outputs.tag }}"
           title="CppWindow ${tag}"
           target_sha="$(git rev-parse HEAD)"
           draft_args=()
@@ -130,12 +137,13 @@ jobs:
           fi
 
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/* --clobber
-          else
-            gh release create "$tag" dist/* \
-              --target "$target_sha" \
-              --title "$title" \
-              "${draft_args[@]}" \
-              "${prerelease_args[@]}" \
-              --generate-notes
+            echo "::error::Release ${tag} already exists"
+            exit 1
           fi
+
+          gh release create "$tag" dist/* \
+            --target "$target_sha" \
+            --title "$title" \
+            "${draft_args[@]}" \
+            "${prerelease_args[@]}" \
+            --generate-notes
