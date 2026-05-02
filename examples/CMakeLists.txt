@@ -32,6 +32,10 @@ target_link_libraries(example_window_controls
 )
 
 cppwindow_add_example(example_fullscreen_toggle fullscreen_toggle.cpp)
+target_link_libraries(example_fullscreen_toggle
+    PRIVATE
+        glad
+)
 cppwindow_add_example(example_mouse_capture mouse_capture.cpp)
 
 cppwindow_add_example(example_opengl opengl.cpp)

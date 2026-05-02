@@ -699,6 +699,8 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
 GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 {
     hasOpenGLContext_ = std::holds_alternative<OpenGLGraphicsModeTag>(desc.mode);
+    decorated_ = desc.decorated;
+    windowedDecorated_ = decorated_;
 
     setupGlfwWindowHints(desc);
     handle_.reset(glfwCreateWindow(
@@ -738,6 +740,8 @@ void GLFWNativeWindow::captureWindowedBounds()
 
     glfwGetWindowPos(handle_.get(), &windowedX_, &windowedY_);
     glfwGetWindowSize(handle_.get(), &windowedWidth_, &windowedHeight_);
+    windowedDecorated_ = decorated_;
+    windowedFloating_ = floating_;
 }
 
 void GLFWNativeWindow::handleEvent(Event&& event)
@@ -894,11 +898,19 @@ void GLFWNativeWindow::setResizable(bool resizable)
 void GLFWNativeWindow::setDecorated(bool decorated)
 {
     glfwSetWindowAttrib(handle_.get(), GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
+    decorated_ = decorated;
+    if (windowMode_ == WindowMode::Windowed) {
+        windowedDecorated_ = decorated_;
+    }
 }
 
 void GLFWNativeWindow::setFloating(bool floating)
 {
     glfwSetWindowAttrib(handle_.get(), GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE);
+    floating_ = floating;
+    if (windowMode_ == WindowMode::Windowed) {
+        windowedFloating_ = floating_;
+    }
 }
 
 void GLFWNativeWindow::setOpacity(float opacity)
@@ -924,15 +936,47 @@ void GLFWNativeWindow::setCursorMode(CursorMode mode)
     cursorMode_ = mode;
 }
 
+void GLFWNativeWindow::minimize()
+{
+    glfwIconifyWindow(handle_.get());
+}
+
+void GLFWNativeWindow::maximize()
+{
+    if (windowMode_ != WindowMode::Windowed) {
+        setWindowMode(WindowMode::Windowed, currentMonitorId_, std::nullopt);
+    }
+
+    captureWindowedBounds();
+    glfwMaximizeWindow(handle_.get());
+}
+
+void GLFWNativeWindow::restore()
+{
+    if (windowMode_ != WindowMode::Windowed) {
+        setWindowMode(WindowMode::Windowed, currentMonitorId_, std::nullopt);
+    }
+
+    glfwRestoreWindow(handle_.get());
+}
+
 void GLFWNativeWindow::setWindowMode(
     WindowMode mode,
     uint32_t monitorId,
     std::optional<VideoMode> videoMode)
 {
     if (mode == WindowMode::Windowed) {
-        const bool wasWindowed = windowMode_ == WindowMode::Windowed;
+        if (windowMode_ == WindowMode::Windowed) {
+            return;
+        }
+
+        const bool wasExclusiveFullscreen = glfwGetWindowMonitor(handle_.get()) != nullptr;
         windowMode_ = WindowMode::Windowed;
-        if (!wasWindowed) {
+        setDecorated(windowedDecorated_);
+        setFloating(windowedFloating_);
+        glfwRestoreWindow(handle_.get());
+
+        if (wasExclusiveFullscreen) {
             glfwSetWindowMonitor(
                 handle_.get(),
                 nullptr,
@@ -941,8 +985,15 @@ void GLFWNativeWindow::setWindowMode(
                 windowedWidth_,
                 windowedHeight_,
                 GLFW_DONT_CARE);
+        } else {
+            glfwSetWindowPos(handle_.get(), windowedX_, windowedY_);
+            glfwSetWindowSize(handle_.get(), windowedWidth_, windowedHeight_);
         }
 
+        return;
+    }
+
+    if (mode == windowMode_) {
         return;
     }
 
@@ -955,7 +1006,75 @@ void GLFWNativeWindow::setWindowMode(
         return;
     }
 
+    if (mode == WindowMode::Fullscreen) {
+        captureWindowedBounds();
+
+        if (glfwGetWindowMonitor(handle_.get())) {
+            int x = 0;
+            int y = 0;
+            int width = 0;
+            int height = 0;
+            glfwGetMonitorWorkarea(monitor, &x, &y, &width, &height);
+            if (width <= 0 || height <= 0) {
+                const GLFWvidmode* currentMode = glfwGetVideoMode(monitor);
+                if (!currentMode) {
+                    return;
+                }
+
+                glfwGetMonitorPos(monitor, &x, &y);
+                width = currentMode->width;
+                height = currentMode->height;
+            }
+            glfwSetWindowMonitor(handle_.get(), nullptr, x, y, width, height, GLFW_DONT_CARE);
+        }
+
+        windowMode_ = mode;
+        setDecorated(true);
+        setFloating(false);
+        glfwRestoreWindow(handle_.get());
+        glfwMaximizeWindow(handle_.get());
+        return;
+    }
+
+    if (mode == WindowMode::BorderlessFullscreen) {
+        captureWindowedBounds();
+
+        int x = 0;
+        int y = 0;
+        int width = 0;
+        int height = 0;
+        glfwGetMonitorWorkarea(monitor, &x, &y, &width, &height);
+
+        if (width <= 0 || height <= 0) {
+            const GLFWvidmode* currentMode = glfwGetVideoMode(monitor);
+            if (!currentMode) {
+                return;
+            }
+
+            glfwGetMonitorPos(monitor, &x, &y);
+            width = currentMode->width;
+            height = currentMode->height;
+        }
+
+        windowMode_ = mode;
+        setDecorated(false);
+        setFloating(true);
+
+        if (glfwGetWindowMonitor(handle_.get())) {
+            glfwSetWindowMonitor(handle_.get(), nullptr, x, y, width, height, GLFW_DONT_CARE);
+        } else {
+            glfwSetWindowPos(handle_.get(), x, y);
+            glfwSetWindowSize(handle_.get(), width, height);
+        }
+
+        return;
+    }
+
     captureWindowedBounds();
+
+    if (mode != WindowMode::ExclusiveFullscreen) {
+        return;
+    }
 
     int x = 0;
     int y = 0;
@@ -971,8 +1090,6 @@ void GLFWNativeWindow::setWindowMode(
         return;
     }
 
-    const int refreshRate =
-        mode == WindowMode::BorderlessFullscreen ? GLFW_DONT_CARE : targetMode.refreshRate;
     windowMode_ = mode;
     glfwSetWindowMonitor(
         handle_.get(),
@@ -981,7 +1098,7 @@ void GLFWNativeWindow::setWindowMode(
         y,
         targetMode.width,
         targetMode.height,
-        refreshRate);
+        targetMode.refreshRate);
 }
 
 void GLFWNativeWindow::setFocus(bool focus) const noexcept

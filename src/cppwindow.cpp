@@ -179,6 +179,21 @@ void Window::setCursorMode(CursorMode mode)
     window_->setCursorMode(mode);
 }
 
+void Window::minimize()
+{
+    window_->minimize();
+}
+
+void Window::maximize()
+{
+    window_->maximize();
+}
+
+void Window::restore()
+{
+    window_->restore();
+}
+
 void Window::setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
 {
     window_->setWindowMode(mode, monitorId, videoMode);

@@ -31,4 +31,5 @@ int main()
     assert(monitor.currentVideoMode.refreshRate == 60);
     assert(cwin::CursorMode::Captured != cwin::CursorMode::Normal);
     assert(cwin::WindowMode::BorderlessFullscreen != cwin::WindowMode::Windowed);
+    assert(cwin::WindowMode::ExclusiveFullscreen != cwin::WindowMode::Fullscreen);
 }

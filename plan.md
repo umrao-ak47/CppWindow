@@ -13,7 +13,7 @@ Temporary working checklist. Remove this file after the planned work is complete
 
 - [x] Add public window state enums and structs:
   - [x] `CursorMode`: `Normal`, `Hidden`, `Captured`
-  - [x] `WindowMode`: `Windowed`, `Fullscreen`, `BorderlessFullscreen`
+  - [x] `WindowMode`: `Windowed`, `Fullscreen`, `BorderlessFullscreen`, `ExclusiveFullscreen`
   - [x] `MonitorInfo`: name, position, physical size, content scale, current video mode
   - [x] `VideoMode`: width, height, refresh rate, color bit depth
 - [x] Add window control APIs:
@@ -29,6 +29,9 @@ Temporary working checklist. Remove this file after the planned work is complete
   - [x] `setVSync(bool)`
   - [x] `setCursorMode(CursorMode)`
   - [x] `getCursorMode()`
+  - [x] `minimize()`
+  - [x] `maximize()`
+  - [x] `restore()`
   - [x] `setWindowMode(WindowMode, optional monitor/video mode)`
   - [x] `getWindowMode()`
 - [x] Add monitor APIs on `WindowContext`:

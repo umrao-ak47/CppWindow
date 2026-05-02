@@ -194,6 +194,9 @@ public:
     void setOpacity(float opacity) override;
     void setVSync(bool enabled) override;
     void setCursorMode(CursorMode mode) override;
+    void minimize() override;
+    void maximize() override;
+    void restore() override;
     void setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
         override;
     void setFocus(bool focus) const noexcept override;
@@ -216,6 +219,10 @@ private:
     CursorMode cursorMode_ = CursorMode::Normal;
     WindowMode windowMode_ = WindowMode::Windowed;
     bool hasOpenGLContext_ = false;
+    bool decorated_ = true;
+    bool floating_ = false;
+    bool windowedDecorated_ = true;
+    bool windowedFloating_ = false;
     uint32_t currentMonitorId_ = 0;
     int windowedX_ = 0;
     int windowedY_ = 0;

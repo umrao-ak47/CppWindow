@@ -71,7 +71,8 @@ enum class WindowMode : uint8_t
 {
     Windowed,
     Fullscreen,
-    BorderlessFullscreen
+    BorderlessFullscreen,
+    ExclusiveFullscreen
 };
 
 struct VideoMode
@@ -596,6 +597,9 @@ public:
     void setOpacity(float opacity);
     void setVSync(bool enabled);
     void setCursorMode(CursorMode mode);
+    void minimize();
+    void maximize();
+    void restore();
     void setWindowMode(
         WindowMode mode,
         uint32_t monitorId = 0,

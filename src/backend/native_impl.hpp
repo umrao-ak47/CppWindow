@@ -94,6 +94,9 @@ public:
     virtual void setOpacity(float opacity) = 0;
     virtual void setVSync(bool enabled) = 0;
     virtual void setCursorMode(CursorMode mode) = 0;
+    virtual void minimize() = 0;
+    virtual void maximize() = 0;
+    virtual void restore() = 0;
     virtual void
     setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode) = 0;
     virtual void setFocus(bool focus) const noexcept = 0;
