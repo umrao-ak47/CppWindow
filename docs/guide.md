@@ -259,8 +259,14 @@ For named commands, use `ActionMap`:
 ```cpp
 cwin::ActionMap actions;
 actions.bindKey("jump", cwin::Key::Space)
+       .bindKey("save", cwin::Key::S, cwin::Modifiers{ .control = true })
+       .bindKeyChord("left_dash", cwin::Key::A, { cwin::Key::LShift })
        .bindMouseButton("fire", cwin::MouseButton::Left)
-       .bindGamepadButton("jump", cwin::GamepadButton::A);
+       .bindGamepadButton("jump", cwin::GamepadButton::A)
+       .bindGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.20f)
+       .setGroup("jump", "gameplay")
+       .setGroup("fire", "gameplay")
+       .setGroup("move_x", "gameplay");
 
 while (!window.shouldClose()) {
     ctx.pollEvents();
@@ -269,7 +275,28 @@ while (!window.shouldClose()) {
     if (actions.isPressed("jump")) {
         jump();
     }
+
+    if (actions.isPressed("save")) {
+        save();
+    }
+
+    move(actions.getAxis("move_x"));
 }
+```
+
+Use groups as simple input contexts:
+
+```cpp
+actions.setGroupEnabled("gameplay", !menuOpen);
+```
+
+For rebinding screens, replace one binding category without rebuilding the
+whole map:
+
+```cpp
+actions.replaceKey("jump", cwin::Key::J);
+actions.replaceKeyChord("left_dash", cwin::Key::A, { cwin::Key::LShift });
+actions.replaceGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.25f);
 ```
 
 ## Events

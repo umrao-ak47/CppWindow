@@ -14,6 +14,7 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -377,6 +378,9 @@ struct Modifiers
     {
         return alt || control || shift || system;
     }
+
+    /// Compares two modifier sets.
+    [[nodiscard]] bool operator==(const Modifiers&) const noexcept = default;
 };
 
 /// Mouse button code.
@@ -1055,33 +1059,112 @@ private:
 //----------------------------------------------------------------------------
 //  Input Helpers
 //----------------------------------------------------------------------------
+/// Keyboard key plus optional modifier requirements.
+struct KeyBinding
+{
+    /// Keyboard key that triggers the action.
+    Key key = Key::Unknown;
+    /// Required modifiers. Empty modifiers mean plain key matching.
+    Modifiers modifiers{};
+    /// Additional keys that must be held, useful for side-specific modifiers.
+    std::vector<Key> requiredKeys;
+    /// When true, extra held modifiers prevent the binding from matching.
+    bool exactModifiers = false;
+
+    /// Compares two key bindings.
+    [[nodiscard]] bool operator==(const KeyBinding&) const noexcept = default;
+};
+
+/// Direction filter for gamepad axis bindings.
+enum class ActionAxisDirection : int8_t
+{
+    /// Match either positive or negative axis movement.
+    Any,
+    /// Match only positive axis movement.
+    Positive,
+    /// Match only negative axis movement.
+    Negative
+};
+
+/// Gamepad axis binding with a deadzone.
+struct GamepadAxisBinding
+{
+    /// Standard gamepad axis that drives the action.
+    GamepadAxis axis = GamepadAxis::LeftX;
+    /// Absolute value below which the axis is ignored.
+    float deadzone = 0.15f;
+    /// Direction that activates the binding.
+    ActionAxisDirection direction = ActionAxisDirection::Any;
+
+    /// Compares two axis bindings.
+    [[nodiscard]] bool operator==(const GamepadAxisBinding&) const noexcept = default;
+};
+
 /// Input sources that can trigger one named action.
 struct ActionBinding
 {
-    /// Keyboard keys that trigger the action.
-    std::vector<Key> keys;
+    /// Optional group/context name. Empty means always enabled.
+    std::string group;
+    /// Keyboard keys that trigger the action, with optional modifiers.
+    std::vector<KeyBinding> keys;
     /// Mouse buttons that trigger the action.
     std::vector<MouseButton> mouseButtons;
     /// Standard gamepad buttons that trigger the action.
     std::vector<GamepadButton> gamepadButtons;
+    /// Standard gamepad axes that trigger or drive the action.
+    std::vector<GamepadAxisBinding> gamepadAxes;
 };
 
 /// Small action binding map for game/app commands.
 class ActionMap final
 {
 public:
-    /// Binds a key to an action name.
-    ActionMap& bindKey(std::string action, Key key);
+    /// Binds a key plus optional required modifiers to an action name.
+    ActionMap&
+    bindKey(std::string action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
+    /// Binds a key plus additional required held keys to an action name.
+    ActionMap& bindKeyChord(std::string action, Key key, std::vector<Key> requiredKeys);
     /// Binds a mouse button to an action name.
     ActionMap& bindMouseButton(std::string action, MouseButton button);
     /// Binds a standard gamepad button to an action name.
     ActionMap& bindGamepadButton(std::string action, GamepadButton button);
+    /// Binds a standard gamepad axis to an action name.
+    ActionMap& bindGamepadAxis(
+        std::string action,
+        GamepadAxis axis,
+        float deadzone = 0.15f,
+        ActionAxisDirection direction = ActionAxisDirection::Any);
+    /// Replaces key bindings for an action.
+    ActionMap&
+    replaceKey(std::string action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
+    /// Replaces key bindings with a key plus additional required held keys.
+    ActionMap& replaceKeyChord(std::string action, Key key, std::vector<Key> requiredKeys);
+    /// Replaces mouse button bindings for an action.
+    ActionMap& replaceMouseButton(std::string action, MouseButton button);
+    /// Replaces gamepad button bindings for an action.
+    ActionMap& replaceGamepadButton(std::string action, GamepadButton button);
+    /// Replaces gamepad axis bindings for an action.
+    ActionMap& replaceGamepadAxis(
+        std::string action,
+        GamepadAxis axis,
+        float deadzone = 0.15f,
+        ActionAxisDirection direction = ActionAxisDirection::Any);
+    /// Removes all input bindings for an action while preserving group and state.
+    void clearBindings(const std::string& action);
     /// Removes all bindings and state for one action.
     void clear(const std::string& action);
     /// Removes every binding and action state.
     void clearAll();
     /// Clears action transition state but keeps bindings.
     void resetState() noexcept;
+    /// Assigns an action to a group/context. Empty group means always enabled.
+    ActionMap& setGroup(std::string action, std::string group);
+    /// Enables or disables a group/context.
+    void setGroupEnabled(std::string group, bool enabled);
+    /// Returns whether a group/context is enabled. Unknown groups are enabled.
+    [[nodiscard]] bool isGroupEnabled(const std::string& group) const noexcept;
+    /// Clears all explicit group enable/disable state.
+    void clearGroupStates();
 
     /// Updates action states from input and an optional gamepad snapshot.
     template <typename Input>
@@ -1089,7 +1172,16 @@ public:
     {
         for (auto& entry : entries_) {
             entry.previousDown = entry.down;
-            entry.down = isBindingDown(entry.binding, input, gamepad);
+
+            if (!isGroupEnabled(entry.binding.group)) {
+                entry.down = false;
+                entry.axisValue = 0.0f;
+                continue;
+            }
+
+            entry.axisValue = bindingAxisValue(entry.binding, gamepad);
+            entry.down =
+                isDigitalBindingDown(entry.binding, input, gamepad) || entry.axisValue != 0.0f;
         }
     }
 
@@ -1099,30 +1191,44 @@ public:
     [[nodiscard]] bool isPressed(const std::string& action) const;
     /// Returns whether an action transitioned from down to up on the last update.
     [[nodiscard]] bool isReleased(const std::string& action) const;
+    /// Returns the current axis value for an action, or zero when inactive.
+    [[nodiscard]] float getAxis(const std::string& action) const;
     /// Returns the binding for an action, or null if it does not exist.
     [[nodiscard]] const ActionBinding* getBinding(const std::string& action) const noexcept;
 
 private:
+    struct GroupState
+    {
+        std::string group;
+        bool enabled = true;
+    };
+
     struct Entry
     {
         std::string action;
         ActionBinding binding;
         bool down = false;
         bool previousDown = false;
+        float axisValue = 0.0f;
     };
 
     [[nodiscard]] Entry* findEntry(const std::string& action) noexcept;
     [[nodiscard]] const Entry* findEntry(const std::string& action) const noexcept;
+    [[nodiscard]] GroupState* findGroup(const std::string& group) noexcept;
+    [[nodiscard]] const GroupState* findGroup(const std::string& group) const noexcept;
     [[nodiscard]] Entry& getOrCreateEntry(std::string action);
+    static void resetEntryState(Entry& entry) noexcept;
 
     template <typename Input>
-    static bool isBindingDown(
+    static bool isDigitalBindingDown(
         const ActionBinding& binding,
         const Input& input,
         const std::optional<GamepadState>& gamepad)
     {
-        for (Key key : binding.keys) {
-            if (input.isKeyDown(key)) {
+        const Modifiers activeModifiers = currentModifiers(input);
+        for (const KeyBinding& key : binding.keys) {
+            if (input.isKeyDown(key.key) && requiredKeysDown(key.requiredKeys, input) &&
+                modifiersMatch(key.modifiers, activeModifiers, key.exactModifiers)) {
                 return true;
             }
         }
@@ -1144,7 +1250,89 @@ private:
         return false;
     }
 
+    template <typename Input>
+    static bool requiredKeysDown(const std::vector<Key>& keys, const Input& input)
+    {
+        for (Key key : keys) {
+            if (!input.isKeyDown(key)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template <typename Input>
+    static Modifiers currentModifiers(const Input& input)
+    {
+        return Modifiers{
+            .alt = input.isKeyDown(Key::LAlt) || input.isKeyDown(Key::RAlt),
+            .control = input.isKeyDown(Key::LControl) || input.isKeyDown(Key::RControl),
+            .shift = input.isKeyDown(Key::LShift) || input.isKeyDown(Key::RShift),
+            .system = input.isKeyDown(Key::LSuper) || input.isKeyDown(Key::RSuper),
+        };
+    }
+
+    static bool modifiersMatch(Modifiers required, Modifiers active, bool exact) noexcept
+    {
+        if (required.alt && !active.alt) {
+            return false;
+        }
+        if (required.control && !active.control) {
+            return false;
+        }
+        if (required.shift && !active.shift) {
+            return false;
+        }
+        if (required.system && !active.system) {
+            return false;
+        }
+
+        return !exact || required == active;
+    }
+
+    static float bindingAxisValue(
+        const ActionBinding& binding,
+        const std::optional<GamepadState>& gamepad) noexcept
+    {
+        if (!gamepad) {
+            return 0.0f;
+        }
+
+        float result = 0.0f;
+        for (const GamepadAxisBinding& axis : binding.gamepadAxes) {
+            const float value = axisBindingValue(*gamepad, axis);
+            if (std::abs(value) > std::abs(result)) {
+                result = value;
+            }
+        }
+        return result;
+    }
+
+    static float axisBindingValue(
+        const GamepadState& gamepad,
+        const GamepadAxisBinding& binding) noexcept
+    {
+        const float value = gamepad.getAxis(binding.axis);
+        const float magnitude = std::abs(value);
+        if (magnitude <= binding.deadzone) {
+            return 0.0f;
+        }
+
+        switch (binding.direction) {
+            case ActionAxisDirection::Any:
+                return value;
+            case ActionAxisDirection::Positive:
+                return value > binding.deadzone ? value : 0.0f;
+            case ActionAxisDirection::Negative:
+                return value < -binding.deadzone ? value : 0.0f;
+        }
+
+        return 0.0f;
+    }
+
     std::vector<Entry> entries_;
+    std::vector<GroupState> groups_;
 };
 
 //----------------------------------------------------------------------------

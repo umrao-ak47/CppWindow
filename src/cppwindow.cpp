@@ -5,6 +5,7 @@
 
 #include <cppwindow/cppwindow.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <thread>
 
@@ -414,11 +415,36 @@ void appendUnique(std::vector<T>& values, T value)
     values.push_back(value);
 }
 
+float sanitizeDeadzone(float deadzone) noexcept
+{
+    if (!std::isfinite(deadzone) || deadzone < 0.0f) {
+        return 0.0f;
+    }
+    return std::clamp(deadzone, 0.0f, 1.0f);
+}
+
 }  // namespace
 
-ActionMap& ActionMap::bindKey(std::string action, Key key)
+ActionMap& ActionMap::bindKey(std::string action, Key key, Modifiers modifiers, bool exactModifiers)
 {
-    appendUnique(getOrCreateEntry(std::move(action)).binding.keys, key);
+    appendUnique(
+        getOrCreateEntry(std::move(action)).binding.keys,
+        KeyBinding{
+            .key = key,
+            .modifiers = modifiers,
+            .exactModifiers = exactModifiers,
+        });
+    return *this;
+}
+
+ActionMap& ActionMap::bindKeyChord(std::string action, Key key, std::vector<Key> requiredKeys)
+{
+    appendUnique(
+        getOrCreateEntry(std::move(action)).binding.keys,
+        KeyBinding{
+            .key = key,
+            .requiredKeys = std::move(requiredKeys),
+        });
     return *this;
 }
 
@@ -434,6 +460,100 @@ ActionMap& ActionMap::bindGamepadButton(std::string action, GamepadButton button
     return *this;
 }
 
+ActionMap& ActionMap::bindGamepadAxis(
+    std::string action,
+    GamepadAxis axis,
+    float deadzone,
+    ActionAxisDirection direction)
+{
+    appendUnique(
+        getOrCreateEntry(std::move(action)).binding.gamepadAxes,
+        GamepadAxisBinding{
+            .axis = axis,
+            .deadzone = sanitizeDeadzone(deadzone),
+            .direction = direction,
+        });
+    return *this;
+}
+
+ActionMap&
+ActionMap::replaceKey(std::string action, Key key, Modifiers modifiers, bool exactModifiers)
+{
+    Entry& entry = getOrCreateEntry(std::move(action));
+    entry.binding.keys.clear();
+    appendUnique(
+        entry.binding.keys,
+        KeyBinding{
+            .key = key,
+            .modifiers = modifiers,
+            .exactModifiers = exactModifiers,
+        });
+    resetEntryState(entry);
+    return *this;
+}
+
+ActionMap& ActionMap::replaceKeyChord(std::string action, Key key, std::vector<Key> requiredKeys)
+{
+    Entry& entry = getOrCreateEntry(std::move(action));
+    entry.binding.keys.clear();
+    appendUnique(
+        entry.binding.keys,
+        KeyBinding{
+            .key = key,
+            .requiredKeys = std::move(requiredKeys),
+        });
+    resetEntryState(entry);
+    return *this;
+}
+
+ActionMap& ActionMap::replaceMouseButton(std::string action, MouseButton button)
+{
+    Entry& entry = getOrCreateEntry(std::move(action));
+    entry.binding.mouseButtons.clear();
+    appendUnique(entry.binding.mouseButtons, button);
+    resetEntryState(entry);
+    return *this;
+}
+
+ActionMap& ActionMap::replaceGamepadButton(std::string action, GamepadButton button)
+{
+    Entry& entry = getOrCreateEntry(std::move(action));
+    entry.binding.gamepadButtons.clear();
+    appendUnique(entry.binding.gamepadButtons, button);
+    resetEntryState(entry);
+    return *this;
+}
+
+ActionMap& ActionMap::replaceGamepadAxis(
+    std::string action,
+    GamepadAxis axis,
+    float deadzone,
+    ActionAxisDirection direction)
+{
+    Entry& entry = getOrCreateEntry(std::move(action));
+    entry.binding.gamepadAxes.clear();
+    appendUnique(
+        entry.binding.gamepadAxes,
+        GamepadAxisBinding{
+            .axis = axis,
+            .deadzone = sanitizeDeadzone(deadzone),
+            .direction = direction,
+        });
+    resetEntryState(entry);
+    return *this;
+}
+
+void ActionMap::clearBindings(const std::string& action)
+{
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.keys.clear();
+        entry->binding.mouseButtons.clear();
+        entry->binding.gamepadButtons.clear();
+        entry->binding.gamepadAxes.clear();
+        resetEntryState(*entry);
+    }
+}
+
 void ActionMap::clear(const std::string& action)
 {
     for (auto it = entries_.begin(); it != entries_.end(); ++it) {
@@ -447,14 +567,55 @@ void ActionMap::clear(const std::string& action)
 void ActionMap::clearAll()
 {
     entries_.clear();
+    groups_.clear();
 }
 
 void ActionMap::resetState() noexcept
 {
     for (auto& entry : entries_) {
-        entry.down = false;
-        entry.previousDown = false;
+        resetEntryState(entry);
     }
+}
+
+ActionMap& ActionMap::setGroup(std::string action, std::string group)
+{
+    Entry& entry = getOrCreateEntry(std::move(action));
+    entry.binding.group = std::move(group);
+    resetEntryState(entry);
+    return *this;
+}
+
+void ActionMap::setGroupEnabled(std::string group, bool enabled)
+{
+    if (group.empty()) {
+        return;
+    }
+
+    if (GroupState* state = findGroup(group)) {
+        state->enabled = enabled;
+        return;
+    }
+
+    groups_.push_back(
+        GroupState{
+            .group = std::move(group),
+            .enabled = enabled,
+        });
+}
+
+bool ActionMap::isGroupEnabled(const std::string& group) const noexcept
+{
+    if (group.empty()) {
+        return true;
+    }
+
+    const GroupState* state = findGroup(group);
+    return !state || state->enabled;
+}
+
+void ActionMap::clearGroupStates()
+{
+    groups_.clear();
 }
 
 bool ActionMap::isDown(const std::string& action) const
@@ -473,6 +634,12 @@ bool ActionMap::isReleased(const std::string& action) const
 {
     const Entry* entry = findEntry(action);
     return entry && !entry->down && entry->previousDown;
+}
+
+float ActionMap::getAxis(const std::string& action) const
+{
+    const Entry* entry = findEntry(action);
+    return entry ? entry->axisValue : 0.0f;
 }
 
 const ActionBinding* ActionMap::getBinding(const std::string& action) const noexcept
@@ -503,6 +670,28 @@ const ActionMap::Entry* ActionMap::findEntry(const std::string& action) const no
     return nullptr;
 }
 
+ActionMap::GroupState* ActionMap::findGroup(const std::string& group) noexcept
+{
+    for (auto& state : groups_) {
+        if (state.group == group) {
+            return &state;
+        }
+    }
+
+    return nullptr;
+}
+
+const ActionMap::GroupState* ActionMap::findGroup(const std::string& group) const noexcept
+{
+    for (const auto& state : groups_) {
+        if (state.group == group) {
+            return &state;
+        }
+    }
+
+    return nullptr;
+}
+
 ActionMap::Entry& ActionMap::getOrCreateEntry(std::string action)
 {
     if (Entry* entry = findEntry(action)) {
@@ -514,6 +703,13 @@ ActionMap::Entry& ActionMap::getOrCreateEntry(std::string action)
             .action = std::move(action),
         });
     return entries_.back();
+}
+
+void ActionMap::resetEntryState(Entry& entry) noexcept
+{
+    entry.down = false;
+    entry.previousDown = false;
+    entry.axisValue = 0.0f;
 }
 
 //----------------------------------------------------------------------------
@@ -877,10 +1073,8 @@ WindowBuilder& WindowBuilder::vSync(bool enabled)
     return *this;
 }
 
-WindowBuilder& WindowBuilder::windowMode(
-    WindowMode mode,
-    uint32_t monitorId,
-    std::optional<VideoMode> videoMode)
+WindowBuilder&
+WindowBuilder::windowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
 {
     data_->windowMode = mode;
     data_->monitorId = monitorId;

@@ -1,6 +1,7 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <glad/glad.h>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -64,17 +65,32 @@ int main()
     actions.bindKey("quit", Key::Escape)
         .bindKey("jump", Key::Space)
         .bindGamepadButton("jump", GamepadButton::A)
+        .bindGamepadAxis("move_x", GamepadAxis::LeftX, 0.20f)
         .bindMouseButton("fire", MouseButton::Left)
+        .bindKey("save", Key::S, Modifiers{ .control = true })
+        .bindKeyChord("left_shift_a", Key::A, { Key::LShift })
+        .bindKeyChord("right_shift_a", Key::A, { Key::RShift })
+        .bindKey("toggle_gameplay", Key::G)
         .bindKey("capture", Key::C)
-        .bindKey("center_mouse", Key::R);
+        .bindKey("center_mouse", Key::R)
+        .setGroup("jump", "gameplay")
+        .setGroup("fire", "gameplay")
+        .setGroup("move_x", "gameplay");
 
     bool captured = false;
     bool rawMouse = false;
+    bool gameplayEnabled = true;
+    int saveCount = 0;
 
     std::cout << "Input Helpers controls:\n";
     std::cout << "  Escape: quit\n";
     std::cout << "  Space or gamepad A: jump action\n";
+    std::cout << "  Left stick X: move_x axis action\n";
     std::cout << "  Left mouse button: fire action\n";
+    std::cout << "  Ctrl+S: save action\n";
+    std::cout << "  Left Shift+A: left_shift_a action\n";
+    std::cout << "  Right Shift+A: right_shift_a action\n";
+    std::cout << "  G: toggle gameplay action group\n";
     std::cout << "  C: toggle captured cursor and raw mouse motion\n";
     std::cout << "  R: center mouse cursor\n";
 
@@ -91,6 +107,15 @@ int main()
 
         if (actions.isPressed("quit")) {
             window.requestClose();
+        }
+
+        if (actions.isPressed("save")) {
+            ++saveCount;
+        }
+
+        if (actions.isPressed("toggle_gameplay")) {
+            gameplayEnabled = !gameplayEnabled;
+            actions.setGroupEnabled("gameplay", gameplayEnabled);
         }
 
         if (actions.isPressed("capture")) {
@@ -115,10 +140,14 @@ int main()
         std::ostringstream state;
         state << "JUMP:" << (actions.isDown("jump") ? "ON" : "OFF")
               << " FIRE:" << (actions.isDown("fire") ? "ON" : "OFF")
+              << " LS+A:" << (actions.isDown("left_shift_a") ? "ON" : "OFF")
+              << " RS+A:" << (actions.isDown("right_shift_a") ? "ON" : "OFF")
+              << " GAME:" << (gameplayEnabled ? "ON" : "OFF") << " SAVE:" << saveCount
               << " CAP:" << (captured ? "ON" : "OFF") << " RAW:" << (rawMouse ? "ON" : "OFF");
 
         std::ostringstream mouse;
-        mouse << "MOUSE:" << static_cast<int>(x) << "," << static_cast<int>(y)
+        mouse << std::fixed << std::setprecision(2) << "MOVE:" << actions.getAxis("move_x")
+              << " MOUSE:" << static_cast<int>(x) << "," << static_cast<int>(y)
               << " FB:" << static_cast<int>(fbMouseX) << "," << static_cast<int>(fbMouseY)
               << " DELTA:" << static_cast<int>(dx) << "," << static_cast<int>(dy);
 
@@ -126,7 +155,7 @@ int main()
         drawInputPanel(
             fbWidth,
             fbHeight,
-            "ESC QUIT  SPACE/A JUMP  LMB FIRE  C CAPTURE  R CENTER",
+            "ESC QUIT SPACE/A JUMP LMB FIRE LS MOVE CTRL+S SAVE L/RSHIFT+A",
             state.str(),
             mouse.str());
         window.swapBuffers();
