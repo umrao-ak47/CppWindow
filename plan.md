@@ -75,8 +75,8 @@ Temporary working checklist. Remove this file after the planned work is complete
 
 ## Phase 4: Documentation and Polish
 
-- [ ] Expand README with the new window control APIs.
-- [ ] Add a short "Build an App/Game" guide.
+- [x] Expand README with the new window control APIs.
+- [x] Add a short "Build an App/Game" guide.
 - [ ] Keep examples small and focused.
 - [ ] Verify install/export path after API additions.
 - [ ] Remove this `plan.md` file after all checklist items are done.

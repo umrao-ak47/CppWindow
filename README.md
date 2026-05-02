@@ -6,6 +6,11 @@ It provides a clean, type-safe API for window creation, event processing, and pe
 
 CppWindow is not a rendering library - it is a platform layer intended to sit beneath Vulkan, OpenGL, or future graphics backends.
 
+## Documentation
+
+- [CppWindow Guide](docs/guide.md): setup, event loop, OpenGL/Vulkan usage, input, events, monitors, window controls, and fullscreen behavior.
+- [Improvement Plan](plan.md): temporary task checklist for the current API polish work.
+
 ## ✨ Features
 
 - Modern C++20 design (RAII, spans, variants, concepts)
@@ -14,6 +19,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 - Strongly typed event system
 - Vulkan surface support
 - OpenGL context support
+- Window controls and monitor queries
 - Zero global input state
 - Backend abstraction (currently GLFW)
 - Minimal runtime overhead
@@ -152,6 +158,19 @@ for (const auto& event : window.events())
     });
 }
 ```
+
+### Window Controls
+
+```cpp
+window.setResizable(true);
+window.setDecorated(false);
+window.setOpacity(0.9f);
+window.setCursorMode(cwin::CursorMode::Captured);
+window.setWindowMode(cwin::WindowMode::BorderlessFullscreen);
+```
+
+See the [CppWindow Guide](docs/guide.md) for fullscreen mode semantics,
+high-DPI notes, and monitor APIs.
 
 ## ⚖️ License
 
