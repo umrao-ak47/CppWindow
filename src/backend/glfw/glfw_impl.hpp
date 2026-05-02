@@ -12,6 +12,7 @@
 // Prevent GLFW from including OpenGL headers
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <array>
 #include <bitset>
 #include <optional>
 #include <stdexcept>
@@ -101,6 +102,10 @@ MouseButton toMouseButton(int b);
 //----------------------------------------------------------------------------
 class GLFWInputState : public NativeInputState
 {
+public:
+    GLFWInputState() = default;
+    explicit GLFWInputState(GLFWwindow* window);
+
     void handleEvent(const Event& event) override;
     void reset() override;
 
@@ -114,9 +119,14 @@ class GLFWInputState : public NativeInputState
     bool isMouseButtonPressed(MouseButton button) const override;
     bool isMouseButtonReleased(MouseButton button) const override;
     std::pair<double, double> getMousePosition() const override;
+    std::pair<double, double> getMouseDelta() const override;
     std::pair<double, double> getScrollDelta() const override;
+    bool isMouseInside() const override;
 
 private:
+    bool queryMouseInside() const;
+
+    GLFWwindow* window_ = nullptr;
     std::bitset<KeyCount> keyStates_{};
     std::bitset<KeyCount> prevKeyStates_{};
 
@@ -124,7 +134,10 @@ private:
     std::bitset<MouseButtonCount> prevMouseStates_{};
 
     double mousePosX_{}, mousePosY_{};
+    double mouseDeltaX_{}, mouseDeltaY_{};
     double scrollDeltaX_{}, scrollDeltaY_{};
+    bool hasMousePosition_ = false;
+    bool mouseInside_ = false;
 };
 
 //----------------------------------------------------------------------------
@@ -248,6 +261,8 @@ public:
     std::optional<MonitorInfo> getPrimaryMonitor() const override;
     std::vector<VideoMode> getVideoModes(uint32_t monitorId) const override;
     std::pair<float, float> getContentScale(uint32_t monitorId) const override;
+    std::vector<GamepadInfo> getGamepads() const override;
+    std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const override;
 };
 
 }  // namespace cwin

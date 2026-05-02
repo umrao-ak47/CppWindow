@@ -6,6 +6,7 @@
 #ifndef CPPWINDOW_HEADER_CPPWINDOW_HPP
 #define CPPWINDOW_HEADER_CPPWINDOW_HPP
 
+#include <array>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -266,6 +267,62 @@ enum class MouseButton : uint8_t
 inline constexpr std::size_t KeyCount{ static_cast<std::size_t>(Key::Last) + 1 };
 inline constexpr std::size_t MouseButtonCount{ static_cast<std::size_t>(MouseButton::Last) + 1 };
 
+enum class GamepadButton : uint8_t
+{
+    A,
+    B,
+    X,
+    Y,
+    LeftBumper,
+    RightBumper,
+    Back,
+    Start,
+    Guide,
+    LeftThumb,
+    RightThumb,
+    DPadUp,
+    DPadRight,
+    DPadDown,
+    DPadLeft,
+    Last = DPadLeft
+};
+
+enum class GamepadAxis : uint8_t
+{
+    LeftX,
+    LeftY,
+    RightX,
+    RightY,
+    LeftTrigger,
+    RightTrigger,
+    Last = RightTrigger
+};
+
+inline constexpr std::size_t GamepadButtonCount{
+    static_cast<std::size_t>(GamepadButton::Last) + 1
+};
+inline constexpr std::size_t GamepadAxisCount{ static_cast<std::size_t>(GamepadAxis::Last) + 1 };
+inline constexpr std::size_t MaxGamepads{ 16 };
+
+struct GamepadInfo
+{
+    uint32_t id = 0;
+    std::string name;
+    bool standardMapping = false;
+};
+
+struct GamepadState
+{
+    uint32_t id = 0;
+    std::string name;
+    bool standardMapping = false;
+    std::array<bool, GamepadButtonCount> buttons{};
+    std::array<float, GamepadAxisCount> axes{};
+
+    [[nodiscard]] bool isButtonDown(GamepadButton button) const noexcept;
+    [[nodiscard]] float getAxis(GamepadAxis axis) const noexcept;
+};
+
 //----------------------------------------------------------------------------
 //  Events
 //----------------------------------------------------------------------------
@@ -396,6 +453,37 @@ public:
     struct MouseLeft
     {};
 
+    struct GamepadConnected
+    {
+        uint32_t gamepadId{};
+        std::string name;
+        bool standardMapping{};
+    };
+
+    struct GamepadDisconnected
+    {
+        uint32_t gamepadId{};
+    };
+
+    struct GamepadButtonPressed
+    {
+        uint32_t gamepadId{};
+        GamepadButton button{};
+    };
+
+    struct GamepadButtonReleased
+    {
+        uint32_t gamepadId{};
+        GamepadButton button{};
+    };
+
+    struct GamepadAxisMoved
+    {
+        uint32_t gamepadId{};
+        GamepadAxis axis{};
+        float value{};
+    };
+
     struct JoystickButtonPressed
     {
         unsigned int joystickId{};
@@ -470,6 +558,11 @@ public:
         MouseMoved,
         MouseEntered,
         MouseLeft,
+        GamepadConnected,
+        GamepadDisconnected,
+        GamepadButtonPressed,
+        GamepadButtonReleased,
+        GamepadAxisMoved,
         JoystickButtonPressed,
         JoystickButtonReleased,
         JoystickMoved,
@@ -547,7 +640,9 @@ public:
     bool isMouseButtonPressed(MouseButton button) const;
     bool isMouseButtonReleased(MouseButton button) const;
     std::pair<double, double> getMousePosition() const;
+    std::pair<double, double> getMouseDelta() const;
     std::pair<double, double> getScrollDelta() const;
+    bool isMouseInside() const;
 
 private:
     explicit InputState(const NativeInputState* state);
@@ -669,6 +764,8 @@ public:
     std::optional<MonitorInfo> getPrimaryMonitor() const;
     std::vector<VideoMode> getVideoModes(uint32_t monitorId = 0) const;
     std::pair<float, float> getContentScale(uint32_t monitorId = 0) const;
+    std::vector<GamepadInfo> getGamepads() const;
+    std::optional<GamepadState> getGamepadState(uint32_t gamepadId = 0) const;
 
 private:
     WindowContext();

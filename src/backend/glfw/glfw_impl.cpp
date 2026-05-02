@@ -7,6 +7,8 @@
 #include "glfw_impl.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -240,6 +242,31 @@ namespace {
 
 }  // namespace
 
+GLFWInputState::GLFWInputState(GLFWwindow* window)
+    : window_(window)
+{
+    if (!window) {
+        return;
+    }
+
+    glfwGetCursorPos(window, &mousePosX_, &mousePosY_);
+    hasMousePosition_ = true;
+    mouseInside_ = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
+}
+
+bool GLFWInputState::queryMouseInside() const
+{
+    if (!window_) {
+        return mouseInside_;
+    }
+
+    if (glfwGetInputMode(window_, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+        return glfwGetWindowAttrib(window_, GLFW_FOCUSED) == GLFW_TRUE;
+    }
+
+    return glfwGetWindowAttrib(window_, GLFW_HOVERED) == GLFW_TRUE;
+}
+
 void GLFWInputState::handleEvent(const Event& event)
 {
     event.visit([&](auto&& event) {
@@ -264,8 +291,17 @@ void GLFWInputState::handleEvent(const Event& event)
             scrollDeltaX_ += event.deltaX;
             scrollDeltaY_ += event.deltaY;
         } else if constexpr (std::is_same_v<T, Event::MouseMoved>) {
+            if (hasMousePosition_) {
+                mouseDeltaX_ += event.posX - mousePosX_;
+                mouseDeltaY_ += event.posY - mousePosY_;
+            }
             mousePosX_ = event.posX;
             mousePosY_ = event.posY;
+            hasMousePosition_ = true;
+        } else if constexpr (std::is_same_v<T, Event::MouseEntered>) {
+            mouseInside_ = true;
+        } else if constexpr (std::is_same_v<T, Event::MouseLeft>) {
+            mouseInside_ = false;
         } else if constexpr (std::is_same_v<T, Event::FocusLost>) {
             keyStates_.reset();
             mouseStates_.reset();
@@ -336,17 +372,30 @@ std::pair<double, double> GLFWInputState::getMousePosition() const
     return { mousePosX_, mousePosY_ };
 }
 
+std::pair<double, double> GLFWInputState::getMouseDelta() const
+{
+    return { mouseDeltaX_, mouseDeltaY_ };
+}
+
 std::pair<double, double> GLFWInputState::getScrollDelta() const
 {
     return { scrollDeltaX_, scrollDeltaY_ };
+}
+
+bool GLFWInputState::isMouseInside() const
+{
+    return queryMouseInside();
 }
 
 void GLFWInputState::reset()
 {
     prevKeyStates_ = keyStates_;
     prevMouseStates_ = mouseStates_;
+    mouseDeltaX_ = 0;
+    mouseDeltaY_ = 0;
     scrollDeltaX_ = 0;
     scrollDeltaY_ = 0;
+    mouseInside_ = queryMouseInside();
 }
 
 //----------------------------------------------------------------------------
@@ -489,6 +538,205 @@ uint32_t getWindowMonitorId(GLFWwindow* window)
     return bestId;
 }
 
+int toGlfwGamepadButton(GamepadButton button)
+{
+    switch (button) {
+        case GamepadButton::A:
+            return GLFW_GAMEPAD_BUTTON_A;
+        case GamepadButton::B:
+            return GLFW_GAMEPAD_BUTTON_B;
+        case GamepadButton::X:
+            return GLFW_GAMEPAD_BUTTON_X;
+        case GamepadButton::Y:
+            return GLFW_GAMEPAD_BUTTON_Y;
+        case GamepadButton::LeftBumper:
+            return GLFW_GAMEPAD_BUTTON_LEFT_BUMPER;
+        case GamepadButton::RightBumper:
+            return GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER;
+        case GamepadButton::Back:
+            return GLFW_GAMEPAD_BUTTON_BACK;
+        case GamepadButton::Start:
+            return GLFW_GAMEPAD_BUTTON_START;
+        case GamepadButton::Guide:
+            return GLFW_GAMEPAD_BUTTON_GUIDE;
+        case GamepadButton::LeftThumb:
+            return GLFW_GAMEPAD_BUTTON_LEFT_THUMB;
+        case GamepadButton::RightThumb:
+            return GLFW_GAMEPAD_BUTTON_RIGHT_THUMB;
+        case GamepadButton::DPadUp:
+            return GLFW_GAMEPAD_BUTTON_DPAD_UP;
+        case GamepadButton::DPadRight:
+            return GLFW_GAMEPAD_BUTTON_DPAD_RIGHT;
+        case GamepadButton::DPadDown:
+            return GLFW_GAMEPAD_BUTTON_DPAD_DOWN;
+        case GamepadButton::DPadLeft:
+            return GLFW_GAMEPAD_BUTTON_DPAD_LEFT;
+    }
+
+    return GLFW_GAMEPAD_BUTTON_A;
+}
+
+int toGlfwGamepadAxis(GamepadAxis axis)
+{
+    switch (axis) {
+        case GamepadAxis::LeftX:
+            return GLFW_GAMEPAD_AXIS_LEFT_X;
+        case GamepadAxis::LeftY:
+            return GLFW_GAMEPAD_AXIS_LEFT_Y;
+        case GamepadAxis::RightX:
+            return GLFW_GAMEPAD_AXIS_RIGHT_X;
+        case GamepadAxis::RightY:
+            return GLFW_GAMEPAD_AXIS_RIGHT_Y;
+        case GamepadAxis::LeftTrigger:
+            return GLFW_GAMEPAD_AXIS_LEFT_TRIGGER;
+        case GamepadAxis::RightTrigger:
+            return GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER;
+    }
+
+    return GLFW_GAMEPAD_AXIS_LEFT_X;
+}
+
+GamepadButton toGamepadButton(size_t index)
+{
+    return static_cast<GamepadButton>(index);
+}
+
+GamepadAxis toGamepadAxis(size_t index)
+{
+    return static_cast<GamepadAxis>(index);
+}
+
+std::optional<GamepadState> readStandardGamepadState(uint32_t gamepadId)
+{
+    if (gamepadId >= MaxGamepads || !glfwJoystickPresent(static_cast<int>(gamepadId))) {
+        return std::nullopt;
+    }
+
+    const int joystickId = static_cast<int>(gamepadId);
+    if (glfwJoystickIsGamepad(joystickId) != GLFW_TRUE) {
+        return std::nullopt;
+    }
+
+    GLFWgamepadstate glfwState{};
+    if (glfwGetGamepadState(joystickId, &glfwState) != GLFW_TRUE) {
+        return std::nullopt;
+    }
+
+    GamepadState state{};
+    state.id = gamepadId;
+    state.standardMapping = true;
+
+    if (const char* name = glfwGetGamepadName(joystickId)) {
+        state.name = name;
+    } else if (const char* name = glfwGetJoystickName(joystickId)) {
+        state.name = name;
+    }
+
+    for (size_t i = 0; i < GamepadButtonCount; ++i) {
+        state.buttons[i] =
+            glfwState.buttons[toGlfwGamepadButton(toGamepadButton(i))] == GLFW_PRESS;
+    }
+
+    for (size_t i = 0; i < GamepadAxisCount; ++i) {
+        state.axes[i] = glfwState.axes[toGlfwGamepadAxis(toGamepadAxis(i))];
+    }
+
+    return state;
+}
+
+std::optional<GamepadInfo> readGamepadInfo(uint32_t gamepadId)
+{
+    if (gamepadId >= MaxGamepads || !glfwJoystickPresent(static_cast<int>(gamepadId))) {
+        return std::nullopt;
+    }
+
+    const int joystickId = static_cast<int>(gamepadId);
+    GamepadInfo info{};
+    info.id = gamepadId;
+    info.standardMapping = glfwJoystickIsGamepad(joystickId) == GLFW_TRUE;
+
+    const char* name =
+        info.standardMapping ? glfwGetGamepadName(joystickId) : glfwGetJoystickName(joystickId);
+    if (!name) {
+        name = glfwGetJoystickName(joystickId);
+    }
+    if (name) {
+        info.name = name;
+    }
+
+    return info;
+}
+
+void dispatchEventToAllWindows(const Event& event)
+{
+    g_WindowRegistry.forEach([&](WindowStorage& storage) {
+        storage.inputState->handleEvent(event);
+        storage.eventQueue.push_back(event);
+    });
+}
+
+void pollGamepads()
+{
+    static std::array<std::optional<GamepadState>, MaxGamepads> previousStates{};
+    constexpr float AxisEpsilon = 0.01f;
+
+    for (uint32_t id = 0; id < MaxGamepads; ++id) {
+        auto current = readStandardGamepadState(id);
+        auto& previous = previousStates[id];
+
+        if (current && !previous) {
+            dispatchEventToAllWindows(
+                Event::GamepadConnected{
+                    .gamepadId = id,
+                    .name = current->name,
+                    .standardMapping = current->standardMapping,
+                });
+        } else if (!current && previous) {
+            dispatchEventToAllWindows(
+                Event::GamepadDisconnected{
+                    .gamepadId = id,
+                });
+        } else if (current && previous) {
+            for (size_t button = 0; button < GamepadButtonCount; ++button) {
+                if (current->buttons[button] == previous->buttons[button]) {
+                    continue;
+                }
+
+                if (current->buttons[button]) {
+                    dispatchEventToAllWindows(
+                        Event::GamepadButtonPressed{
+                            .gamepadId = id,
+                            .button = toGamepadButton(button),
+                        });
+                } else {
+                    dispatchEventToAllWindows(
+                        Event::GamepadButtonReleased{
+                            .gamepadId = id,
+                            .button = toGamepadButton(button),
+                        });
+                }
+            }
+
+            for (size_t axis = 0; axis < GamepadAxisCount; ++axis) {
+                const float currentValue = current->axes[axis];
+                const float previousValue = previous->axes[axis];
+                if (std::abs(currentValue - previousValue) <= AxisEpsilon) {
+                    continue;
+                }
+
+                dispatchEventToAllWindows(
+                    Event::GamepadAxisMoved{
+                        .gamepadId = id,
+                        .axis = toGamepadAxis(axis),
+                        .value = currentValue,
+                    });
+            }
+        }
+
+        previous = std::move(current);
+    }
+}
+
 }  // namespace
 
 //----------------------------------------------------------------------------
@@ -629,6 +877,14 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
         }
     });
 
+    glfwSetCharCallback(handle, [](GLFWwindow* window, unsigned int codepoint) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        self->handleEvent(
+            Event::TextEntered{
+                .unicode = static_cast<char32_t>(codepoint),
+            });
+    });
+
     glfwSetMouseButtonCallback(handle, [](GLFWwindow* window, int button, int action, int mods) {
         auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
         MouseButton mappedButton = inputmap::toMouseButton(button);
@@ -720,7 +976,7 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
         glfwSetWindowAttrib(handle_.get(), GLFW_DECORATED, GLFW_FALSE);
     };
 
-    storage_ = std::make_shared<WindowStorage>(std::make_unique<GLFWInputState>());
+    storage_ = std::make_shared<WindowStorage>(std::make_unique<GLFWInputState>(handle_.get()));
     captureWindowedBounds();
     currentMonitorId_ = getWindowMonitorId(handle_.get());
 
@@ -1204,6 +1460,7 @@ void GLFWWindowContext::pollEvents() noexcept
     g_WindowRegistry.resetAll();
     // poll new events
     glfwPollEvents();
+    pollGamepads();
 }
 
 ProcLoader GLFWWindowContext::getProcLoader() const
@@ -1284,6 +1541,25 @@ std::pair<float, float> GLFWWindowContext::getContentScale(uint32_t monitorId) c
     float yScale = 1.0f;
     glfwGetMonitorContentScale(monitor, &xScale, &yScale);
     return { xScale, yScale };
+}
+
+std::vector<GamepadInfo> GLFWWindowContext::getGamepads() const
+{
+    std::vector<GamepadInfo> gamepads;
+    gamepads.reserve(MaxGamepads);
+
+    for (uint32_t id = 0; id < MaxGamepads; ++id) {
+        if (auto info = readGamepadInfo(id)) {
+            gamepads.push_back(std::move(*info));
+        }
+    }
+
+    return gamepads;
+}
+
+std::optional<GamepadState> GLFWWindowContext::getGamepadState(uint32_t gamepadId) const
+{
+    return readStandardGamepadState(gamepadId);
 }
 
 //----------------------------------------------------------------------------

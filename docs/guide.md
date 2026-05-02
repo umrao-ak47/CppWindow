@@ -49,6 +49,8 @@ cmake --build build --target example_basic
 cmake --build build --target example_opengl
 cmake --build build --target example_window_controls
 cmake --build build --target example_fullscreen_toggle
+cmake --build build --target example_text_input
+cmake --build build --target example_gamepad
 cmake --build build --target example_particles
 ```
 
@@ -174,10 +176,13 @@ Available input queries:
 - `isKeyDown`, `isKeyPressed`, `isKeyReleased`
 - `isMouseButtonDown`, `isMouseButtonPressed`, `isMouseButtonReleased`
 - `getMousePosition`
+- `getMouseDelta`
 - `getScrollDelta`
+- `isMouseInside`
 
 `Pressed` and `Released` are frame transitions. Poll once per frame before
-reading them.
+reading them. `getMouseDelta()` and `getScrollDelta()` are also per-frame
+values and reset on the next `pollEvents()`.
 
 ## Events
 
@@ -211,6 +216,42 @@ Common event types:
 - `MouseMoved`, `MouseEntered`, `MouseLeft`
 - `MouseButtonPressed`, `MouseButtonReleased`
 - `MouseWheelScrolled`
+- `GamepadConnected`, `GamepadDisconnected`
+- `GamepadButtonPressed`, `GamepadButtonReleased`
+- `GamepadAxisMoved`
+
+`TextEntered` reports Unicode code points after keyboard layout and input
+method processing. Use it for text fields, and use `KeyPressed` for commands
+and shortcuts.
+
+## Gamepads
+
+CppWindow exposes standard-mapped gamepads through GLFW's gamepad mapping
+layer. This gives stable button and axis names across common controllers.
+
+```cpp
+auto& ctx = cwin::WindowContext::Get();
+
+for (const auto& gamepad : ctx.getGamepads()) {
+    std::cout << gamepad.id << ": " << gamepad.name << "\n";
+}
+
+if (auto state = ctx.getGamepadState(0)) {
+    if (state->isButtonDown(cwin::GamepadButton::A)) {
+        jump();
+    }
+
+    float moveX = state->getAxis(cwin::GamepadAxis::LeftX);
+    float moveY = state->getAxis(cwin::GamepadAxis::LeftY);
+}
+```
+
+`getGamepads()` lists present joystick devices and tells you whether each one
+has a standard mapping. `getGamepadState()` returns a value only for present
+devices with a standard mapping.
+
+Gamepad connection, button, and axis events are delivered to window event
+queues after `pollEvents()`.
 
 ## Window Controls
 
@@ -377,5 +418,7 @@ are backend/platform-specific and should only be used at integration boundaries.
   monitor info, and content-scale events.
 - `examples/fullscreen_toggle.cpp`: windowed, fullscreen, borderless
   fullscreen, and exclusive fullscreen modes.
-- `examples/mouse_capture.cpp`: captured cursor behavior.
+- `examples/mouse_capture.cpp`: captured cursor behavior with an OpenGL status bar.
+- `examples/text_input.cpp`: Unicode text input events.
+- `examples/gamepad.cpp`: standard gamepad queries and events.
 - `examples/particles.cpp`: richer OpenGL rendering example.

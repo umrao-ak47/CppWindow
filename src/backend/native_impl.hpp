@@ -59,7 +59,9 @@ public:
     virtual bool isMouseButtonPressed(MouseButton button) const = 0;
     virtual bool isMouseButtonReleased(MouseButton button) const = 0;
     virtual std::pair<double, double> getMousePosition() const = 0;
+    virtual std::pair<double, double> getMouseDelta() const = 0;
     virtual std::pair<double, double> getScrollDelta() const = 0;
+    virtual bool isMouseInside() const = 0;
 };
 
 //----------------------------------------------------------------------------
@@ -129,6 +131,8 @@ public:
     virtual std::optional<MonitorInfo> getPrimaryMonitor() const = 0;
     virtual std::vector<VideoMode> getVideoModes(uint32_t monitorId) const = 0;
     virtual std::pair<float, float> getContentScale(uint32_t monitorId) const = 0;
+    virtual std::vector<GamepadInfo> getGamepads() const = 0;
+    virtual std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const = 0;
 };
 
 //----------------------------------------------------------------------------

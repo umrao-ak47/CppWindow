@@ -37,6 +37,14 @@ target_link_libraries(example_fullscreen_toggle
         glad
 )
 cppwindow_add_example(example_mouse_capture mouse_capture.cpp)
+target_link_libraries(example_mouse_capture
+    PRIVATE
+        glad
+)
+
+cppwindow_add_example(example_text_input text_input.cpp)
+
+cppwindow_add_example(example_gamepad gamepad.cpp)
 
 cppwindow_add_example(example_opengl opengl.cpp)
 target_link_libraries(example_opengl

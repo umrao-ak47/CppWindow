@@ -10,6 +10,43 @@
 namespace cwin {
 
 //----------------------------------------------------------------------------
+//  Gamepad State Implementation
+//----------------------------------------------------------------------------
+namespace {
+
+[[nodiscard]] bool isValidGamepadButton(GamepadButton button) noexcept
+{
+    const auto idx = static_cast<size_t>(button);
+    return idx < GamepadButtonCount;
+}
+
+[[nodiscard]] bool isValidGamepadAxis(GamepadAxis axis) noexcept
+{
+    const auto idx = static_cast<size_t>(axis);
+    return idx < GamepadAxisCount;
+}
+
+}  // namespace
+
+bool GamepadState::isButtonDown(GamepadButton button) const noexcept
+{
+    if (!isValidGamepadButton(button)) {
+        return false;
+    }
+
+    return buttons[static_cast<size_t>(button)];
+}
+
+float GamepadState::getAxis(GamepadAxis axis) const noexcept
+{
+    if (!isValidGamepadAxis(axis)) {
+        return 0.0f;
+    }
+
+    return axes[static_cast<size_t>(axis)];
+}
+
+//----------------------------------------------------------------------------
 //  Input State Implemenation
 //----------------------------------------------------------------------------
 InputState::InputState(const NativeInputState* state)
@@ -52,9 +89,19 @@ std::pair<double, double> InputState::getMousePosition() const
     return state_->getMousePosition();
 }
 
+std::pair<double, double> InputState::getMouseDelta() const
+{
+    return state_->getMouseDelta();
+}
+
 std::pair<double, double> InputState::getScrollDelta() const
 {
     return state_->getScrollDelta();
+}
+
+bool InputState::isMouseInside() const
+{
+    return state_->isMouseInside();
 }
 
 //----------------------------------------------------------------------------
@@ -392,6 +439,16 @@ std::vector<VideoMode> WindowContext::getVideoModes(uint32_t monitorId) const
 std::pair<float, float> WindowContext::getContentScale(uint32_t monitorId) const
 {
     return context_->getContentScale(monitorId);
+}
+
+std::vector<GamepadInfo> WindowContext::getGamepads() const
+{
+    return context_->getGamepads();
+}
+
+std::optional<GamepadState> WindowContext::getGamepadState(uint32_t gamepadId) const
+{
+    return context_->getGamepadState(gamepadId);
 }
 
 }  // namespace cwin

@@ -6,6 +6,7 @@
 #ifndef CPPWINDOW_HEADER_WINDOW_REGISTRY_HPP
 #define CPPWINDOW_HEADER_WINDOW_REGISTRY_HPP
 
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -48,6 +49,25 @@ public:
             // expired entries are ignored
         }
         // set tail to first free slot
+        tail_ = newTail;
+    }
+
+    template <typename Fn>
+    void forEach(Fn&& fn)
+    {
+        std::lock_guard lock(mtx_);
+        size_t newTail = 0;
+
+        for (size_t i = 0; i < tail_; ++i) {
+            if (auto s = storageRefs_[i].lock()) {
+                fn(*s);
+                if (i != newTail) {
+                    storageRefs_[newTail] = storageRefs_[i];
+                }
+                ++newTail;
+            }
+        }
+
         tail_ = newTail;
     }
 

@@ -55,14 +55,14 @@ Temporary working checklist. Remove this file after the planned work is complete
 
 ## Phase 2: Input Quality
 
-- [ ] Add mouse delta tracking.
-- [ ] Add cursor enter/leave state.
-- [ ] Add text input example.
-- [ ] Add gamepad support:
-  - [ ] connection events
-  - [ ] buttons
-  - [ ] axes
-  - [ ] standard gamepad mapping
+- [x] Add mouse delta tracking.
+- [x] Add cursor enter/leave state.
+- [x] Add text input example.
+- [x] Add gamepad support:
+  - [x] connection events
+  - [x] buttons
+  - [x] axes
+  - [x] standard gamepad mapping
 
 ## Phase 3: App Utility APIs
 
@@ -78,5 +78,5 @@ Temporary working checklist. Remove this file after the planned work is complete
 - [x] Expand README with the new window control APIs.
 - [x] Add a short "Build an App/Game" guide.
 - [ ] Keep examples small and focused.
-- [ ] Verify install/export path after API additions.
+- [x] Verify install/export path after API additions.
 - [ ] Remove this `plan.md` file after all checklist items are done.
