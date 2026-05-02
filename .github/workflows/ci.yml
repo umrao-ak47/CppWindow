@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu GCC
+            os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+            cmake_extra_args: -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+          - name: Ubuntu Clang
+            os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+            cmake_extra_args: -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+          - name: macOS Clang
+            os: macos-latest
+            cc: clang
+            cxx: clang++
+            cmake_extra_args: ""
+          - name: Windows MSVC
+            os: windows-latest
+            cmake_extra_args: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Configure
+        if: runner.os != 'Windows'
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCPPWINDOW_BUILD_EXAMPLES=ON
+          -DCPPWINDOW_BUILD_TESTS=ON
+          -DCPPWINDOW_BUILD_DOCS=OFF
+          ${{ matrix.cmake_extra_args }}
+
+      - name: Configure
+        if: runner.os == 'Windows'
+        run: >
+          cmake -S . -B build
+          -DCPPWINDOW_BUILD_EXAMPLES=ON
+          -DCPPWINDOW_BUILD_TESTS=ON
+          -DCPPWINDOW_BUILD_DOCS=OFF
+          ${{ matrix.cmake_extra_args }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen
+
+      - name: Configure docs
+        run: >
+          cmake -S . -B build-docs
+          -DCPPWINDOW_BUILD_DOCS=ON
+          -DCPPWINDOW_BUILD_EXAMPLES=OFF
+          -DCPPWINDOW_BUILD_TESTS=OFF
+
+      - name: Build docs
+        run: cmake --build build-docs --target cppwindow_docs
