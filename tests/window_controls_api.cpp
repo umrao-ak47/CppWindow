@@ -13,6 +13,11 @@
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Window&>().events()),
               std::span<const cwin::Event>>);
+static_assert(std::is_default_constructible_v<cwin::EventDispatcher>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::EventDispatcher&>().dispatch(
+                  std::declval<std::span<const cwin::Event>>())),
+              void>);
 static_assert(
     std::is_same_v<decltype(std::declval<const cwin::Window&>().getDpiScale()), cwin::DpiScale>);
 static_assert(std::is_same_v<
@@ -155,6 +160,47 @@ int main()
     cwin::Event textEvent = cwin::Event::TextEntered{ .unicode = U'a' };
     assert(textEvent.is<cwin::Event::TextEntered>());
     assert(textEvent.getIf<cwin::Event::TextEntered>()->unicode == U'a');
+
+    std::array<cwin::Event, 3> dispatchedEvents{
+        cwin::Event::Closed{},
+        cwin::Event::KeyPressed{
+            .key = cwin::Key::Escape,
+            .scancode = 0,
+            .modifiers = {},
+        },
+        cwin::Event::Resized{
+            .width = 640,
+            .height = 360,
+        },
+    };
+    cwin::EventDispatcher dispatcher;
+    assert(dispatcher.empty());
+    int eachCount = 0;
+    int closedCount = 0;
+    bool escapeSeen = false;
+    int resizedWidth = 0;
+    dispatcher.each([&](const cwin::Event&) {
+        ++eachCount;
+    });
+    dispatcher.on<cwin::Event::Closed>([&] {
+        ++closedCount;
+    });
+    dispatcher.on<cwin::Event::KeyPressed>([&](const cwin::Event::KeyPressed& key) {
+        escapeSeen = key.key == cwin::Key::Escape;
+    });
+    dispatcher.on<cwin::Event::Resized>([&](const cwin::Event::Resized& resized) {
+        resizedWidth = resized.width;
+    });
+    assert(!dispatcher.empty());
+    assert(dispatcher.handlerCount() == 4);
+    dispatcher.dispatch(
+        std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
+    assert(eachCount == 3);
+    assert(closedCount == 1);
+    assert(escapeSeen);
+    assert(resizedWidth == 640);
+    dispatcher.clear();
+    assert(dispatcher.empty());
 
     cwin::Event shortcut = cwin::Event::KeyPressed{
         .key = cwin::Key::S,

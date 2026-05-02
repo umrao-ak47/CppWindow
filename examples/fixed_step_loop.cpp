@@ -50,6 +50,19 @@ int main()
     FrameLimiter frameLimiter(60.0);
     Simulation simulation;
     double displayedFps = 0.0;
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::R) {
+                fixedStep.reset();
+                simulation = {};
+            }
+        });
 
     while (!window.shouldClose()) {
         const FrameTime frame = frameTimer.tick();
@@ -59,21 +72,7 @@ int main()
         }
 
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::R) {
-                    fixedStep.reset();
-                    simulation = {};
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         fixedStep.add(clampedDelta);
         while (fixedStep.consumeStep()) {

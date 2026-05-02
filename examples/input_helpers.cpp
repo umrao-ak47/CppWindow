@@ -109,15 +109,14 @@ int main()
         "LMB: FIRE",          "CTRL+S: SAVE",   "LEFT SHIFT+A: LS+A", "RIGHT SHIFT+A: RS+A",
         "G: TOGGLE GAMEPLAY", "C: CAPTURE RAW", "R: CENTER MOUSE",
     };
+    EventDispatcher dispatcher;
+    dispatcher.on<Event::Closed>([&] {
+        window.requestClose();
+    });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         actions.update(window.getInput(), ctx.getGamepadState(0));
 

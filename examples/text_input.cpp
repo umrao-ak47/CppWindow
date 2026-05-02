@@ -49,29 +49,27 @@ int main()
 
     std::u32string text;
     FrameLimiter frameLimiter(60.0);
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::Backspace && !text.empty()) {
+                text.pop_back();
+            }
+        })
+        .on<Event::TextEntered>([&](const Event::TextEntered& entered) {
+            if (entered.unicode >= U' ' && entered.unicode != 0x7F) {
+                text.push_back(entered.unicode);
+            }
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::Backspace && !text.empty()) {
-                    text.pop_back();
-                }
-            }
-
-            if (const auto* entered = event.getIf<Event::TextEntered>()) {
-                if (entered->unicode >= U' ' && entered->unicode != 0x7F) {
-                    text.push_back(entered->unicode);
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         std::string title = "Text Input";
         if (!text.empty()) {

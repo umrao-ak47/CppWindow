@@ -359,6 +359,16 @@ int main()
     FrameTimer frameTimer;
     FpsCounter fpsCounter(0.5);
     float elapsed = 0.0f;
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            }
+        });
 
     while (!window.shouldClose()) {
         const FrameTime frame = frameTimer.tick();
@@ -372,16 +382,7 @@ int main()
         }
 
         ctx.pollEvents();
-        for (auto& e : window.events()) {
-            if (e.is<Event::Closed>()) {
-                window.requestClose();
-            }
-            if (const auto* key = e.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         for (size_t i = 0; i < particles.size(); ++i) {
             Particle& p = particles[i];

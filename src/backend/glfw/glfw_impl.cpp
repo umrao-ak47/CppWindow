@@ -1649,7 +1649,6 @@ void GLFWNativeWindow::setWindowMode(
         windowMode_ = mode;
         setDecorated(true);
         setFloating(false);
-        glfwRestoreWindow(handle_.get());
         glfwMaximizeWindow(handle_.get());
         return;
     }

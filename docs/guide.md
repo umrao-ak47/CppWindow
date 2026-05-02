@@ -89,14 +89,14 @@ int main()
                       .resizable()
                       .build();
 
+    cwin::EventDispatcher dispatcher;
+    dispatcher.on<cwin::Event::Closed>([&] {
+        window.requestClose();
+    });
+
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<cwin::Event::Closed>()) {
-                window.requestClose();
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         // Update and render here.
     }
@@ -318,6 +318,38 @@ for (const auto& event : window.events()) {
         updateUiScale(scale->xScale, scale->yScale);
     }
 }
+```
+
+For application code, `EventDispatcher` is usually cleaner. Register handlers
+once, then dispatch the current frame's event span after polling:
+
+```cpp
+cwin::EventDispatcher dispatcher;
+dispatcher
+    .on<cwin::Event::Closed>([&] {
+        window.requestClose();
+    })
+    .on<cwin::Event::KeyPressed>([&](const cwin::Event::KeyPressed& key) {
+        if (key.key == cwin::Key::Escape) {
+            window.requestClose();
+        }
+    });
+
+while (!window.shouldClose()) {
+    ctx.pollEvents();
+    dispatcher.dispatch(window.events());
+}
+```
+
+Use `each()` when you want every raw event, such as for logging:
+
+```cpp
+cwin::EventDispatcher dispatcher;
+dispatcher.each([](const cwin::Event& event) {
+    event.visit([](const auto& payload) {
+        log(payload);
+    });
+});
 ```
 
 Common event types:

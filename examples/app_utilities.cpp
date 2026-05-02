@@ -1,5 +1,6 @@
 #include <cppwindow/cppwindow.hpp>
 
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -23,10 +24,42 @@ int main()
     FpsCounter fpsCounter(0.5);
     FrameLimiter frameLimiter(60.0);
     uint64_t fixedSteps = 0;
+    uint64_t currentFrameIndex = 0;
     double displayedFps = 0.0;
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::C) {
+                std::ostringstream text;
+                text << "Copied from CppWindow frame " << currentFrameIndex;
+                if (ctx.setClipboardText(text.str())) {
+                    std::cout << "clipboard set: " << text.str() << "\n";
+                } else {
+                    std::cout << "clipboard set failed\n";
+                }
+            } else if (key.key == Key::V) {
+                if (auto text = ctx.tryGetClipboardText()) {
+                    std::cout << "clipboard: " << *text << "\n";
+                } else {
+                    std::cout << "clipboard unavailable\n";
+                }
+            }
+        })
+        .on<Event::FilesDropped>([](const Event::FilesDropped& drop) {
+            std::cout << "files dropped at " << drop.posX << ", " << drop.posY << "\n";
+            for (const auto& path : drop.paths) {
+                std::cout << "  " << path << "\n";
+            }
+        });
 
     while (!window.shouldClose()) {
         const FrameTime frame = frameTimer.tick();
+        currentFrameIndex = frame.frameIndex;
         if (fpsCounter.update(frame)) {
             displayedFps = fpsCounter.framesPerSecond();
         }
@@ -36,39 +69,7 @@ int main()
         }
 
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::C) {
-                    std::ostringstream text;
-                    text << "Copied from CppWindow frame " << frame.frameIndex;
-                    if (ctx.setClipboardText(text.str())) {
-                        std::cout << "clipboard set: " << text.str() << "\n";
-                    } else {
-                        std::cout << "clipboard set failed\n";
-                    }
-                } else if (key->key == Key::V) {
-                    if (auto text = ctx.tryGetClipboardText()) {
-                        std::cout << "clipboard: " << *text << "\n";
-                    } else {
-                        std::cout << "clipboard unavailable\n";
-                    }
-                }
-            }
-
-            if (const auto* drop = event.getIf<Event::FilesDropped>()) {
-                std::cout << "files dropped at " << drop->posX << ", " << drop->posY << "\n";
-                for (const auto& path : drop->paths) {
-                    std::cout << "  " << path << "\n";
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         std::ostringstream title;
         title << "App Utilities - frame " << frame.frameIndex << " dt " << std::fixed

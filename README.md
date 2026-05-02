@@ -69,15 +69,16 @@ int main()
             .noAPI()
             .build();
 
+    cwin::EventDispatcher dispatcher;
+    dispatcher.on<cwin::Event::Closed>([&]
+    {
+        window.requestClose();
+    });
+
     while (!window.shouldClose())
     {
         ctx.pollEvents();
-
-        for (const auto& event : window.events())
-        {
-            if (event.is<cwin::Event::Closed>())
-                window.requestClose();
-        }
+        dispatcher.dispatch(window.events());
     }
 }
 ```
@@ -152,17 +153,21 @@ auto [x,y] = input.getMousePosition();
 Events are stored internally and exposed as a span to avoid allocations.
 
 ```cpp
-for (const auto& event : window.events())
-{
-    event.visit([](auto&& e)
-    {
-        using T = std::decay_t<decltype(e)>;
-
-        if constexpr (std::is_same_v<T, cwin::Event::Resized>)
-        {
-            // handle resize
-        }
+cwin::EventDispatcher dispatcher;
+dispatcher
+    .on<cwin::Event::Resized>([](const cwin::Event::Resized& resized) {
+        resize(resized.width, resized.height);
+    })
+    .each([](const cwin::Event& event) {
+        event.visit([](const auto& payload) {
+            // optional generic logging
+        });
     });
+
+while (!window.shouldClose())
+{
+    ctx.pollEvents();
+    dispatcher.dispatch(window.events());
 }
 ```
 

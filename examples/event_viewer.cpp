@@ -179,11 +179,9 @@ int main()
     uint64_t eventCount = 0;
     std::string lastEvent = "none";
     FrameLimiter frameLimiter(60.0);
-
-    while (!window.shouldClose()) {
-        ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
+    EventDispatcher dispatcher;
+    dispatcher
+        .each([&](const Event& event) {
             logEvent(event);
             ++eventCount;
 
@@ -191,17 +189,19 @@ int main()
                 using T = std::decay_t<decltype(payload)>;
                 lastEvent = eventName<T>();
             });
-
-            if (event.is<Event::Closed>()) {
+        })
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
                 window.requestClose();
             }
+        });
 
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                }
-            }
-        }
+    while (!window.shouldClose()) {
+        ctx.pollEvents();
+        dispatcher.dispatch(window.events());
 
         std::ostringstream title;
         title << "Event Viewer - " << eventCount << " events - last " << lastEvent;

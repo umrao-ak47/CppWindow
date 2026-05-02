@@ -20,19 +20,22 @@ int main()
     window.setVSync(useVSync);
     FrameLimiter frameLimiter(60.0);
     frameLimiter.setVSyncEnabled(useVSync);
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                std::cout << "Close window\n";
+                window.requestClose();
+            }
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
+        dispatcher.dispatch(window.events());
 
-        // Use Escape to close window
-        for (auto& e : window.events()) {
-            if (auto event = e.getIf<Event::KeyPressed>()) {
-                if (event->key == Key::Escape) {
-                    std::cout << "Close window\n";
-                    window.requestClose();
-                }
-            }
-        }
         window.swapBuffers();
         frameLimiter.wait();
     }

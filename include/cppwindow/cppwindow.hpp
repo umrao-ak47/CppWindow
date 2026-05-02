@@ -1050,6 +1050,102 @@ private:
     Data m_data;
 };
 
+/// Persistent typed event dispatcher.
+///
+/// Register handlers once, then call `dispatch()` with the current frame's
+/// `Window::events()` span after `WindowContext::pollEvents()` or
+/// `waitEvents*()`. `EventDispatcher` does not run the loop.
+class EventDispatcher final
+{
+public:
+    /// Creates an empty dispatcher.
+    EventDispatcher() = default;
+
+    /// Dispatches every event to registered handlers.
+    void dispatch(std::span<const Event> events) const
+    {
+        for (const Event& event : events) {
+            for (const auto& handler : handlers_) {
+                handler(event);
+            }
+        }
+    }
+
+    /// Removes all registered handlers.
+    void clear() noexcept
+    {
+        handlers_.clear();
+    }
+
+    /// Returns whether no handlers are registered.
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return handlers_.empty();
+    }
+
+    /// Returns the number of registered handlers.
+    [[nodiscard]] std::size_t handlerCount() const noexcept
+    {
+        return handlers_.size();
+    }
+
+    /// Registers `handler` for every event payload of type `T`.
+    ///
+    /// The handler may accept `const T&` or no arguments.
+    template <typename T, typename Handler>
+        requires EventSubtypeOf<T, Event>
+    EventDispatcher& on(Handler&& handler)
+    {
+        using StoredHandler = std::decay_t<Handler>;
+        handlers_.emplace_back(
+            [handler = StoredHandler(std::forward<Handler>(handler))](const Event& event) mutable {
+                if (const T* payload = event.getIf<T>()) {
+                    invokeTyped<T>(handler, *payload);
+                }
+            });
+        return *this;
+    }
+
+    /// Registers `handler` for every event.
+    ///
+    /// The handler may accept `const Event&` or no arguments.
+    template <typename Handler>
+    EventDispatcher& each(Handler&& handler)
+    {
+        using StoredHandler = std::decay_t<Handler>;
+        handlers_.emplace_back(
+            [handler = StoredHandler(std::forward<Handler>(handler))](const Event& event) mutable {
+                if constexpr (std::invocable<StoredHandler&, const Event&>) {
+                    handler(event);
+                } else if constexpr (std::invocable<StoredHandler&>) {
+                    handler();
+                } else {
+                    static_assert(
+                        std::invocable<StoredHandler&>,
+                        "EventDispatcher::each handler must accept const Event& or no arguments");
+                }
+            });
+        return *this;
+    }
+
+private:
+    template <typename T, typename Handler>
+    static void invokeTyped(Handler&& handler, const T& payload)
+    {
+        if constexpr (std::invocable<Handler&, const T&>) {
+            handler(payload);
+        } else if constexpr (std::invocable<Handler&>) {
+            handler();
+        } else {
+            static_assert(
+                std::invocable<Handler&>,
+                "EventDispatcher::on handler must accept const event payload& or no arguments");
+        }
+    }
+
+    std::vector<std::function<void(const Event&)>> handlers_;
+};
+
 //----------------------------------------------------------------------------
 //  Input State
 //----------------------------------------------------------------------------

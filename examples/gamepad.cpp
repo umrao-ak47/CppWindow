@@ -81,47 +81,41 @@ int main()
 
     std::string lastTitle;
     FrameLimiter frameLimiter(60.0);
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            }
+        })
+        .on<Event::GamepadConnected>([](const Event::GamepadConnected& connected) {
+            std::cout << "gamepad connected [" << connected.gamepadId << "] " << connected.name
+                      << "\n";
+        })
+        .on<Event::GamepadDisconnected>([](const Event::GamepadDisconnected& disconnected) {
+            std::cout << "gamepad disconnected [" << disconnected.gamepadId << "]\n";
+        })
+        .on<Event::GamepadButtonPressed>([](const Event::GamepadButtonPressed& button) {
+            std::cout << "button pressed [" << button.gamepadId << "] " << buttonName(button.button)
+                      << "\n";
+        })
+        .on<Event::GamepadButtonReleased>([](const Event::GamepadButtonReleased& button) {
+            std::cout << "button released [" << button.gamepadId << "] "
+                      << buttonName(button.button) << "\n";
+        })
+        .on<Event::GamepadAxisMoved>([](const Event::GamepadAxisMoved& axis) {
+            if (std::abs(axis.value) > 0.5f) {
+                std::cout << "axis [" << axis.gamepadId << "] " << axisName(axis.axis) << " = "
+                          << axis.value << "\n";
+            }
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                }
-            }
-
-            if (const auto* connected = event.getIf<Event::GamepadConnected>()) {
-                std::cout << "gamepad connected [" << connected->gamepadId << "] "
-                          << connected->name << "\n";
-            }
-
-            if (const auto* disconnected = event.getIf<Event::GamepadDisconnected>()) {
-                std::cout << "gamepad disconnected [" << disconnected->gamepadId << "]\n";
-            }
-
-            if (const auto* button = event.getIf<Event::GamepadButtonPressed>()) {
-                std::cout << "button pressed [" << button->gamepadId << "] "
-                          << buttonName(button->button) << "\n";
-            }
-
-            if (const auto* button = event.getIf<Event::GamepadButtonReleased>()) {
-                std::cout << "button released [" << button->gamepadId << "] "
-                          << buttonName(button->button) << "\n";
-            }
-
-            if (const auto* axis = event.getIf<Event::GamepadAxisMoved>()) {
-                if (std::abs(axis->value) > 0.5f) {
-                    std::cout << "axis [" << axis->gamepadId << "] " << axisName(axis->axis)
-                              << " = " << axis->value << "\n";
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         std::ostringstream title;
         title << "Gamepad";

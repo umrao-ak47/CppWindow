@@ -246,6 +246,10 @@ int main()
     FpsCounter fpsCounter(1.0);
     float time = 0.f;
     float cameraAngle = 0.f;
+    EventDispatcher dispatcher;
+    dispatcher.on<Event::Closed>([&] {
+        window.requestClose();
+    });
 
     while (!window.shouldClose()) {
         const FrameTime frame = frameTimer.tick();
@@ -259,11 +263,7 @@ int main()
         }
 
         ctx.pollEvents();
-        for (auto& e : window.events()) {
-            if (e.is<Event::Closed>()) {
-                window.requestClose();
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         Vec3 eye{ std::cos(cameraAngle) * 3.0f, 2.0f, std::sin(cameraAngle) * 3.0f };
 

@@ -8,30 +8,32 @@ using namespace cwin;
 
 namespace {
 
-void handleWindow(Window& window, std::string_view name, int& presses)
+EventDispatcher makeWindowDispatcher(Window& window, std::string_view name, int& presses)
 {
-    for (const auto& event : window.events()) {
-        if (event.is<Event::Closed>()) {
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&, name] {
             std::cout << name << " close requested\n";
             window.setVisible(false);
             window.requestClose();
-        }
-
-        if (const auto* key = event.getIf<Event::KeyPressed>()) {
-            if (key->key == Key::Escape) {
+        })
+        .on<Event::KeyPressed>([&, name](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
                 std::cout << name << " closed with Escape\n";
                 window.setVisible(false);
                 window.requestClose();
-            } else if (key->key == Key::Space) {
+            } else if (key.key == Key::Space) {
                 ++presses;
             }
-        }
+        })
+        .on<Event::Resized>([name](const Event::Resized& resized) {
+            std::cout << name << " resized to " << resized.width << "x" << resized.height << "\n";
+        });
+    return dispatcher;
+}
 
-        if (const auto* resized = event.getIf<Event::Resized>()) {
-            std::cout << name << " resized to " << resized->width << "x" << resized->height << "\n";
-        }
-    }
-
+void updateWindowTitle(Window& window, std::string_view name, int presses)
+{
     if (!window.shouldClose()) {
         auto [x, y] = window.getInput().getMousePosition();
         std::ostringstream title;
@@ -55,6 +57,8 @@ int main()
 
     int leftPresses = 0;
     int rightPresses = 0;
+    EventDispatcher leftDispatcher = makeWindowDispatcher(left, "Left", leftPresses);
+    EventDispatcher rightDispatcher = makeWindowDispatcher(right, "Right", rightPresses);
     FrameLimiter frameLimiter(120.0);
 
     std::cout << "Controls:\n"
@@ -64,8 +68,10 @@ int main()
     while (!left.shouldClose() || !right.shouldClose()) {
         ctx.pollEvents();
 
-        handleWindow(left, "Left", leftPresses);
-        handleWindow(right, "Right", rightPresses);
+        leftDispatcher.dispatch(left.events());
+        rightDispatcher.dispatch(right.events());
+        updateWindowTitle(left, "Left", leftPresses);
+        updateWindowTitle(right, "Right", rightPresses);
 
         frameLimiter.wait();
     }

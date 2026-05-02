@@ -60,25 +60,24 @@ int main()
     printVulkanInfo(ctx);
 
     FrameLimiter frameLimiter(60.0);
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::H) {
+                printNativeHandles(window);
+            } else if (key.key == Key::V) {
+                printVulkanInfo(ctx);
+            }
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::H) {
-                    printNativeHandles(window);
-                } else if (key->key == Key::V) {
-                    printVulkanInfo(ctx);
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         frameLimiter.wait();
     }

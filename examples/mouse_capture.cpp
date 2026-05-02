@@ -52,31 +52,30 @@ int main()
     double displayDeltaX = 0.0;
     double displayDeltaY = 0.0;
     Clock statusResetClock;
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::C) {
+                captured = !captured;
+                window.setCursorMode(captured ? CursorMode::Captured : CursorMode::Normal);
+                std::cout << "captured: " << captured << "\n";
+            }
+        })
+        .on<Event::MouseEntered>([&] {
+            std::cout << "mouse entered\n";
+        })
+        .on<Event::MouseLeft>([&] {
+            std::cout << "mouse left\n";
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::C) {
-                    captured = !captured;
-                    window.setCursorMode(captured ? CursorMode::Captured : CursorMode::Normal);
-                    std::cout << "captured: " << captured << "\n";
-                }
-            }
-
-            if (event.is<Event::MouseEntered>()) {
-                std::cout << "mouse entered\n";
-            } else if (event.is<Event::MouseLeft>()) {
-                std::cout << "mouse left\n";
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         auto [deltaX, deltaY] = window.getInput().getMouseDelta();
         displayDeltaX += deltaX;

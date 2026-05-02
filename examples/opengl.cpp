@@ -32,15 +32,14 @@ int main()
     window.setVSync(useVSync);
     FrameLimiter frameLimiter(60.0);
     frameLimiter.setVSyncEnabled(useVSync);
+    EventDispatcher dispatcher;
+    dispatcher.on<Event::Closed>([&] {
+        window.requestClose();
+    });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (auto& e : window.events()) {
-            if (e.is<Event::Closed>()) {
-                window.requestClose();
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         auto [fbWidth, fbHeight] = window.getFrameBufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));

@@ -46,43 +46,42 @@ int main()
               << "  Esc: close\n";
 
     DemoMode mode = DemoMode::Windowed;
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::F) {
+                if (mode != DemoMode::Fullscreen) {
+                    mode = DemoMode::Fullscreen;
+                    window.setWindowMode(WindowMode::Fullscreen);
+                    std::cout << "fullscreen with title bar\n";
+                }
+            } else if (key.key == Key::B) {
+                if (mode != DemoMode::BorderlessFullscreen) {
+                    mode = DemoMode::BorderlessFullscreen;
+                    window.setWindowMode(WindowMode::BorderlessFullscreen);
+                    std::cout << "borderless fullscreen\n";
+                }
+            } else if (key.key == Key::W) {
+                window.setWindowMode(WindowMode::Windowed);
+                mode = DemoMode::Windowed;
+                std::cout << "windowed\n";
+            } else if (key.key == Key::E) {
+                if (mode != DemoMode::ExclusiveFullscreen) {
+                    mode = DemoMode::ExclusiveFullscreen;
+                    window.setWindowMode(WindowMode::ExclusiveFullscreen);
+                    std::cout << "exclusive fullscreen\n";
+                }
+            }
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::F) {
-                    if (mode != DemoMode::Fullscreen) {
-                        mode = DemoMode::Fullscreen;
-                        window.setWindowMode(WindowMode::Fullscreen);
-                        std::cout << "fullscreen with title bar\n";
-                    }
-                } else if (key->key == Key::B) {
-                    if (mode != DemoMode::BorderlessFullscreen) {
-                        mode = DemoMode::BorderlessFullscreen;
-                        window.setWindowMode(WindowMode::BorderlessFullscreen);
-                        std::cout << "borderless fullscreen\n";
-                    }
-                } else if (key->key == Key::W) {
-                    window.setWindowMode(WindowMode::Windowed);
-                    mode = DemoMode::Windowed;
-                    std::cout << "windowed\n";
-                } else if (key->key == Key::E) {
-                    if (mode != DemoMode::ExclusiveFullscreen) {
-                        mode = DemoMode::ExclusiveFullscreen;
-                        window.setWindowMode(WindowMode::ExclusiveFullscreen);
-                        std::cout << "exclusive fullscreen\n";
-                    }
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         auto [fbWidth, fbHeight] = window.getFrameBufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));

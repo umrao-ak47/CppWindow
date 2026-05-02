@@ -56,23 +56,22 @@ int main()
     printMonitors(ctx);
 
     FrameLimiter frameLimiter(60.0);
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::M) {
+                printMonitors(ctx);
+            }
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::M) {
-                    printMonitors(ctx);
-                }
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         auto [width, height] = window.getSize();
         auto [fbWidth, fbHeight] = window.getFrameBufferSize();

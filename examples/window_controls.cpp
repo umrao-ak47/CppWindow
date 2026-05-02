@@ -142,97 +142,92 @@ int main()
     bool floating = false;
     float opacity = 1.0f;
     CursorMode cursorMode = CursorMode::Normal;
+    EventDispatcher dispatcher;
+    dispatcher
+        .on<Event::Closed>([&] {
+            window.requestClose();
+        })
+        .on<Event::KeyPressed>([&](const Event::KeyPressed& key) {
+            if (key.key == Key::Escape) {
+                window.requestClose();
+            } else if (key.key == Key::R) {
+                resizable = !resizable;
+                window.setResizable(resizable);
+                std::cout << "resizable: " << resizable << "\n";
+            } else if (key.key == Key::D) {
+                decorated = !decorated;
+                window.setDecorated(decorated);
+                std::cout << "decorated: " << decorated << "\n";
+            } else if (key.key == Key::T) {
+                floating = !floating;
+                window.setFloating(floating);
+                std::cout << "floating: " << floating << "\n";
+            } else if (key.key == Key::C) {
+                cursorMode = cursorMode == CursorMode::Normal   ? CursorMode::Hidden
+                             : cursorMode == CursorMode::Hidden ? CursorMode::Captured
+                                                                : CursorMode::Normal;
+                window.setCursorMode(cursorMode);
+                std::cout << "cursor: " << cursorModeName(cursorMode) << "\n";
+            } else if (key.key == Key::H) {
+                cursorMode = CursorMode::Normal;
+                window.setCursorMode(cursorMode);
+                std::cout << "hand cursor: " << window.setCursorShape(CursorShape::Hand) << "\n";
+            } else if (key.key == Key::J) {
+                cursorMode = CursorMode::Normal;
+                window.setCursorMode(cursorMode);
+                std::cout << "custom cursor: "
+                          << window.setCursorImage(imageFrom(cursorPixels, 24, 24), 12, 12) << "\n";
+            } else if (key.key == Key::N) {
+                window.clearCursor();
+                std::cout << "cursor image cleared\n";
+            } else if (key.key == Key::I) {
+                std::cout << "icon set: " << window.setIcon(imageFrom(iconPixels, 32, 32)) << "\n";
+            } else if (key.key == Key::M) {
+                window.clearIcon();
+                std::cout << "icon cleared\n";
+            } else if (key.key == Key::U) {
+                window.requestAttention();
+                std::cout << "attention requested\n";
+            } else if (key.key == Key::O) {
+                opacity -= 0.1f;
+                window.setOpacity(opacity);
+                opacity = window.getOpacity();
+                std::cout << "opacity: " << opacity << "\n";
+            } else if (key.key == Key::P) {
+                opacity += 0.1f;
+                window.setOpacity(opacity);
+                opacity = window.getOpacity();
+                std::cout << "opacity: " << opacity << "\n";
+            } else if (key.key == Key::L) {
+                window.setSizeLimits(
+                    SizeLimits{
+                        .minWidth = 640,
+                        .minHeight = 360,
+                        .maxWidth = 1600,
+                        .maxHeight = 900,
+                    });
+                std::cout << "size limits set\n";
+            } else if (key.key == Key::K) {
+                window.clearSizeLimits();
+                std::cout << "size limits cleared\n";
+            } else if (key.key == Key::A) {
+                window.setAspectRatio({ 16, 9 });
+                std::cout << "aspect ratio: 16:9\n";
+            } else if (key.key == Key::S) {
+                window.clearAspectRatio();
+                std::cout << "aspect ratio cleared\n";
+            }
+        })
+        .on<Event::Moved>([](const Event::Moved& moved) {
+            std::cout << "moved: " << moved.x << ", " << moved.y << "\n";
+        })
+        .on<Event::ContentScaleChanged>([](const Event::ContentScaleChanged& scale) {
+            std::cout << "content scale: " << scale.xScale << "x" << scale.yScale << "\n";
+        });
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
-
-        for (const auto& event : window.events()) {
-            if (event.is<Event::Closed>()) {
-                window.requestClose();
-            }
-
-            if (const auto* key = event.getIf<Event::KeyPressed>()) {
-                if (key->key == Key::Escape) {
-                    window.requestClose();
-                } else if (key->key == Key::R) {
-                    resizable = !resizable;
-                    window.setResizable(resizable);
-                    std::cout << "resizable: " << resizable << "\n";
-                } else if (key->key == Key::D) {
-                    decorated = !decorated;
-                    window.setDecorated(decorated);
-                    std::cout << "decorated: " << decorated << "\n";
-                } else if (key->key == Key::T) {
-                    floating = !floating;
-                    window.setFloating(floating);
-                    std::cout << "floating: " << floating << "\n";
-                } else if (key->key == Key::C) {
-                    cursorMode = cursorMode == CursorMode::Normal   ? CursorMode::Hidden
-                                 : cursorMode == CursorMode::Hidden ? CursorMode::Captured
-                                                                    : CursorMode::Normal;
-                    window.setCursorMode(cursorMode);
-                    std::cout << "cursor: " << cursorModeName(cursorMode) << "\n";
-                } else if (key->key == Key::H) {
-                    cursorMode = CursorMode::Normal;
-                    window.setCursorMode(cursorMode);
-                    std::cout << "hand cursor: " << window.setCursorShape(CursorShape::Hand)
-                              << "\n";
-                } else if (key->key == Key::J) {
-                    cursorMode = CursorMode::Normal;
-                    window.setCursorMode(cursorMode);
-                    std::cout << "custom cursor: "
-                              << window.setCursorImage(imageFrom(cursorPixels, 24, 24), 12, 12)
-                              << "\n";
-                } else if (key->key == Key::N) {
-                    window.clearCursor();
-                    std::cout << "cursor image cleared\n";
-                } else if (key->key == Key::I) {
-                    std::cout << "icon set: " << window.setIcon(imageFrom(iconPixels, 32, 32))
-                              << "\n";
-                } else if (key->key == Key::M) {
-                    window.clearIcon();
-                    std::cout << "icon cleared\n";
-                } else if (key->key == Key::U) {
-                    window.requestAttention();
-                    std::cout << "attention requested\n";
-                } else if (key->key == Key::O) {
-                    opacity -= 0.1f;
-                    window.setOpacity(opacity);
-                    opacity = window.getOpacity();
-                    std::cout << "opacity: " << opacity << "\n";
-                } else if (key->key == Key::P) {
-                    opacity += 0.1f;
-                    window.setOpacity(opacity);
-                    opacity = window.getOpacity();
-                    std::cout << "opacity: " << opacity << "\n";
-                } else if (key->key == Key::L) {
-                    window.setSizeLimits(
-                        SizeLimits{
-                            .minWidth = 640,
-                            .minHeight = 360,
-                            .maxWidth = 1600,
-                            .maxHeight = 900,
-                        });
-                    std::cout << "size limits set\n";
-                } else if (key->key == Key::K) {
-                    window.clearSizeLimits();
-                    std::cout << "size limits cleared\n";
-                } else if (key->key == Key::A) {
-                    window.setAspectRatio({ 16, 9 });
-                    std::cout << "aspect ratio: 16:9\n";
-                } else if (key->key == Key::S) {
-                    window.clearAspectRatio();
-                    std::cout << "aspect ratio cleared\n";
-                }
-            }
-
-            if (const auto* moved = event.getIf<Event::Moved>()) {
-                std::cout << "moved: " << moved->x << ", " << moved->y << "\n";
-            }
-            if (const auto* scale = event.getIf<Event::ContentScaleChanged>()) {
-                std::cout << "content scale: " << scale->xScale << "x" << scale->yScale << "\n";
-            }
-        }
+        dispatcher.dispatch(window.events());
 
         auto [fbWidth, fbHeight] = window.getFrameBufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
