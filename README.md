@@ -171,6 +171,17 @@ while (!window.shouldClose())
 }
 ```
 
+Use `subscribe()` or `subscribeEach()` when a handler should be removed later:
+
+```cpp
+auto resizeHandler =
+    dispatcher.subscribe<cwin::Event::Resized>([](const cwin::Event::Resized& resized) {
+        resize(resized.width, resized.height);
+    });
+
+dispatcher.disconnect(resizeHandler);
+```
+
 ### Window Controls
 
 ```cpp

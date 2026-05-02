@@ -352,6 +352,20 @@ dispatcher.each([](const cwin::Event& event) {
 });
 ```
 
+Use `subscribe()` or `subscribeEach()` when you need to disconnect a handler,
+for example when closing a modal tool or disabling a temporary input layer:
+
+```cpp
+cwin::EventDispatcher dispatcher;
+
+auto keyHandler =
+    dispatcher.subscribe<cwin::Event::KeyPressed>([](const cwin::Event::KeyPressed& key) {
+        handleTemporaryShortcut(key);
+    });
+
+dispatcher.disconnect(keyHandler);
+```
+
 Common event types:
 
 - `Closed`

@@ -14,10 +14,19 @@ static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Window&>().events()),
               std::span<const cwin::Event>>);
 static_assert(std::is_default_constructible_v<cwin::EventDispatcher>);
+static_assert(std::is_default_constructible_v<cwin::EventDispatcher::Subscription>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::EventDispatcher&>().dispatch(
                   std::declval<std::span<const cwin::Event>>())),
               void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::EventDispatcher&>().disconnect(
+                  std::declval<cwin::EventDispatcher::Subscription>())),
+              bool>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::EventDispatcher&>().isConnected(
+                  std::declval<cwin::EventDispatcher::Subscription>())),
+              bool>);
 static_assert(
     std::is_same_v<decltype(std::declval<const cwin::Window&>().getDpiScale()), cwin::DpiScale>);
 static_assert(std::is_same_v<
@@ -179,18 +188,25 @@ int main()
     int closedCount = 0;
     bool escapeSeen = false;
     int resizedWidth = 0;
-    dispatcher.each([&](const cwin::Event&) {
-        ++eachCount;
-    });
-    dispatcher.on<cwin::Event::Closed>([&] {
-        ++closedCount;
-    });
+    cwin::EventDispatcher::Subscription eachSubscription =
+        dispatcher.subscribeEach([&](const cwin::Event&) {
+            ++eachCount;
+        });
+    cwin::EventDispatcher::Subscription closedSubscription =
+        dispatcher.subscribe<cwin::Event::Closed>([&] {
+            ++closedCount;
+        });
     dispatcher.on<cwin::Event::KeyPressed>([&](const cwin::Event::KeyPressed& key) {
         escapeSeen = key.key == cwin::Key::Escape;
     });
     dispatcher.on<cwin::Event::Resized>([&](const cwin::Event::Resized& resized) {
         resizedWidth = resized.width;
     });
+    assert(eachSubscription);
+    assert(closedSubscription);
+    assert(dispatcher.isConnected(eachSubscription));
+    assert(dispatcher.isConnected(closedSubscription));
+    assert(!dispatcher.isConnected({}));
     assert(!dispatcher.empty());
     assert(dispatcher.handlerCount() == 4);
     dispatcher.dispatch(
@@ -199,8 +215,71 @@ int main()
     assert(closedCount == 1);
     assert(escapeSeen);
     assert(resizedWidth == 640);
+    assert(dispatcher.disconnect(eachSubscription));
+    assert(!dispatcher.disconnect(eachSubscription));
+    assert(!dispatcher.disconnect({}));
+    assert(!dispatcher.isConnected(eachSubscription));
+    assert(dispatcher.handlerCount() == 3);
+    escapeSeen = false;
+    resizedWidth = 0;
+    dispatcher.dispatch(
+        std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
+    assert(eachCount == 3);
+    assert(closedCount == 2);
+    assert(escapeSeen);
+    assert(resizedWidth == 640);
     dispatcher.clear();
     assert(dispatcher.empty());
+    assert(dispatcher.handlerCount() == 0);
+    assert(!dispatcher.isConnected(closedSubscription));
+
+    cwin::EventDispatcher disconnectingDispatcher;
+    int firstHandlerCount = 0;
+    int secondHandlerCount = 0;
+    cwin::EventDispatcher::Subscription secondSubscription;
+    const cwin::EventDispatcher::Subscription firstSubscription =
+        disconnectingDispatcher.subscribeEach([&](const cwin::Event&) {
+            ++firstHandlerCount;
+            if (firstHandlerCount == 1) {
+                assert(disconnectingDispatcher.disconnect(secondSubscription));
+            } else {
+                assert(!disconnectingDispatcher.isConnected(secondSubscription));
+            }
+        });
+    secondSubscription = disconnectingDispatcher.subscribeEach([&](const cwin::Event&) {
+        ++secondHandlerCount;
+    });
+    assert(firstSubscription);
+    assert(secondSubscription);
+    disconnectingDispatcher.dispatch(
+        std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
+    assert(firstHandlerCount == 3);
+    assert(secondHandlerCount == 0);
+
+    cwin::EventDispatcher clearingDispatcher;
+    int afterClearCount = 0;
+    const cwin::EventDispatcher::Subscription clearSubscription =
+        clearingDispatcher.subscribeEach([&](const cwin::Event&) {
+            clearingDispatcher.clear();
+        });
+    const cwin::EventDispatcher::Subscription afterClearSubscription =
+        clearingDispatcher.subscribeEach([&](const cwin::Event&) {
+            ++afterClearCount;
+        });
+    assert(clearSubscription);
+    assert(afterClearSubscription);
+    clearingDispatcher.dispatch(
+        std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
+    assert(afterClearCount == 0);
+    assert(clearingDispatcher.empty());
+
+    cwin::EventDispatcher chainingDispatcher;
+    chainingDispatcher.each([&](const cwin::Event&) {
+        ++eachCount;
+    }).on<cwin::Event::Closed>([&] {
+        ++closedCount;
+    });
+    assert(chainingDispatcher.handlerCount() == 2);
 
     cwin::Event shortcut = cwin::Event::KeyPressed{
         .key = cwin::Key::S,

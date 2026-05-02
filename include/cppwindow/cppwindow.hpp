@@ -1050,6 +1050,20 @@ private:
     Data m_data;
 };
 
+/// True when `Handler` can receive a payload of type `T` from `EventDispatcher`.
+template <typename Handler, typename T>
+concept EventPayloadHandlerFor =
+    std::copy_constructible<std::decay_t<Handler>> &&
+    (std::invocable<std::decay_t<Handler>&, const T&> ||
+     std::invocable<std::decay_t<Handler>&>);
+
+/// True when `Handler` can receive raw events from `EventDispatcher`.
+template <typename Handler>
+concept EventHandlerFor =
+    std::copy_constructible<std::decay_t<Handler>> &&
+    (std::invocable<std::decay_t<Handler>&, const Event&> ||
+     std::invocable<std::decay_t<Handler>&>);
+
 /// Persistent typed event dispatcher.
 ///
 /// Register handlers once, then call `dispatch()` with the current frame's
@@ -1058,14 +1072,57 @@ private:
 class EventDispatcher final
 {
 public:
+    /// Opaque handle for a registered event handler.
+    struct Subscription
+    {
+        /// Internal subscription id. Zero means no subscription.
+        std::uint64_t id = 0;
+
+        /// Returns whether this handle refers to a possible subscription.
+        [[nodiscard]] explicit operator bool() const noexcept
+        {
+            return id != 0;
+        }
+
+        /// Compares two subscription handles.
+        [[nodiscard]] friend bool operator==(Subscription, Subscription) = default;
+    };
+
     /// Creates an empty dispatcher.
     EventDispatcher() = default;
 
     /// Dispatches every event to registered handlers.
     void dispatch(std::span<const Event> events) const
     {
+        struct DispatchScope
+        {
+            explicit DispatchScope(const EventDispatcher& dispatcher) noexcept
+                : dispatcher(dispatcher)
+            {
+                ++dispatcher.dispatchDepth_;
+            }
+
+            ~DispatchScope() noexcept
+            {
+                --dispatcher.dispatchDepth_;
+                if (dispatcher.dispatchDepth_ == 0) {
+                    dispatcher.compactDisconnectedHandlers();
+                }
+            }
+
+            const EventDispatcher& dispatcher;
+        };
+
+        const DispatchScope scope{ *this };
+        const std::size_t handlerCount = handlers_.size();
+
         for (const Event& event : events) {
-            for (const auto& handler : handlers_) {
+            for (std::size_t index = 0; index < handlerCount; ++index) {
+                if (!handlers_[index].connected) {
+                    continue;
+                }
+
+                auto handler = handlers_[index].handler;
                 handler(event);
             }
         }
@@ -1074,76 +1131,173 @@ public:
     /// Removes all registered handlers.
     void clear() noexcept
     {
-        handlers_.clear();
+        activeHandlerCount_ = 0;
+        if (dispatchDepth_ == 0) {
+            handlers_.clear();
+            return;
+        }
+
+        for (HandlerEntry& entry : handlers_) {
+            entry.connected = false;
+        }
     }
 
     /// Returns whether no handlers are registered.
     [[nodiscard]] bool empty() const noexcept
     {
-        return handlers_.empty();
+        return activeHandlerCount_ == 0;
     }
 
     /// Returns the number of registered handlers.
     [[nodiscard]] std::size_t handlerCount() const noexcept
     {
-        return handlers_.size();
+        return activeHandlerCount_;
+    }
+
+    /// Disconnects a registered handler. Returns true when a handler was removed.
+    bool disconnect(Subscription subscription) noexcept
+    {
+        if (!subscription) {
+            return false;
+        }
+
+        for (HandlerEntry& entry : handlers_) {
+            if (entry.subscription == subscription && entry.connected) {
+                entry.connected = false;
+                --activeHandlerCount_;
+                if (dispatchDepth_ == 0) {
+                    compactDisconnectedHandlers();
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// Returns whether a subscription is still connected.
+    [[nodiscard]] bool isConnected(Subscription subscription) const noexcept
+    {
+        if (!subscription) {
+            return false;
+        }
+
+        for (const HandlerEntry& entry : handlers_) {
+            if (entry.subscription == subscription) {
+                return entry.connected;
+            }
+        }
+
+        return false;
+    }
+
+    /// Registers `handler` for every event payload of type `T` and returns its handle.
+    ///
+    /// The handler may accept `const T&` or no arguments.
+    template <typename T, typename Handler>
+        requires EventSubtypeOf<T, Event> && EventPayloadHandlerFor<Handler, T>
+    [[nodiscard]] Subscription subscribe(Handler&& handler)
+    {
+        using StoredHandler = std::decay_t<Handler>;
+        return addHandler(
+            [handler = StoredHandler(std::forward<Handler>(handler))](const Event& event) mutable {
+                if (const T* payload = event.getIf<T>()) {
+                    invokeTyped<T>(handler, *payload);
+                }
+            });
     }
 
     /// Registers `handler` for every event payload of type `T`.
     ///
     /// The handler may accept `const T&` or no arguments.
     template <typename T, typename Handler>
-        requires EventSubtypeOf<T, Event>
+        requires EventSubtypeOf<T, Event> && EventPayloadHandlerFor<Handler, T>
     EventDispatcher& on(Handler&& handler)
     {
+        (void)subscribe<T>(std::forward<Handler>(handler));
+        return *this;
+    }
+
+    /// Registers `handler` for every event and returns its handle.
+    ///
+    /// The handler may accept `const Event&` or no arguments.
+    template <typename Handler>
+        requires EventHandlerFor<Handler>
+    [[nodiscard]] Subscription subscribeEach(Handler&& handler)
+    {
         using StoredHandler = std::decay_t<Handler>;
-        handlers_.emplace_back(
+        return addHandler(
             [handler = StoredHandler(std::forward<Handler>(handler))](const Event& event) mutable {
-                if (const T* payload = event.getIf<T>()) {
-                    invokeTyped<T>(handler, *payload);
+                if constexpr (std::invocable<StoredHandler&, const Event&>) {
+                    handler(event);
+                } else if constexpr (std::invocable<StoredHandler&>) {
+                    handler();
                 }
             });
-        return *this;
     }
 
     /// Registers `handler` for every event.
     ///
     /// The handler may accept `const Event&` or no arguments.
     template <typename Handler>
+        requires EventHandlerFor<Handler>
     EventDispatcher& each(Handler&& handler)
     {
-        using StoredHandler = std::decay_t<Handler>;
-        handlers_.emplace_back(
-            [handler = StoredHandler(std::forward<Handler>(handler))](const Event& event) mutable {
-                if constexpr (std::invocable<StoredHandler&, const Event&>) {
-                    handler(event);
-                } else if constexpr (std::invocable<StoredHandler&>) {
-                    handler();
-                } else {
-                    static_assert(
-                        std::invocable<StoredHandler&>,
-                        "EventDispatcher::each handler must accept const Event& or no arguments");
-                }
-            });
+        (void)subscribeEach(std::forward<Handler>(handler));
         return *this;
     }
 
 private:
+    struct HandlerEntry
+    {
+        Subscription subscription;
+        std::function<void(const Event&)> handler;
+        bool connected = true;
+    };
+
+    Subscription nextSubscription() noexcept
+    {
+        if (nextSubscriptionId_ == 0) {
+            nextSubscriptionId_ = 1;
+        }
+
+        return Subscription{ nextSubscriptionId_++ };
+    }
+
+    void compactDisconnectedHandlers() const
+    {
+        std::erase_if(handlers_, [](const HandlerEntry& entry) {
+            return !entry.connected;
+        });
+    }
+
+    Subscription addHandler(std::function<void(const Event&)> handler)
+    {
+        const Subscription subscription = nextSubscription();
+        handlers_.push_back(HandlerEntry{
+            .subscription = subscription,
+            .handler = std::move(handler),
+            .connected = true,
+        });
+        ++activeHandlerCount_;
+        return subscription;
+    }
+
     template <typename T, typename Handler>
+        requires EventPayloadHandlerFor<Handler, T>
     static void invokeTyped(Handler&& handler, const T& payload)
     {
         if constexpr (std::invocable<Handler&, const T&>) {
             handler(payload);
         } else if constexpr (std::invocable<Handler&>) {
             handler();
-        } else {
-            static_assert(
-                std::invocable<Handler&>,
-                "EventDispatcher::on handler must accept const event payload& or no arguments");
         }
     }
 
-    std::vector<std::function<void(const Event&)>> handlers_;
+    mutable std::vector<HandlerEntry> handlers_;
+    std::size_t activeHandlerCount_ = 0;
+    std::uint64_t nextSubscriptionId_ = 1;
+    mutable std::size_t dispatchDepth_ = 0;
 };
 
 //----------------------------------------------------------------------------
