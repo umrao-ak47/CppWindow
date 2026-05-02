@@ -108,6 +108,9 @@ public:
     virtual void setOpacity(float opacity) = 0;
     virtual void setVSync(bool enabled) = 0;
     virtual void setCursorMode(CursorMode mode) = 0;
+    virtual bool setCursorShape(CursorShape shape) = 0;
+    virtual bool setCursorImage(const ImageRgba& image, int hotX, int hotY) = 0;
+    virtual void clearCursor() = 0;
     virtual void setMousePosition(double x, double y) = 0;
     virtual bool setRawMouseMotion(bool enabled) = 0;
     virtual void minimize() = 0;
@@ -115,6 +118,9 @@ public:
     virtual void restore() = 0;
     virtual void
     setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode) = 0;
+    virtual bool setIcon(std::span<const ImageRgba> images) = 0;
+    virtual void clearIcon() = 0;
+    virtual void requestAttention() = 0;
     virtual void setFocus(bool focus) const noexcept = 0;
     virtual void setVisible(bool visible) const noexcept = 0;
     virtual std::pair<int, int> getSize() const noexcept = 0;
@@ -138,6 +144,9 @@ public:
     virtual ~NativeWindowContext() = default;
 
     virtual void pollEvents() noexcept = 0;
+    virtual void waitEvents() noexcept = 0;
+    virtual void waitEventsTimeout(double timeoutSeconds) noexcept = 0;
+    virtual void postEmptyEvent() noexcept = 0;
 
     virtual ProcLoader getProcLoader() const = 0;
     virtual bool isVulkanSupported() const = 0;
@@ -149,8 +158,9 @@ public:
     virtual std::vector<GamepadInfo> getGamepads() const = 0;
     virtual std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const = 0;
     virtual bool isRawMouseMotionSupported() const = 0;
-    virtual void setClipboardText(const std::string& text) const = 0;
+    virtual bool setClipboardText(const std::string& text) const = 0;
     virtual std::string getClipboardText() const = 0;
+    virtual std::optional<std::string> tryGetClipboardText() const = 0;
 };
 
 //----------------------------------------------------------------------------

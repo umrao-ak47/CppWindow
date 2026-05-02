@@ -107,6 +107,10 @@ int main()
 then collects new events for the current frame. Read `window.events()` and
 `window.getInput()` after polling.
 
+For event-driven tools that can sleep while idle, use `waitEvents()` or
+`waitEventsTimeout(seconds)` instead. `postEmptyEvent()` wakes a thread blocked
+inside either wait call.
+
 Builder options can cover most initial window state:
 
 ```cpp
@@ -393,9 +397,19 @@ Clipboard text is available on `WindowContext`:
 ```cpp
 auto& ctx = cwin::WindowContext::Get();
 
-ctx.setClipboardText("Copied from my app");
-std::string pasted = ctx.getClipboardText();
+if (!ctx.setClipboardText("Copied from my app")) {
+    // Clipboard write was rejected by the platform/backend.
+}
+
+if (auto text = ctx.tryGetClipboardText()) {
+    paste(*text);
+}
 ```
+
+`tryGetClipboardText()` returns `std::nullopt` when the backend reports a
+clipboard read error. `getClipboardText()` is still available as a convenience
+fallback and returns an empty string on failure. `hasClipboardText()` reports
+whether readable, non-empty clipboard text is currently available.
 
 Drag-and-drop files onto a window to receive `Event::FilesDropped`:
 
@@ -464,6 +478,39 @@ window.setCursorMode(cwin::CursorMode::Captured);
 ```
 
 `Captured` is the mode to use for first-person camera control.
+
+Cursor shapes and custom RGBA cursor images:
+
+```cpp
+window.setCursorShape(cwin::CursorShape::Hand);
+
+std::array<uint8_t, 16 * 16 * 4> pixels{};
+fillCursorPixels(pixels);
+cwin::ImageRgba cursor{
+    .width = 16,
+    .height = 16,
+    .pixels = pixels,
+};
+window.setCursorImage(cursor, 0, 0);
+window.clearCursor();
+```
+
+Window icons use the same `ImageRgba` format. Some platforms, including macOS,
+may ignore per-window icons.
+
+```cpp
+std::array<uint8_t, 32 * 32 * 4> iconPixels{};
+fillIconPixels(iconPixels);
+cwin::ImageRgba icon{
+    .width = 32,
+    .height = 32,
+    .pixels = iconPixels,
+};
+
+window.setIcon(icon);
+window.clearIcon();
+window.requestAttention();
+```
 
 ## Fullscreen Modes
 
@@ -568,6 +615,10 @@ while (!window.shouldClose()) {
 When VSync is enabled, set `limiter.setVSyncEnabled(true)` so the limiter does
 not add a second software delay on top of the presentation wait.
 
+For idle, event-driven apps, replace `pollEvents()` with `waitEvents()` or
+`waitEventsTimeout(seconds)`. Use a timeout when animations, timers, or periodic
+work still need to progress without incoming input.
+
 For a fixed-step simulation, use `FixedStepAccumulator` in application code:
 
 ```cpp
@@ -621,8 +672,8 @@ GLFW error code and description, are included in `what()` when available.
 
 - `examples/basic.cpp`: minimal no-API window.
 - `examples/opengl.cpp`: OpenGL setup and presentation.
-- `examples/window_controls.cpp`: resizing, decoration, opacity, cursor mode,
-  monitor info, and content-scale events.
+- `examples/window_controls.cpp`: resizing, decoration, opacity, cursor modes,
+  cursor images, icons, attention requests, monitor info, and content-scale events.
 - `examples/fullscreen_toggle.cpp`: windowed, fullscreen, borderless
   fullscreen, and exclusive fullscreen modes.
 - `examples/mouse_capture.cpp`: captured cursor behavior with an OpenGL status bar.

@@ -126,6 +126,42 @@ enum class CursorMode : uint8_t
     Captured
 };
 
+/// Standard platform cursor shapes.
+enum class CursorShape : uint8_t
+{
+    /// Default arrow cursor.
+    Arrow,
+    /// Text insertion cursor.
+    IBeam,
+    /// Crosshair cursor.
+    Crosshair,
+    /// Pointing hand cursor.
+    Hand,
+    /// Horizontal resize cursor.
+    ResizeHorizontal,
+    /// Vertical resize cursor.
+    ResizeVertical,
+    /// Northwest/southeast diagonal resize cursor.
+    ResizeDiagonalNWSE,
+    /// Northeast/southwest diagonal resize cursor.
+    ResizeDiagonalNESW,
+    /// Omnidirectional resize cursor.
+    ResizeAll,
+    /// Unavailable/not-allowed cursor.
+    NotAllowed
+};
+
+/// 8-bit RGBA image data for window icons and custom cursors.
+struct ImageRgba
+{
+    /// Image width in pixels.
+    uint32_t width = 0;
+    /// Image height in pixels.
+    uint32_t height = 0;
+    /// Pixel bytes in RGBA order. Must contain at least `width * height * 4` bytes.
+    std::span<const uint8_t> pixels;
+};
+
 /// High-level window presentation mode.
 enum class WindowMode : uint8_t
 {
@@ -1406,6 +1442,12 @@ public:
     void setVSync(bool enabled);
     /// Sets cursor visibility/capture mode.
     void setCursorMode(CursorMode mode);
+    /// Sets a standard platform cursor shape. Returns false when unsupported.
+    [[nodiscard]] bool setCursorShape(CursorShape shape);
+    /// Sets a custom RGBA cursor image with hotspot coordinates. Returns false on invalid input.
+    [[nodiscard]] bool setCursorImage(const ImageRgba& image, int hotX = 0, int hotY = 0);
+    /// Restores the platform default cursor image.
+    void clearCursor();
     /// Sets the cursor position in window coordinates.
     void setMousePosition(double x, double y);
     /// Enables or disables raw mouse motion when supported by the backend.
@@ -1421,6 +1463,14 @@ public:
         WindowMode mode,
         uint32_t monitorId = 0,
         std::optional<VideoMode> videoMode = std::nullopt);
+    /// Sets one window icon image. Returns false when unsupported or invalid.
+    [[nodiscard]] bool setIcon(const ImageRgba& image);
+    /// Sets multiple window icon images. Returns false when unsupported or invalid.
+    [[nodiscard]] bool setIcons(std::span<const ImageRgba> images);
+    /// Restores the platform default window icon.
+    void clearIcon();
+    /// Requests user attention for the window.
+    void requestAttention();
     /// Requests or clears input focus where the platform permits it.
     void setFocus(bool focus) const noexcept;
     /// Shows or hides the window.
@@ -1538,6 +1588,12 @@ public:
 
     /// Polls platform events and updates window/input state.
     void pollEvents() const noexcept;
+    /// Waits until at least one platform event is available, then updates state.
+    void waitEvents() const noexcept;
+    /// Waits up to `timeoutSeconds` for events, then updates state.
+    void waitEventsTimeout(double timeoutSeconds) const noexcept;
+    /// Wakes a thread blocked in `waitEvents` or `waitEventsTimeout`.
+    void postEmptyEvent() const noexcept;
 
     /// Returns a procedure loader for OpenGL or backend integration.
     ProcLoader getProcLoader() const;
@@ -1561,10 +1617,14 @@ public:
     std::optional<GamepadState> getGamepadState(uint32_t gamepadId = 0) const;
     /// Returns whether raw mouse motion is supported by the backend/platform.
     bool isRawMouseMotionSupported() const;
-    /// Sets the platform clipboard text.
-    void setClipboardText(const std::string& text) const;
-    /// Returns the platform clipboard text.
+    /// Sets the platform clipboard text. Returns false when the backend reports failure.
+    [[nodiscard]] bool setClipboardText(const std::string& text) const;
+    /// Returns whether clipboard text is currently available and non-empty.
+    [[nodiscard]] bool hasClipboardText() const;
+    /// Returns the platform clipboard text, or an empty string on failure.
     std::string getClipboardText() const;
+    /// Returns platform clipboard text, or null when the backend reports failure.
+    [[nodiscard]] std::optional<std::string> tryGetClipboardText() const;
 
 private:
     WindowContext();

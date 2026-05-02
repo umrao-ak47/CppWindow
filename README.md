@@ -20,10 +20,10 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 - Structured modifier state and CppWindow error categories
 - Vulkan surface support
 - OpenGL context support
-- Window controls and monitor queries
+- Window controls, waitable event loops, and monitor queries
 - Mouse delta, text input, raw joystick events, and standard gamepad support
 - Action bindings, mouse positioning, and raw mouse motion controls
-- Clipboard, file drop events, DPI conversion, FPS, and frame pacing helpers
+- Clipboard status, file drop events, DPI conversion, FPS, and frame pacing helpers
 - Zero global input state
 - Backend abstraction (currently GLFW)
 - Minimal runtime overhead
@@ -173,6 +173,8 @@ window.setResizable(true);
 window.setDecorated(false);
 window.setOpacity(0.9f);
 window.setCursorMode(cwin::CursorMode::Captured);
+window.setCursorShape(cwin::CursorShape::Hand);
+window.requestAttention();
 window.setWindowMode(cwin::WindowMode::BorderlessFullscreen);
 ```
 

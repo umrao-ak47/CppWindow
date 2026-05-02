@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -556,6 +557,71 @@ int toGlfwCursorMode(CursorMode mode)
     }
 
     return GLFW_CURSOR_NORMAL;
+}
+
+int toGlfwCursorShape(CursorShape shape)
+{
+    switch (shape) {
+        case CursorShape::Arrow:
+            return GLFW_ARROW_CURSOR;
+        case CursorShape::IBeam:
+            return GLFW_IBEAM_CURSOR;
+        case CursorShape::Crosshair:
+            return GLFW_CROSSHAIR_CURSOR;
+        case CursorShape::Hand:
+            return GLFW_POINTING_HAND_CURSOR;
+        case CursorShape::ResizeHorizontal:
+            return GLFW_RESIZE_EW_CURSOR;
+        case CursorShape::ResizeVertical:
+            return GLFW_RESIZE_NS_CURSOR;
+        case CursorShape::ResizeDiagonalNWSE:
+            return GLFW_RESIZE_NWSE_CURSOR;
+        case CursorShape::ResizeDiagonalNESW:
+            return GLFW_RESIZE_NESW_CURSOR;
+        case CursorShape::ResizeAll:
+            return GLFW_RESIZE_ALL_CURSOR;
+        case CursorShape::NotAllowed:
+            return GLFW_NOT_ALLOWED_CURSOR;
+    }
+
+    return GLFW_ARROW_CURSOR;
+}
+
+bool isValidImage(const ImageRgba& image) noexcept
+{
+    if (image.width == 0 || image.height == 0) {
+        return false;
+    }
+
+    const size_t maxSize = std::numeric_limits<size_t>::max();
+    if (static_cast<size_t>(image.width) > maxSize / static_cast<size_t>(image.height)) {
+        return false;
+    }
+
+    const size_t pixelCount = static_cast<size_t>(image.width) * static_cast<size_t>(image.height);
+    if (pixelCount > maxSize / 4) {
+        return false;
+    }
+
+    return image.pixels.size() >= pixelCount * 4;
+}
+
+std::optional<GLFWimage> toGlfwImage(const ImageRgba& image) noexcept
+{
+    if (!isValidImage(image)) {
+        return std::nullopt;
+    }
+
+    if (image.width > static_cast<uint32_t>(std::numeric_limits<int>::max()) ||
+        image.height > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+        return std::nullopt;
+    }
+
+    return GLFWimage{
+        .width = static_cast<int>(image.width),
+        .height = static_cast<int>(image.height),
+        .pixels = const_cast<unsigned char*>(image.pixels.data()),
+    };
 }
 
 Modifiers toModifiers(int mods)
@@ -1433,6 +1499,45 @@ void GLFWNativeWindow::setCursorMode(CursorMode mode)
     cursorMode_ = mode;
 }
 
+bool GLFWNativeWindow::setCursorShape(CursorShape shape)
+{
+    UniqueGLFWcursor cursor(glfwCreateStandardCursor(toGlfwCursorShape(shape)));
+    if (!cursor) {
+        return false;
+    }
+
+    glfwSetCursor(handle_.get(), cursor.get());
+    cursor_ = std::move(cursor);
+    return true;
+}
+
+bool GLFWNativeWindow::setCursorImage(const ImageRgba& image, int hotX, int hotY)
+{
+    std::optional<GLFWimage> glfwImage = toGlfwImage(image);
+    if (!glfwImage) {
+        return false;
+    }
+
+    if (hotX < 0 || hotY < 0 || hotX >= glfwImage->width || hotY >= glfwImage->height) {
+        return false;
+    }
+
+    UniqueGLFWcursor cursor(glfwCreateCursor(&*glfwImage, hotX, hotY));
+    if (!cursor) {
+        return false;
+    }
+
+    glfwSetCursor(handle_.get(), cursor.get());
+    cursor_ = std::move(cursor);
+    return true;
+}
+
+void GLFWNativeWindow::clearCursor()
+{
+    glfwSetCursor(handle_.get(), nullptr);
+    cursor_.reset();
+}
+
 void GLFWNativeWindow::setMousePosition(double x, double y)
 {
     glfwSetCursorPos(handle_.get(), x, y);
@@ -1614,6 +1719,38 @@ void GLFWNativeWindow::setWindowMode(
         targetMode.refreshRate);
 }
 
+bool GLFWNativeWindow::setIcon(std::span<const ImageRgba> images)
+{
+    if (images.empty()) {
+        clearIcon();
+        return true;
+    }
+
+    std::vector<GLFWimage> glfwImages;
+    glfwImages.reserve(images.size());
+    for (const ImageRgba& image : images) {
+        std::optional<GLFWimage> glfwImage = toGlfwImage(image);
+        if (!glfwImage) {
+            return false;
+        }
+        glfwImages.push_back(*glfwImage);
+    }
+
+    clearGlfwError();
+    glfwSetWindowIcon(handle_.get(), static_cast<int>(glfwImages.size()), glfwImages.data());
+    return takeGlfwError().code == GLFW_NO_ERROR;
+}
+
+void GLFWNativeWindow::clearIcon()
+{
+    glfwSetWindowIcon(handle_.get(), 0, nullptr);
+}
+
+void GLFWNativeWindow::requestAttention()
+{
+    glfwRequestWindowAttention(handle_.get());
+}
+
 void GLFWNativeWindow::setFocus(bool focus) const noexcept
 {
     if (focus) {
@@ -1733,6 +1870,27 @@ void GLFWWindowContext::pollEvents() noexcept
     pollGamepads();
 }
 
+void GLFWWindowContext::waitEvents() noexcept
+{
+    g_WindowRegistry.resetAll();
+    glfwWaitEvents();
+    pollJoysticks();
+    pollGamepads();
+}
+
+void GLFWWindowContext::waitEventsTimeout(double timeoutSeconds) noexcept
+{
+    g_WindowRegistry.resetAll();
+    glfwWaitEventsTimeout(std::max(0.0, timeoutSeconds));
+    pollJoysticks();
+    pollGamepads();
+}
+
+void GLFWWindowContext::postEmptyEvent() noexcept
+{
+    glfwPostEmptyEvent();
+}
+
 ProcLoader GLFWWindowContext::getProcLoader() const
 {
     return [](const char* name) -> ProcFunction {
@@ -1837,15 +1995,29 @@ bool GLFWWindowContext::isRawMouseMotionSupported() const
     return glfwRawMouseMotionSupported() == GLFW_TRUE;
 }
 
-void GLFWWindowContext::setClipboardText(const std::string& text) const
+bool GLFWWindowContext::setClipboardText(const std::string& text) const
 {
+    clearGlfwError();
     glfwSetClipboardString(nullptr, text.c_str());
+    return takeGlfwError().code == GLFW_NO_ERROR;
 }
 
 std::string GLFWWindowContext::getClipboardText() const
 {
+    return tryGetClipboardText().value_or(std::string());
+}
+
+std::optional<std::string> GLFWWindowContext::tryGetClipboardText() const
+{
+    clearGlfwError();
     const char* text = glfwGetClipboardString(nullptr);
-    return text ? std::string(text) : std::string();
+    if (text) {
+        (void)takeGlfwError();
+        return std::string(text);
+    }
+
+    return takeGlfwError().code == GLFW_NO_ERROR ? std::optional<std::string>{ std::string() }
+                                                 : std::nullopt;
 }
 
 //----------------------------------------------------------------------------

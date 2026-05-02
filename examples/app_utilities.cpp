@@ -12,7 +12,11 @@ int main()
 
     auto window = WindowBuilder{}.title("App Utilities").size(840, 420).noAPI().resizable().build();
 
-    std::cout << "Keys: C copy text, V print clipboard, Esc close. Drop files onto the window.\n";
+    std::cout << "Controls:\n"
+              << "  C: copy text\n"
+              << "  V: print clipboard\n"
+              << "  Drop files: print dropped paths\n"
+              << "  Esc: close\n";
 
     FrameTimer frameTimer;
     FixedStepAccumulator fixedStep(1.0 / 60.0);
@@ -44,10 +48,17 @@ int main()
                 } else if (key->key == Key::C) {
                     std::ostringstream text;
                     text << "Copied from CppWindow frame " << frame.frameIndex;
-                    ctx.setClipboardText(text.str());
-                    std::cout << "clipboard set: " << text.str() << "\n";
+                    if (ctx.setClipboardText(text.str())) {
+                        std::cout << "clipboard set: " << text.str() << "\n";
+                    } else {
+                        std::cout << "clipboard set failed\n";
+                    }
                 } else if (key->key == Key::V) {
-                    std::cout << "clipboard: " << ctx.getClipboardText() << "\n";
+                    if (auto text = ctx.tryGetClipboardText()) {
+                        std::cout << "clipboard: " << *text << "\n";
+                    } else {
+                        std::cout << "clipboard unavailable\n";
+                    }
                 }
             }
 

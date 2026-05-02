@@ -124,6 +124,18 @@ struct GLFWwindowDeleter
 
 using UniqueGLFWwindow = std::unique_ptr<GLFWwindow, GLFWwindowDeleter>;
 
+struct GLFWcursorDeleter
+{
+    void operator()(GLFWcursor* cursor) const noexcept
+    {
+        if (cursor) {
+            glfwDestroyCursor(cursor);
+        }
+    }
+};
+
+using UniqueGLFWcursor = std::unique_ptr<GLFWcursor, GLFWcursorDeleter>;
+
 class WindowStorage
 {
 public:
@@ -176,6 +188,9 @@ public:
     void setOpacity(float opacity) override;
     void setVSync(bool enabled) override;
     void setCursorMode(CursorMode mode) override;
+    bool setCursorShape(CursorShape shape) override;
+    bool setCursorImage(const ImageRgba& image, int hotX, int hotY) override;
+    void clearCursor() override;
     void setMousePosition(double x, double y) override;
     bool setRawMouseMotion(bool enabled) override;
     void minimize() override;
@@ -183,6 +198,9 @@ public:
     void restore() override;
     void setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
         override;
+    bool setIcon(std::span<const ImageRgba> images) override;
+    void clearIcon() override;
+    void requestAttention() override;
     void setFocus(bool focus) const noexcept override;
     void setVisible(bool visible) const noexcept override;
     std::pair<int, int> getSize() const noexcept override;
@@ -200,6 +218,7 @@ private:
     void captureWindowedBounds();
 
     UniqueGLFWwindow handle_{};
+    UniqueGLFWcursor cursor_{};
     std::shared_ptr<WindowStorage> storage_{};
     CursorMode cursorMode_ = CursorMode::Normal;
     WindowMode windowMode_ = WindowMode::Windowed;
@@ -225,6 +244,9 @@ public:
     ~GLFWWindowContext();
 
     void pollEvents() noexcept override;
+    void waitEvents() noexcept override;
+    void waitEventsTimeout(double timeoutSeconds) noexcept override;
+    void postEmptyEvent() noexcept override;
 
     ProcLoader getProcLoader() const override;
     bool isVulkanSupported() const override;
@@ -236,8 +258,9 @@ public:
     std::vector<GamepadInfo> getGamepads() const override;
     std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const override;
     bool isRawMouseMotionSupported() const override;
-    void setClipboardText(const std::string& text) const override;
+    bool setClipboardText(const std::string& text) const override;
     std::string getClipboardText() const override;
+    std::optional<std::string> tryGetClipboardText() const override;
 
 private:
     GLFWerrorfun previousErrorCallback_ = nullptr;

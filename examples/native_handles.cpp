@@ -52,7 +52,10 @@ int main()
     auto window =
         WindowBuilder{}.title("Native Handles").size(760, 360).noAPI().resizable().build();
 
-    std::cout << "Press H to print native handles, V for Vulkan support, Escape closes.\n";
+    std::cout << "Controls:\n"
+              << "  H: print native handles\n"
+              << "  V: print Vulkan support\n"
+              << "  Esc: close\n";
     printNativeHandles(window);
     printVulkanInfo(ctx);
 

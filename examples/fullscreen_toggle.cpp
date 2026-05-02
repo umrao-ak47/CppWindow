@@ -38,8 +38,12 @@ int main()
     FrameLimiter frameLimiter(120.0);
     frameLimiter.setVSyncEnabled(useVSync);
 
-    std::cout << "Keys: F fullscreen with title bar, B borderless fullscreen, "
-                 "E exclusive fullscreen, W windowed, Esc close\n";
+    std::cout << "Controls:\n"
+              << "  F: fullscreen with title bar\n"
+              << "  B: borderless fullscreen\n"
+              << "  E: exclusive fullscreen\n"
+              << "  W: windowed\n"
+              << "  Esc: close\n";
 
     DemoMode mode = DemoMode::Windowed;
 

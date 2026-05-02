@@ -50,7 +50,9 @@ int main()
     auto& ctx = WindowContext::Get();
     auto window = WindowBuilder{}.title("Monitor Info").size(820, 420).noAPI().resizable().build();
 
-    std::cout << "Press M to print monitor info again. Escape closes.\n";
+    std::cout << "Controls:\n"
+              << "  M: print monitor info again\n"
+              << "  Esc: close\n";
     printMonitors(ctx);
 
     FrameLimiter frameLimiter(60.0);

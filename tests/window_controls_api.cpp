@@ -1,7 +1,10 @@
 #include <cppwindow/cppwindow.hpp>
 
+#include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -15,6 +18,40 @@ static_assert(
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().getDpiScale()),
               cwin::DpiScale>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::Window&>().setCursorShape(cwin::CursorShape::Hand)),
+              bool>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::Window&>()
+                           .setCursorImage(std::declval<const cwin::ImageRgba&>(), 0, 0)),
+              bool>);
+static_assert(
+    std::is_same_v<
+        decltype(std::declval<cwin::Window&>().setIcon(std::declval<const cwin::ImageRgba&>())),
+        bool>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::Window&>().setIcons(
+                  std::declval<std::span<const cwin::ImageRgba>>())),
+              bool>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().clearCursor()), void>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().clearIcon()), void>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().requestAttention()), void>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().waitEvents()), void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().waitEventsTimeout(0.1)),
+              void>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().postEmptyEvent()), void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().setClipboardText(
+                  std::declval<const std::string&>())),
+              bool>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().hasClipboardText()), bool>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().tryGetClipboardText()),
+              std::optional<std::string>>);
 
 int main()
 {
@@ -44,8 +81,22 @@ int main()
     assert(ratio.numerator == 16);
     assert(monitor.currentVideoMode.refreshRate == 60);
     assert(cwin::CursorMode::Captured != cwin::CursorMode::Normal);
+    assert(cwin::CursorShape::Hand != cwin::CursorShape::Arrow);
+    assert(cwin::CursorShape::ResizeAll != cwin::CursorShape::NotAllowed);
     assert(cwin::WindowMode::BorderlessFullscreen != cwin::WindowMode::Windowed);
     assert(cwin::WindowMode::ExclusiveFullscreen != cwin::WindowMode::Fullscreen);
+
+    std::array<uint8_t, 16> imagePixels{
+        255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
+    };
+    cwin::ImageRgba image{
+        .width = 2,
+        .height = 2,
+        .pixels = std::span<const uint8_t>{ imagePixels.data(), imagePixels.size() },
+    };
+    assert(image.width == 2);
+    assert(image.height == 2);
+    assert(image.pixels.size() == imagePixels.size());
 
     cwin::WindowBuilder builder;
     builder.title("Configured")
@@ -163,5 +214,4 @@ int main()
     assert(joystickAxis.is<cwin::Event::JoystickMoved>());
     assert(joystickAxis.getIf<cwin::Event::JoystickMoved>()->axis == 2);
     assert(joystickAxis.getIf<cwin::Event::JoystickMoved>()->position == -0.5f);
-
 }

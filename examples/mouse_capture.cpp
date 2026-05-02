@@ -44,7 +44,9 @@ int main()
     FrameLimiter frameLimiter(120.0);
     frameLimiter.setVSyncEnabled(useVSync);
 
-    std::cout << "Keys: C toggle captured cursor, Esc close\n";
+    std::cout << "Controls:\n"
+              << "  C: toggle captured cursor\n"
+              << "  Esc: close\n";
 
     bool captured = false;
     double displayDeltaX = 0.0;

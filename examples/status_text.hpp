@@ -1,11 +1,11 @@
 #ifndef CPPWINDOW_EXAMPLES_STATUS_TEXT_HPP
 #define CPPWINDOW_EXAMPLES_STATUS_TEXT_HPP
 
-#include <glad/glad.h>
-
 #include <array>
 #include <cstdint>
+#include <glad/glad.h>
 #include <string>
+#include <string_view>
 
 namespace example {
 
@@ -116,7 +116,7 @@ inline void drawRect(int x, int y, int width, int height, float red, float green
     glDisable(GL_SCISSOR_TEST);
 }
 
-inline void drawText(const std::string& text, int x, int y, int scale)
+inline void drawText(std::string_view text, int x, int y, int scale)
 {
     constexpr int GlyphWidth = 5;
     constexpr int GlyphHeight = 7;
@@ -143,7 +143,8 @@ inline void drawText(const std::string& text, int x, int y, int scale)
     }
 }
 
-inline void drawStatusBar(uint32_t framebufferWidth, uint32_t framebufferHeight, const std::string& text)
+inline void
+drawStatusBar(uint32_t framebufferWidth, uint32_t framebufferHeight, std::string_view text)
 {
     glViewport(
         0,

@@ -39,7 +39,10 @@ int main()
     auto window =
         WindowBuilder{}.title("Fixed Step Loop").size(860, 360).noAPI().resizable().build();
 
-    std::cout << "Fixed update runs at 60Hz. Rendering/presentation remains caller-controlled.\n";
+    std::cout << "Fixed update runs at 60Hz. Rendering/presentation remains caller-controlled.\n"
+              << "Controls:\n"
+              << "  R: reset simulation\n"
+              << "  Esc: close\n";
 
     FrameTimer frameTimer;
     FixedStepAccumulator fixedStep(1.0 / 60.0);

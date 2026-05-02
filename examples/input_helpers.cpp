@@ -1,10 +1,13 @@
 #include <cppwindow/cppwindow.hpp>
 
+#include <array>
 #include <glad/glad.h>
 #include <iomanip>
 #include <iostream>
+#include <span>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 
 #include "status_text.hpp"
 
@@ -15,7 +18,7 @@ namespace {
 void drawInputPanel(
     uint32_t framebufferWidth,
     uint32_t framebufferHeight,
-    const std::string& controls,
+    std::span<const std::string_view> controls,
     const std::string& state,
     const std::string& mouse)
 {
@@ -28,15 +31,21 @@ void drawInputPanel(
     glClear(GL_COLOR_BUFFER_BIT);
 
     const int width = static_cast<int>(framebufferWidth);
-    const int scale = framebufferWidth < 900 ? 1 : 2;
-    const int lineHeight = 7 * scale + 10;
-    const int panelHeight = lineHeight * 3 + 18;
+    const int scale = (framebufferWidth < 1100 || framebufferHeight < 650) ? 1 : 2;
+    const int lineHeight = 7 * scale + 6;
+    const int panelHeight = lineHeight * (static_cast<int>(controls.size()) + 2) + 18;
 
     example::drawRect(0, 0, width, panelHeight, 0.02f, 0.025f, 0.03f);
     example::drawRect(0, panelHeight - 2, width, 2, 0.14f, 0.45f, 0.70f);
-    example::drawText(controls, 12, panelHeight - lineHeight, scale);
-    example::drawText(state, 12, panelHeight - lineHeight * 2, scale);
-    example::drawText(mouse, 12, panelHeight - lineHeight * 3, scale);
+
+    int y = panelHeight - lineHeight;
+    for (std::string_view control : controls) {
+        example::drawText(control, 12, y, scale);
+        y -= lineHeight;
+    }
+    example::drawText(state, 12, y, scale);
+    y -= lineHeight;
+    example::drawText(mouse, 12, y, scale);
 }
 
 }  // namespace
@@ -84,7 +93,8 @@ int main()
 
     std::cout << "Input Helpers controls:\n";
     std::cout << "  Escape: quit\n";
-    std::cout << "  Space or gamepad A: jump action\n";
+    std::cout << "  Space: jump action\n";
+    std::cout << "  Gamepad A: jump action\n";
     std::cout << "  Left stick X: move_x axis action\n";
     std::cout << "  Left mouse button: fire action\n";
     std::cout << "  Ctrl+S: save action\n";
@@ -93,6 +103,12 @@ int main()
     std::cout << "  G: toggle gameplay action group\n";
     std::cout << "  C: toggle captured cursor and raw mouse motion\n";
     std::cout << "  R: center mouse cursor\n";
+
+    static constexpr std::array<std::string_view, 11> ControlLines{
+        "ESC: QUIT",          "SPACE: JUMP",    "GAMEPAD A: JUMP",    "LEFT STICK X: MOVE",
+        "LMB: FIRE",          "CTRL+S: SAVE",   "LEFT SHIFT+A: LS+A", "RIGHT SHIFT+A: RS+A",
+        "G: TOGGLE GAMEPLAY", "C: CAPTURE RAW", "R: CENTER MOUSE",
+    };
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
@@ -155,7 +171,7 @@ int main()
         drawInputPanel(
             fbWidth,
             fbHeight,
-            "ESC QUIT SPACE/A JUMP LMB FIRE LS MOVE CTRL+S SAVE L/RSHIFT+A",
+            std::span<const std::string_view>{ ControlLines.data(), ControlLines.size() },
             state.str(),
             mouse.str());
         window.swapBuffers();

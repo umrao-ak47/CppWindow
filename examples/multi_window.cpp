@@ -57,7 +57,9 @@ int main()
     int rightPresses = 0;
     FrameLimiter frameLimiter(120.0);
 
-    std::cout << "Press Space in either window. Escape closes the focused window.\n";
+    std::cout << "Controls:\n"
+              << "  Space: count a press in the focused window\n"
+              << "  Esc: close the focused window\n";
 
     while (!left.shouldClose() || !right.shouldClose()) {
         ctx.pollEvents();

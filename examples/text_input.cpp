@@ -42,7 +42,10 @@ int main()
 
     auto window = WindowBuilder{}.title("Text Input").size(720, 360).noAPI().resizable().build();
 
-    std::cout << "Type text. Backspace deletes, Escape closes.\n";
+    std::cout << "Controls:\n"
+              << "  Type text: append to title\n"
+              << "  Backspace: delete last character\n"
+              << "  Esc: close\n";
 
     std::u32string text;
     FrameLimiter frameLimiter(60.0);

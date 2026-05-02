@@ -834,6 +834,21 @@ void Window::setCursorMode(CursorMode mode)
     window_->setCursorMode(mode);
 }
 
+bool Window::setCursorShape(CursorShape shape)
+{
+    return window_->setCursorShape(shape);
+}
+
+bool Window::setCursorImage(const ImageRgba& image, int hotX, int hotY)
+{
+    return window_->setCursorImage(image, hotX, hotY);
+}
+
+void Window::clearCursor()
+{
+    window_->clearCursor();
+}
+
 void Window::setMousePosition(double x, double y)
 {
     window_->setMousePosition(x, y);
@@ -862,6 +877,26 @@ void Window::restore()
 void Window::setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
 {
     window_->setWindowMode(mode, monitorId, videoMode);
+}
+
+bool Window::setIcon(const ImageRgba& image)
+{
+    return window_->setIcon(std::span<const ImageRgba>{ &image, 1 });
+}
+
+bool Window::setIcons(std::span<const ImageRgba> images)
+{
+    return window_->setIcon(images);
+}
+
+void Window::clearIcon()
+{
+    window_->clearIcon();
+}
+
+void Window::requestAttention()
+{
+    window_->requestAttention();
 }
 
 void Window::setFocus(bool focus) const noexcept
@@ -1132,6 +1167,21 @@ void WindowContext::pollEvents() const noexcept
     context_->pollEvents();
 }
 
+void WindowContext::waitEvents() const noexcept
+{
+    context_->waitEvents();
+}
+
+void WindowContext::waitEventsTimeout(double timeoutSeconds) const noexcept
+{
+    context_->waitEventsTimeout(timeoutSeconds);
+}
+
+void WindowContext::postEmptyEvent() const noexcept
+{
+    context_->postEmptyEvent();
+}
+
 ProcLoader WindowContext::getProcLoader() const
 {
     return context_->getProcLoader();
@@ -1188,14 +1238,25 @@ bool WindowContext::isRawMouseMotionSupported() const
     return context_->isRawMouseMotionSupported();
 }
 
-void WindowContext::setClipboardText(const std::string& text) const
+bool WindowContext::setClipboardText(const std::string& text) const
 {
-    context_->setClipboardText(text);
+    return context_->setClipboardText(text);
+}
+
+bool WindowContext::hasClipboardText() const
+{
+    const auto text = tryGetClipboardText();
+    return text.has_value() && !text->empty();
 }
 
 std::string WindowContext::getClipboardText() const
 {
     return context_->getClipboardText();
+}
+
+std::optional<std::string> WindowContext::tryGetClipboardText() const
+{
+    return context_->tryGetClipboardText();
 }
 
 }  // namespace cwin

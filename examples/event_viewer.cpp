@@ -167,7 +167,14 @@ int main()
     auto& ctx = WindowContext::Get();
     auto window = WindowBuilder{}.title("Event Viewer").size(900, 520).noAPI().resizable().build();
 
-    std::cout << "Move, resize, type, click, scroll, or drop files. Escape closes.\n";
+    std::cout << "Controls:\n"
+              << "  Move window: log move events\n"
+              << "  Resize window: log resize events\n"
+              << "  Type text: log text events\n"
+              << "  Click mouse: log button events\n"
+              << "  Scroll mouse: log scroll events\n"
+              << "  Drop files: log dropped paths\n"
+              << "  Esc: close\n";
 
     uint64_t eventCount = 0;
     std::string lastEvent = "none";

@@ -75,7 +75,9 @@ int main()
 
     auto window = WindowBuilder{}.title("Gamepad").size(720, 360).noAPI().resizable().build();
 
-    std::cout << "Connect a standard-mapped gamepad. Escape closes.\n";
+    std::cout << "Controls:\n"
+              << "  Connect standard gamepad: show state\n"
+              << "  Esc: close\n";
 
     std::string lastTitle;
     FrameLimiter frameLimiter(60.0);
