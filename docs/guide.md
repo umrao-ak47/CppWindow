@@ -8,6 +8,8 @@ native surface/context hooks.
 CppWindow does not own the application loop and does not provide a renderer.
 Your application decides when to poll, update, render, and present.
 
+For a complete symbol-by-symbol reference, see the [API Reference](api.md).
+
 ## Requirements
 
 - CMake 3.20 or newer
@@ -52,7 +54,19 @@ cmake --build build --target example_fullscreen_toggle
 cmake --build build --target example_text_input
 cmake --build build --target example_gamepad
 cmake --build build --target example_app_utilities
+cmake --build build --target example_multi_window
+cmake --build build --target example_event_viewer
+cmake --build build --target example_monitor_info
+cmake --build build --target example_native_handles
+cmake --build build --target example_fixed_step_loop
 cmake --build build --target example_particles
+```
+
+Build the generated API reference:
+
+```bash
+cmake -S . -B build-docs -DCPPWINDOW_BUILD_DOCS=ON -DCPPWINDOW_BUILD_EXAMPLES=OFF -DCPPWINDOW_BUILD_TESTS=OFF
+cmake --build build-docs --target cppwindow_docs
 ```
 
 ## Minimal Window
@@ -463,4 +477,9 @@ are backend/platform-specific and should only be used at integration boundaries.
 - `examples/text_input.cpp`: Unicode text input events.
 - `examples/gamepad.cpp`: standard gamepad queries and events.
 - `examples/app_utilities.cpp`: clipboard, file drop events, and timing helpers.
+- `examples/multi_window.cpp`: independent event/input handling for multiple windows.
+- `examples/event_viewer.cpp`: logs all event payloads with `Event::visit`.
+- `examples/monitor_info.cpp`: monitor metadata, content scale, and video modes.
+- `examples/native_handles.cpp`: platform handle and Vulkan extension inspection.
+- `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation timing.
 - `examples/particles.cpp`: richer OpenGL rendering example.

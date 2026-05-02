@@ -1,0 +1,171 @@
+#include <cppwindow/cppwindow.hpp>
+
+#include <cstdint>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <type_traits>
+
+using namespace cwin;
+
+namespace {
+
+template <typename T>
+constexpr const char* eventName()
+{
+    if constexpr (std::is_same_v<T, Event::FrameBufferResized>) {
+        return "FrameBufferResized";
+    } else if constexpr (std::is_same_v<T, Event::Closed>) {
+        return "Closed";
+    } else if constexpr (std::is_same_v<T, Event::Resized>) {
+        return "Resized";
+    } else if constexpr (std::is_same_v<T, Event::Moved>) {
+        return "Moved";
+    } else if constexpr (std::is_same_v<T, Event::Minimized>) {
+        return "Minimized";
+    } else if constexpr (std::is_same_v<T, Event::Restored>) {
+        return "Restored";
+    } else if constexpr (std::is_same_v<T, Event::Maximized>) {
+        return "Maximized";
+    } else if constexpr (std::is_same_v<T, Event::ContentScaleChanged>) {
+        return "ContentScaleChanged";
+    } else if constexpr (std::is_same_v<T, Event::MonitorChanged>) {
+        return "MonitorChanged";
+    } else if constexpr (std::is_same_v<T, Event::FocusLost>) {
+        return "FocusLost";
+    } else if constexpr (std::is_same_v<T, Event::FocusGained>) {
+        return "FocusGained";
+    } else if constexpr (std::is_same_v<T, Event::TextEntered>) {
+        return "TextEntered";
+    } else if constexpr (std::is_same_v<T, Event::KeyPressed>) {
+        return "KeyPressed";
+    } else if constexpr (std::is_same_v<T, Event::KeyReleased>) {
+        return "KeyReleased";
+    } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
+        return "MouseWheelScrolled";
+    } else if constexpr (std::is_same_v<T, Event::MouseButtonPressed>) {
+        return "MouseButtonPressed";
+    } else if constexpr (std::is_same_v<T, Event::MouseButtonReleased>) {
+        return "MouseButtonReleased";
+    } else if constexpr (std::is_same_v<T, Event::MouseMoved>) {
+        return "MouseMoved";
+    } else if constexpr (std::is_same_v<T, Event::MouseEntered>) {
+        return "MouseEntered";
+    } else if constexpr (std::is_same_v<T, Event::MouseLeft>) {
+        return "MouseLeft";
+    } else if constexpr (std::is_same_v<T, Event::GamepadConnected>) {
+        return "GamepadConnected";
+    } else if constexpr (std::is_same_v<T, Event::GamepadDisconnected>) {
+        return "GamepadDisconnected";
+    } else if constexpr (std::is_same_v<T, Event::GamepadButtonPressed>) {
+        return "GamepadButtonPressed";
+    } else if constexpr (std::is_same_v<T, Event::GamepadButtonReleased>) {
+        return "GamepadButtonReleased";
+    } else if constexpr (std::is_same_v<T, Event::GamepadAxisMoved>) {
+        return "GamepadAxisMoved";
+    } else if constexpr (std::is_same_v<T, Event::FilesDropped>) {
+        return "FilesDropped";
+    } else {
+        return "ReservedEvent";
+    }
+}
+
+template <typename Enum>
+int enumIndex(Enum value)
+{
+    return static_cast<int>(value);
+}
+
+void logEvent(const Event& event)
+{
+    event.visit([](const auto& payload) {
+        using T = std::decay_t<decltype(payload)>;
+
+        std::cout << eventName<T>();
+
+        if constexpr (std::is_same_v<T, Event::FrameBufferResized>) {
+            std::cout << " width=" << payload.width << " height=" << payload.height;
+        } else if constexpr (std::is_same_v<T, Event::Resized>) {
+            std::cout << " width=" << payload.width << " height=" << payload.height;
+        } else if constexpr (std::is_same_v<T, Event::Moved>) {
+            std::cout << " x=" << payload.x << " y=" << payload.y;
+        } else if constexpr (std::is_same_v<T, Event::ContentScaleChanged>) {
+            std::cout << " xScale=" << payload.xScale << " yScale=" << payload.yScale;
+        } else if constexpr (std::is_same_v<T, Event::MonitorChanged>) {
+            std::cout << " monitor=" << payload.monitorId << " mode=" << enumIndex(payload.mode);
+        } else if constexpr (std::is_same_v<T, Event::TextEntered>) {
+            std::cout << " codepoint=" << static_cast<uint32_t>(payload.unicode);
+        } else if constexpr (std::is_same_v<T, Event::KeyPressed>
+                             || std::is_same_v<T, Event::KeyReleased>) {
+            std::cout << " key=" << enumIndex(payload.key) << " scancode=" << payload.scancode
+                      << " alt=" << payload.alt << " control=" << payload.control
+                      << " shift=" << payload.shift << " system=" << payload.system;
+        } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
+            std::cout << " delta=" << payload.deltaX << ", " << payload.deltaY << " pos="
+                      << payload.posX << ", " << payload.posY;
+        } else if constexpr (std::is_same_v<T, Event::MouseButtonPressed>
+                             || std::is_same_v<T, Event::MouseButtonReleased>) {
+            std::cout << " button=" << enumIndex(payload.button) << " pos=" << payload.posX
+                      << ", " << payload.posY;
+        } else if constexpr (std::is_same_v<T, Event::MouseMoved>) {
+            std::cout << " pos=" << payload.posX << ", " << payload.posY;
+        } else if constexpr (std::is_same_v<T, Event::GamepadConnected>) {
+            std::cout << " id=" << payload.gamepadId << " name=" << payload.name
+                      << " standard=" << payload.standardMapping;
+        } else if constexpr (std::is_same_v<T, Event::GamepadDisconnected>) {
+            std::cout << " id=" << payload.gamepadId;
+        } else if constexpr (std::is_same_v<T, Event::GamepadButtonPressed>
+                             || std::is_same_v<T, Event::GamepadButtonReleased>) {
+            std::cout << " id=" << payload.gamepadId << " button=" << enumIndex(payload.button);
+        } else if constexpr (std::is_same_v<T, Event::GamepadAxisMoved>) {
+            std::cout << " id=" << payload.gamepadId << " axis=" << enumIndex(payload.axis)
+                      << " value=" << payload.value;
+        } else if constexpr (std::is_same_v<T, Event::FilesDropped>) {
+            std::cout << " files=" << payload.paths.size() << " pos=" << payload.posX << ", "
+                      << payload.posY;
+        }
+
+        std::cout << "\n";
+    });
+}
+
+}  // namespace
+
+int main()
+{
+    auto& ctx = WindowContext::Get();
+    auto window = WindowBuilder{}.title("Event Viewer").size(900, 520).noAPI().resizable().build();
+
+    std::cout << "Move, resize, type, click, scroll, or drop files. Escape closes.\n";
+
+    uint64_t eventCount = 0;
+    std::string lastEvent = "none";
+
+    while (!window.shouldClose()) {
+        ctx.pollEvents();
+
+        for (const auto& event : window.events()) {
+            logEvent(event);
+            ++eventCount;
+
+            event.visit([&](const auto& payload) {
+                using T = std::decay_t<decltype(payload)>;
+                lastEvent = eventName<T>();
+            });
+
+            if (event.is<Event::Closed>()) {
+                window.requestClose();
+            }
+
+            if (const auto* key = event.getIf<Event::KeyPressed>()) {
+                if (key->key == Key::Escape) {
+                    window.requestClose();
+                }
+            }
+        }
+
+        std::ostringstream title;
+        title << "Event Viewer - " << eventCount << " events - last " << lastEvent;
+        window.setTitle(title.str());
+    }
+}

@@ -1,0 +1,25 @@
+PROJECT_NAME           = "CppWindow"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+PROJECT_BRIEF          = "C++20 windowing, input, and app utility layer"
+OUTPUT_DIRECTORY       = "@CMAKE_CURRENT_BINARY_DIR@/docs"
+INPUT                  = "@CMAKE_CURRENT_SOURCE_DIR@/include/cppwindow/cppwindow.hpp" \
+                         "@CMAKE_CURRENT_SOURCE_DIR@/README.md" \
+                         "@CMAKE_CURRENT_SOURCE_DIR@/docs/guide.md" \
+                         "@CMAKE_CURRENT_SOURCE_DIR@/docs/api.md"
+USE_MDFILE_AS_MAINPAGE = "@CMAKE_CURRENT_SOURCE_DIR@/README.md"
+RECURSIVE              = NO
+FILE_PATTERNS          = *.hpp *.md
+MARKDOWN_SUPPORT       = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+EXCLUDE_SYMBOLS        = cwin::details cwin::details::*
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_AS_ERROR          = NO
+QUIET                  = NO

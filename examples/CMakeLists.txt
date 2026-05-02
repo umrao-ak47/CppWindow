@@ -48,6 +48,16 @@ cppwindow_add_example(example_gamepad gamepad.cpp)
 
 cppwindow_add_example(example_app_utilities app_utilities.cpp)
 
+cppwindow_add_example(example_multi_window multi_window.cpp)
+
+cppwindow_add_example(example_event_viewer event_viewer.cpp)
+
+cppwindow_add_example(example_monitor_info monitor_info.cpp)
+
+cppwindow_add_example(example_native_handles native_handles.cpp)
+
+cppwindow_add_example(example_fixed_step_loop fixed_step_loop.cpp)
+
 cppwindow_add_example(example_opengl opengl.cpp)
 target_link_libraries(example_opengl
     PRIVATE

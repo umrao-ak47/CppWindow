@@ -9,6 +9,7 @@ include(GNUInstallDirs)
 # Options & Versions
 # ------------------------------------------------------------------------------
 option(CPPWINDOW_INSTALL "Create install target" OFF)
+option(CPPWINDOW_BUILD_DOCS "Build cppwindow API documentation with Doxygen" OFF)
 # Enable examples and tests automatically if this is the root project
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(CPPWINDOW_BUILD_EXAMPLES "Build cppwindow examples" ON)
@@ -137,4 +138,24 @@ endif()
 if(CPPWINDOW_BUILD_TESTS)
     include(CTest)
     add_subdirectory(tests)
+endif()
+
+# -----------------------------
+# Documentation
+# -----------------------------
+if(CPPWINDOW_BUILD_DOCS)
+    find_package(Doxygen REQUIRED)
+
+    configure_file(
+        docs/Doxyfile.in
+        "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+        @ONLY
+    )
+
+    add_custom_target(cppwindow_docs
+        COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating CppWindow API documentation"
+        VERBATIM
+    )
 endif()

@@ -9,7 +9,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 ## Documentation
 
 - [CppWindow Guide](docs/guide.md): setup, event loop, OpenGL/Vulkan usage, input, events, monitors, window controls, and fullscreen behavior.
-- [Improvement Plan](plan.md): temporary task checklist for the current API polish work.
+- [API Reference](docs/api.md): generated public API reference from `cppwindow.hpp`.
 
 ## ✨ Features
 
@@ -58,14 +58,14 @@ target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 
 int main()
 {
+    auto& ctx = cwin::WindowContext::Get();
+
     cwin::Window window =
         cwin::WindowBuilder{}
             .title("Basic Example")
             .size(1280, 720)
             .noAPI()
             .build();
-
-    auto& ctx = cwin::WindowContext::Get();
 
     while (!window.shouldClose())
     {
@@ -96,7 +96,7 @@ auto window =
 Create the surface later:
 
 ```cpp
-VkHandle surface =
+cwin::VulkanHandle surface =
     window.createVulkanSurface(instance);
 ```
 
@@ -107,12 +107,15 @@ CppWindow creates the context, but you must load OpenGL functions.
 Example using GLAD:
 
 ```cpp
+auto& ctx = cwin::WindowContext::Get();
+
 auto window =
     cwin::WindowBuilder{}
         .openGL({4,5,true})
         .build();
 
-gladLoadGLLoader(window.getGLLoader());
+window.makeContextCurrent();
+gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()));
 ```
 
 Render loop:
@@ -172,7 +175,8 @@ window.setWindowMode(cwin::WindowMode::BorderlessFullscreen);
 ```
 
 See the [CppWindow Guide](docs/guide.md) for fullscreen mode semantics,
-high-DPI notes, and monitor APIs.
+high-DPI notes, and monitor APIs. See the [API Reference](docs/api.md) for all
+public types and methods.
 
 ## ⚖️ License
 
