@@ -5,7 +5,8 @@ OUTPUT_DIRECTORY       = "@CMAKE_CURRENT_BINARY_DIR@/docs"
 INPUT                  = "@CMAKE_CURRENT_SOURCE_DIR@/include/cppwindow/cppwindow.hpp" \
                          "@CMAKE_CURRENT_SOURCE_DIR@/README.md" \
                          "@CMAKE_CURRENT_SOURCE_DIR@/docs/guide.md" \
-                         "@CMAKE_CURRENT_SOURCE_DIR@/docs/api.md"
+                         "@CMAKE_CURRENT_SOURCE_DIR@/docs/api.md" \
+                         "@CMAKE_CURRENT_SOURCE_DIR@/docs/release.md"
 USE_MDFILE_AS_MAINPAGE = "@CMAKE_CURRENT_SOURCE_DIR@/README.md"
 RECURSIVE              = NO
 FILE_PATTERNS          = *.hpp *.md

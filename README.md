@@ -10,6 +10,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 
 - [CppWindow Guide](docs/guide.md): setup, event loop, OpenGL/Vulkan usage, input, events, monitors, window controls, and fullscreen behavior.
 - [API Reference](docs/api.md): generated public API reference from `cppwindow.hpp`.
+- [Release Process](docs/release.md): manual release workflow and artifacts.
 
 ## ✨ Features
 

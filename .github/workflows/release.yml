@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to create, for example v0.1.0
+        required: true
+        type: string
+      target_ref:
+        description: Branch, tag, or commit SHA to release
+        required: true
+        default: main
+        type: string
+      draft:
+        description: Create the GitHub release as a draft
+        required: true
+        default: true
+        type: boolean
+      prerelease:
+        description: Mark the GitHub release as a prerelease
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
+          fetch-depth: 0
+
+      - name: Validate tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Release tag must look like v0.1.0 or v0.1.0-rc.1"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCPPWINDOW_BUILD_EXAMPLES=ON
+          -DCPPWINDOW_BUILD_TESTS=ON
+          -DCPPWINDOW_BUILD_DOCS=OFF
+          -DGLFW_BUILD_X11=ON
+          -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Configure docs
+        run: >
+          cmake -S . -B build-docs
+          -DCPPWINDOW_BUILD_DOCS=ON
+          -DCPPWINDOW_BUILD_EXAMPLES=OFF
+          -DCPPWINDOW_BUILD_TESTS=OFF
+
+      - name: Build docs
+        run: cmake --build build-docs --target cppwindow_docs
+
+      - name: Create release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          version="${tag#v}"
+          mkdir -p dist
+          git archive \
+            --format=tar.gz \
+            --prefix="CppWindow-${version}/" \
+            -o "dist/CppWindow-${version}.tar.gz" \
+            HEAD
+          git archive \
+            --format=zip \
+            --prefix="CppWindow-${version}/" \
+            -o "dist/CppWindow-${version}.zip" \
+            HEAD
+          tar -czf "dist/CppWindow-${version}-docs-html.tar.gz" -C build-docs/docs/html .
+          sha256sum dist/* > "dist/CppWindow-${version}-SHA256SUMS.txt"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppwindow-${{ inputs.tag }}-release-artifacts
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          title="CppWindow ${tag}"
+          target_sha="$(git rev-parse HEAD)"
+          draft_args=()
+          prerelease_args=()
+
+          if [[ "${{ inputs.draft }}" == "true" ]]; then
+            draft_args+=(--draft)
+          fi
+          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+            prerelease_args+=(--prerelease)
+          fi
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/* --clobber
+          else
+            gh release create "$tag" dist/* \
+              --target "$target_sha" \
+              --title "$title" \
+              "${draft_args[@]}" \
+              "${prerelease_args[@]}" \
+              --generate-notes
+          fi
