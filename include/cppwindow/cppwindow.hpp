@@ -6,12 +6,18 @@
 #ifndef CPPWINDOW_HEADER_CPPWINDOW_HPP
 #define CPPWINDOW_HEADER_CPPWINDOW_HPP
 
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <variant>
+#include <vector>
 
 namespace cwin {
 
@@ -31,13 +37,14 @@ struct NativeHandles
         Win32,
         Cocoa,
         X11,
-        WayLand,
+        Wayland,
+        WayLand = Wayland,
         Unknown
     };
 
     System system = System::Unknown;
-    void* window;
-    void* display;
+    void* window = nullptr;
+    void* display = nullptr;
 };
 
 enum class GraphicsMode : uint8_t
@@ -202,10 +209,9 @@ enum class MouseButton : uint8_t
     Last = Button8  // Count for MouseButton
 };
 
-//  The total number of keyboard keys, ignoring `Key::Unknown`
-inline constexpr unsigned int KeyCount{ static_cast<unsigned int>(Key::Last) };
-// The total number of mouse buttons, ignoring `MouseButton::Unknown`
-static constexpr unsigned int MouseButtonCount{ static_cast<unsigned int>(MouseButton::Last) };
+// Includes the Unknown slot so enum values can be used as direct indices.
+inline constexpr std::size_t KeyCount{ static_cast<std::size_t>(Key::Last) + 1 };
+inline constexpr std::size_t MouseButtonCount{ static_cast<std::size_t>(MouseButton::Last) + 1 };
 
 //----------------------------------------------------------------------------
 //  Events

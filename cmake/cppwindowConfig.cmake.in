@@ -1,4 +1,7 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
+
+find_dependency(glfw3 @CPPWINDOW_REQUIRED_GLFW_VERSION@)
+
 include("${CMAKE_CURRENT_LIST_DIR}/cppwindowTargets.cmake")

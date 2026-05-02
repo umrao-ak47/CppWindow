@@ -46,7 +46,7 @@ target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 ### Window Creation
 
 ```cpp
-#include <cppwindow/window.hpp>
+#include <cppwindow/cppwindow.hpp>
 
 int main()
 {

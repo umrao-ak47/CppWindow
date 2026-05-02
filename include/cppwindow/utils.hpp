@@ -7,7 +7,9 @@
 #define CPPWINDOW_HEADER_UTILS_HPP
 
 #include <array>
-#include <memory>
+#include <concepts>
+#include <cstddef>
+#include <type_traits>
 
 namespace cwin {
 
@@ -73,40 +75,56 @@ struct StaticLookup
     {
         toWrapperMap.fill(Traits::WrapperNone);
         toBackendMap.fill(Traits::BackendNone);
-        for (int i = 0; i < N; i++) {
+        for (size_t i = 0; i < N; i++) {
             addEntry(mapping[i]);
         }
-        //(..., addEntry<mapping>());
     }
 
     constexpr void addEntry(const Entry& entry)
     {
+        if (!isWrapperInRange(entry.wrapperVal) || !isBackendInRange(entry.backendVal)) {
+            return;
+        }
+
         size_t wIdx = static_cast<size_t>(entry.wrapperVal) - WrapperMinVal;
-        // static_assert(wIdx < WrapperMaxVal, "Wrapper out of range");
         toBackendMap[wIdx] = entry.backendVal;
 
         size_t bIdx = static_cast<size_t>(entry.backendVal) - BackendMinVal;
-        // static_assert(bIdx < BackendMaxVal, "Backend out of range");
         toWrapperMap[bIdx] = entry.wrapperVal;
     }
 
     // Two-way Keyboard
-    inline BackendType toBackend(WrapperType k) const noexcept
+    [[nodiscard]] constexpr BackendType toBackend(WrapperType k) const noexcept
     {
-        size_t idx = static_cast<size_t>(k) - WrapperMinVal;
-        if (idx < 0 || idx > WrapperMaxVal) {
+        if (!isWrapperInRange(k)) {
             return Traits::BackendNone;
         }
+
+        size_t idx = static_cast<size_t>(k) - WrapperMinVal;
         return toBackendMap[idx];
     }
 
-    inline WrapperType toWrapper(BackendType k) const noexcept
+    [[nodiscard]] constexpr WrapperType toWrapper(BackendType k) const noexcept
     {
-        size_t idx = static_cast<size_t>(k) - BackendMinVal;
-        if (idx < 0 || idx > BackendMaxVal) {
+        if (!isBackendInRange(k)) {
             return Traits::WrapperNone;
         }
-        return toWrapperMap[k];
+
+        size_t idx = static_cast<size_t>(k) - BackendMinVal;
+        return toWrapperMap[idx];
+    }
+
+private:
+    [[nodiscard]] static constexpr bool isWrapperInRange(WrapperType value) noexcept
+    {
+        const size_t raw = static_cast<size_t>(value);
+        return raw >= WrapperMinVal && raw <= WrapperMaxVal;
+    }
+
+    [[nodiscard]] static constexpr bool isBackendInRange(BackendType value) noexcept
+    {
+        const size_t raw = static_cast<size_t>(value);
+        return raw >= BackendMinVal && raw <= BackendMaxVal;
     }
 };
 

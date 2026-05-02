@@ -13,9 +13,10 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <bitset>
-#include <format>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "../../window_registry.hpp"
 #include "../native_impl.hpp"
@@ -143,13 +144,18 @@ using UniqueGLFWwindow = std::unique_ptr<GLFWwindow, GLFWwindowDeleter>;
 class WindowStorage
 {
 public:
+    explicit WindowStorage(std::unique_ptr<NativeInputState> inputState)
+        : inputState(std::move(inputState))
+    {
+    }
+
     std::vector<Event> eventQueue;
     std::unique_ptr<NativeInputState> inputState;
 
     void reset()
     {
         eventQueue.clear();
-        inputState.reset();
+        inputState->reset();
     }
 };
 

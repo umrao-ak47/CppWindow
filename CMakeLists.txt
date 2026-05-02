@@ -1,18 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(CppWindow LANGUAGES CXX)
+project(CppWindow VERSION 0.1.0 LANGUAGES CXX)
 
 include(FetchContent)
+include(GNUInstallDirs)
 
 # ------------------------------------------------------------------------------
 # Options & Versions
 # ------------------------------------------------------------------------------
 option(CPPWINDOW_INSTALL "Create install target" OFF)
-# Enable examples automatically if this is the root project
+# Enable examples and tests automatically if this is the root project
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(CPPWINDOW_BUILD_EXAMPLES "Build cppwindow examples" ON)
+    option(CPPWINDOW_BUILD_TESTS "Build cppwindow tests" ON)
 else()
     option(CPPWINDOW_BUILD_EXAMPLES "Build cppwindow examples" OFF)
+    option(CPPWINDOW_BUILD_TESTS "Build cppwindow tests" OFF)
 endif()
 
 set(CPPWINDOW_REQUIRED_GLFW_VERSION 3.4)
@@ -30,8 +33,9 @@ if(NOT TARGET glfw)
     # Quiet the GLFW internal build
     set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "")
     set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "")
-    set(GLFW_INSTALL OFF CACHE INTERNAL "")
-    
+    set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "")
+    set(GLFW_INSTALL ${CPPWINDOW_INSTALL} CACHE INTERNAL "")
+
     FetchContent_MakeAvailable(glfw)
 else()
     get_target_property(FOUND_VERSION glfw VERSION)
@@ -63,7 +67,8 @@ target_include_directories(cppwindow
 # ------------------------------------------------------------------------------
 target_link_libraries(cppwindow
     PRIVATE
-        glfw
+        $<BUILD_INTERFACE:glfw>
+        $<INSTALL_INTERFACE:glfw>
 )
 
 target_compile_features(cppwindow
@@ -81,15 +86,36 @@ target_compile_definitions(cppwindow PRIVATE
 # Install rules
 # ------------------------------------------------------------------------------
 if(CPPWINDOW_INSTALL)
-    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
     install(
         TARGETS cppwindow
         EXPORT cppwindowTargets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
     install(
         DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+    configure_package_config_file(
+        cmake/cppwindowConfig.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/cppwindowConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppwindow
+    )
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/cppwindowConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+    install(
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/cppwindowConfig.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/cppwindowConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppwindow
     )
     install(
         EXPORT cppwindowTargets
@@ -103,4 +129,12 @@ endif()
 # -----------------------------
 if(CPPWINDOW_BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+# -----------------------------
+# Tests
+# -----------------------------
+if(CPPWINDOW_BUILD_TESTS)
+    include(CTest)
+    add_subdirectory(tests)
 endif()

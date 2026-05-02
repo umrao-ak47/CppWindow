@@ -61,14 +61,14 @@ std::pair<double, double> InputState::getScrollDelta() const
 //  Window Implementation
 //----------------------------------------------------------------------------
 Window::Window(std::unique_ptr<NativeWindow> window)
-    : window_(std::move(window)),
-      inputState_(window->getInput())
+    : inputState_(window->getInput()),
+      window_(std::move(window))
 {
 }
 
 Window::Window(Window&& other) noexcept
-    : window_(std::move(other.window_)),
-      inputState_(std::move(other.inputState_))
+    : inputState_(std::move(other.inputState_)),
+      window_(std::move(other.window_))
 {
 }
 

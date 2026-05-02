@@ -222,18 +222,42 @@ MouseButton toMouseButton(int b)
 //  GLFW Input State Implementation
 //----------------------------------------------------------------------------
 
+namespace {
+
+[[nodiscard]] bool isValidKey(Key key) noexcept
+{
+    const auto idx = static_cast<size_t>(key);
+    return idx > static_cast<size_t>(Key::Unknown) && idx < KeyCount;
+}
+
+[[nodiscard]] bool isValidMouseButton(MouseButton button) noexcept
+{
+    const auto idx = static_cast<size_t>(button);
+    return idx > static_cast<size_t>(MouseButton::Unknown) && idx < MouseButtonCount;
+}
+
+}  // namespace
+
 void GLFWInputState::handleEvent(const Event& event)
 {
     event.visit([&](auto&& event) {
         using T = std::decay_t<decltype(event)>;
         if constexpr (std::is_same_v<T, Event::KeyPressed>) {
-            keyStates_.set(static_cast<size_t>(event.key));
+            if (isValidKey(event.key)) {
+                keyStates_.set(static_cast<size_t>(event.key));
+            }
         } else if constexpr (std::is_same_v<T, Event::KeyReleased>) {
-            keyStates_.reset(static_cast<size_t>(event.key));
+            if (isValidKey(event.key)) {
+                keyStates_.reset(static_cast<size_t>(event.key));
+            }
         } else if constexpr (std::is_same_v<T, Event::MouseButtonPressed>) {
-            mouseStates_.set(static_cast<size_t>(event.button));
+            if (isValidMouseButton(event.button)) {
+                mouseStates_.set(static_cast<size_t>(event.button));
+            }
         } else if constexpr (std::is_same_v<T, Event::MouseButtonReleased>) {
-            mouseStates_.reset(static_cast<size_t>(event.button));
+            if (isValidMouseButton(event.button)) {
+                mouseStates_.reset(static_cast<size_t>(event.button));
+            }
         } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
             scrollDeltaX_ += event.deltaX;
             scrollDeltaY_ += event.deltaY;
@@ -249,34 +273,58 @@ void GLFWInputState::handleEvent(const Event& event)
 
 bool GLFWInputState::isKeyDown(Key key) const
 {
+    if (!isValidKey(key)) {
+        return false;
+    }
+
     return keyStates_.test(static_cast<size_t>(key));
 }
 
 bool GLFWInputState::isKeyPressed(Key key) const
 {
+    if (!isValidKey(key)) {
+        return false;
+    }
+
     size_t idx = static_cast<size_t>(key);
     return keyStates_.test(idx) && !prevKeyStates_.test(idx);
 }
 
 bool GLFWInputState::isKeyReleased(Key key) const
 {
+    if (!isValidKey(key)) {
+        return false;
+    }
+
     size_t idx = static_cast<size_t>(key);
     return !keyStates_.test(idx) && prevKeyStates_.test(idx);
 }
 
 bool GLFWInputState::isMouseButtonDown(MouseButton button) const
 {
+    if (!isValidMouseButton(button)) {
+        return false;
+    }
+
     return mouseStates_.test(static_cast<size_t>(button));
 }
 
 bool GLFWInputState::isMouseButtonPressed(MouseButton button) const
 {
+    if (!isValidMouseButton(button)) {
+        return false;
+    }
+
     size_t idx = static_cast<size_t>(button);
     return mouseStates_.test(idx) && !prevMouseStates_.test(idx);
 }
 
 bool GLFWInputState::isMouseButtonReleased(MouseButton button) const
 {
+    if (!isValidMouseButton(button)) {
+        return false;
+    }
+
     size_t idx = static_cast<size_t>(button);
     return !mouseStates_.test(idx) && prevMouseStates_.test(idx);
 }
@@ -326,14 +374,16 @@ void setupGlfwWindowHints(const WindowDesc& desc)
     glfwWindowHint(GLFW_DECORATED, desc.decorated);
     // special Window Hints
     const auto visitor = Visitor{
-        [](NoneGraphicsModeTag mode) {
+        [](NoneGraphicsModeTag) {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         },
         [](OpenGLGraphicsModeTag mode) {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, mode.config.major);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, mode.config.minor);
-            glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, mode.config.coreProfile);
+            glfwWindowHint(
+                GLFW_OPENGL_PROFILE,
+                mode.config.coreProfile ? GLFW_OPENGL_CORE_PROFILE : GLFW_OPENGL_ANY_PROFILE);
         },
     };
     std::visit(visitor, desc.mode);
@@ -486,11 +536,11 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
         glfwSetWindowAttrib(handle_.get(), GLFW_DECORATED, GLFW_FALSE);
     };
 
+    storage_ = std::make_shared<WindowStorage>(std::make_unique<GLFWInputState>());
+
     // set data and register callbacks
     glfwSetWindowUserPointer(handle_.get(), this);
     registerGlfwCallbacks(handle_.get());
-    // create storage and register to registry
-    storage_ = std::make_shared<WindowStorage>();
 
     // register to registry
     g_WindowRegistry.registerStorage(storage_);
@@ -498,6 +548,7 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 
 void GLFWNativeWindow::handleEvent(Event&& event)
 {
+    storage_->inputState->handleEvent(event);
     storage_->eventQueue.push_back(std::move(event));
 }
 
@@ -515,11 +566,11 @@ NativeHandles GLFWNativeWindow::getNativeHandles() const
     int platform = glfwGetPlatform();
     if (platform == GLFW_PLATFORM_X11) {
         handles.system = NativeHandles::System::X11;
-        handles.window = reinterpret_cast<void*>(glfwGetX11Window(m_window));
+        handles.window = reinterpret_cast<void*>(glfwGetX11Window(handle_.get()));
         handles.display = glfwGetX11Display();
     } else if (platform == GLFW_PLATFORM_WAYLAND) {
         handles.system = NativeHandles::System::Wayland;
-        handles.window = glfwGetWaylandWindow(m_window);
+        handles.window = glfwGetWaylandWindow(handle_.get());
         handles.display = glfwGetWaylandDisplay();
     }
 #endif
@@ -587,12 +638,18 @@ void GLFWNativeWindow::setSize(int width, int height)
 
 void GLFWNativeWindow::setFocus(bool focus) const noexcept
 {
-    glfwSetWindowAttrib(handle_.get(), GLFW_FOCUSED, focus);
+    if (focus) {
+        glfwFocusWindow(handle_.get());
+    }
 }
 
 void GLFWNativeWindow::setVisible(bool visible) const noexcept
 {
-    glfwSetWindowAttrib(handle_.get(), GLFW_VISIBLE, visible);
+    if (visible) {
+        glfwShowWindow(handle_.get());
+    } else {
+        glfwHideWindow(handle_.get());
+    }
 }
 
 std::pair<int, int> GLFWNativeWindow::getSize() const noexcept
@@ -664,6 +721,9 @@ std::vector<std::string> GLFWWindowContext::getRequiredVulkanExtensions() const
 {
     uint32_t count = 0;
     const char** ext = glfwGetRequiredInstanceExtensions(&count);
+    if (!ext) {
+        return {};
+    }
 
     return std::vector<std::string>(ext, ext + count);
 }
