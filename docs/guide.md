@@ -54,6 +54,7 @@ cmake --build build --target example_fullscreen_toggle
 cmake --build build --target example_text_input
 cmake --build build --target example_gamepad
 cmake --build build --target example_app_utilities
+cmake --build build --target example_input_helpers
 cmake --build build --target example_multi_window
 cmake --build build --target example_event_viewer
 cmake --build build --target example_monitor_info
@@ -220,6 +221,38 @@ Available input queries:
 `Pressed` and `Released` are frame transitions. Poll once per frame before
 reading them. `getMouseDelta()` and `getScrollDelta()` are also per-frame
 values and reset on the next `pollEvents()`.
+
+Mouse control helpers live on `Window`:
+
+```cpp
+window.setMousePosition(640.0, 360.0);
+
+if (cwin::WindowContext::Get().isRawMouseMotionSupported()) {
+    window.setCursorMode(cwin::CursorMode::Captured);
+    window.setRawMouseMotion(true);
+}
+```
+
+Raw mouse motion is useful for camera controls. It is only effective while the
+cursor is captured on platforms that support raw motion.
+
+For named commands, use `ActionMap`:
+
+```cpp
+cwin::ActionMap actions;
+actions.bindKey("jump", cwin::Key::Space)
+       .bindMouseButton("fire", cwin::MouseButton::Left)
+       .bindGamepadButton("jump", cwin::GamepadButton::A);
+
+while (!window.shouldClose()) {
+    ctx.pollEvents();
+    actions.update(window.getInput(), ctx.getGamepadState(0));
+
+    if (actions.isPressed("jump")) {
+        jump();
+    }
+}
+```
 
 ## Events
 
@@ -534,6 +567,7 @@ GLFW error code and description, are included in `what()` when available.
 - `examples/text_input.cpp`: Unicode text input events.
 - `examples/gamepad.cpp`: standard gamepad queries and events.
 - `examples/app_utilities.cpp`: clipboard, file drop events, and timing helpers.
+- `examples/input_helpers.cpp`: action bindings, mouse positioning, and raw mouse mode.
 - `examples/multi_window.cpp`: independent event/input handling for multiple windows.
 - `examples/event_viewer.cpp`: logs all event payloads with `Event::visit`.
 - `examples/monitor_info.cpp`: monitor metadata, content scale, and video modes.

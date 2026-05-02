@@ -59,6 +59,7 @@ int main()
         .sizeLimits(limits)
         .aspectRatio(ratio)
         .cursorMode(cwin::CursorMode::Hidden)
+        .rawMouseMotion()
         .vSync(false)
         .windowMode(cwin::WindowMode::BorderlessFullscreen, monitor.id);
 
@@ -157,4 +158,5 @@ int main()
     assert(joystickAxis.is<cwin::Event::JoystickMoved>());
     assert(joystickAxis.getIf<cwin::Event::JoystickMoved>()->axis == 2);
     assert(joystickAxis.getIf<cwin::Event::JoystickMoved>()->position == -0.5f);
+
 }

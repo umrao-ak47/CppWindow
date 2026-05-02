@@ -217,6 +217,125 @@ bool InputState::isMouseInside() const
 }
 
 //----------------------------------------------------------------------------
+//  Action Map Implementation
+//----------------------------------------------------------------------------
+namespace {
+
+template <typename T>
+void appendUnique(std::vector<T>& values, T value)
+{
+    for (T existing : values) {
+        if (existing == value) {
+            return;
+        }
+    }
+
+    values.push_back(value);
+}
+
+}  // namespace
+
+ActionMap& ActionMap::bindKey(std::string action, Key key)
+{
+    appendUnique(getOrCreateEntry(std::move(action)).binding.keys, key);
+    return *this;
+}
+
+ActionMap& ActionMap::bindMouseButton(std::string action, MouseButton button)
+{
+    appendUnique(getOrCreateEntry(std::move(action)).binding.mouseButtons, button);
+    return *this;
+}
+
+ActionMap& ActionMap::bindGamepadButton(std::string action, GamepadButton button)
+{
+    appendUnique(getOrCreateEntry(std::move(action)).binding.gamepadButtons, button);
+    return *this;
+}
+
+void ActionMap::clear(const std::string& action)
+{
+    for (auto it = entries_.begin(); it != entries_.end(); ++it) {
+        if (it->action == action) {
+            entries_.erase(it);
+            return;
+        }
+    }
+}
+
+void ActionMap::clearAll()
+{
+    entries_.clear();
+}
+
+void ActionMap::resetState() noexcept
+{
+    for (auto& entry : entries_) {
+        entry.down = false;
+        entry.previousDown = false;
+    }
+}
+
+bool ActionMap::isDown(const std::string& action) const
+{
+    const Entry* entry = findEntry(action);
+    return entry && entry->down;
+}
+
+bool ActionMap::isPressed(const std::string& action) const
+{
+    const Entry* entry = findEntry(action);
+    return entry && entry->down && !entry->previousDown;
+}
+
+bool ActionMap::isReleased(const std::string& action) const
+{
+    const Entry* entry = findEntry(action);
+    return entry && !entry->down && entry->previousDown;
+}
+
+const ActionBinding* ActionMap::getBinding(const std::string& action) const noexcept
+{
+    const Entry* entry = findEntry(action);
+    return entry ? &entry->binding : nullptr;
+}
+
+ActionMap::Entry* ActionMap::findEntry(const std::string& action) noexcept
+{
+    for (auto& entry : entries_) {
+        if (entry.action == action) {
+            return &entry;
+        }
+    }
+
+    return nullptr;
+}
+
+const ActionMap::Entry* ActionMap::findEntry(const std::string& action) const noexcept
+{
+    for (const auto& entry : entries_) {
+        if (entry.action == action) {
+            return &entry;
+        }
+    }
+
+    return nullptr;
+}
+
+ActionMap::Entry& ActionMap::getOrCreateEntry(std::string action)
+{
+    if (Entry* entry = findEntry(action)) {
+        return *entry;
+    }
+
+    entries_.push_back(
+        Entry{
+            .action = std::move(action),
+        });
+    return entries_.back();
+}
+
+//----------------------------------------------------------------------------
 //  Window Implementation
 //----------------------------------------------------------------------------
 Window::Window(std::unique_ptr<NativeWindow> window)
@@ -338,6 +457,16 @@ void Window::setCursorMode(CursorMode mode)
     window_->setCursorMode(mode);
 }
 
+void Window::setMousePosition(double x, double y)
+{
+    window_->setMousePosition(x, y);
+}
+
+bool Window::setRawMouseMotion(bool enabled)
+{
+    return window_->setRawMouseMotion(enabled);
+}
+
 void Window::minimize()
 {
     window_->minimize();
@@ -398,6 +527,11 @@ CursorMode Window::getCursorMode() const noexcept
     return window_->getCursorMode();
 }
 
+bool Window::isRawMouseMotionEnabled() const noexcept
+{
+    return window_->isRawMouseMotionEnabled();
+}
+
 WindowMode Window::getWindowMode() const noexcept
 {
     return window_->getWindowMode();
@@ -432,6 +566,7 @@ struct WindowBuilder::Data
     std::optional<SizeLimits> sizeLimits;
     std::optional<AspectRatio> aspectRatio;
     std::optional<CursorMode> cursorMode;
+    std::optional<bool> rawMouseMotion;
     std::optional<bool> vSync;
     WindowMode windowMode = WindowMode::Windowed;
     uint32_t monitorId = 0;
@@ -543,6 +678,12 @@ WindowBuilder& WindowBuilder::cursorMode(CursorMode mode)
     return *this;
 }
 
+WindowBuilder& WindowBuilder::rawMouseMotion(bool enabled)
+{
+    data_->rawMouseMotion = enabled;
+    return *this;
+}
+
 WindowBuilder& WindowBuilder::vSync(bool enabled)
 {
     data_->vSync = enabled;
@@ -577,6 +718,7 @@ Window WindowBuilder::build()
         .sizeLimits = data_->sizeLimits,
         .aspectRatio = data_->aspectRatio,
         .cursorMode = data_->cursorMode,
+        .rawMouseMotion = data_->rawMouseMotion,
         .vSync = data_->vSync,
         .windowMode = data_->windowMode,
         .monitorId = data_->monitorId,
@@ -652,6 +794,11 @@ std::vector<GamepadInfo> WindowContext::getGamepads() const
 std::optional<GamepadState> WindowContext::getGamepadState(uint32_t gamepadId) const
 {
     return context_->getGamepadState(gamepadId);
+}
+
+bool WindowContext::isRawMouseMotionSupported() const
+{
+    return context_->isRawMouseMotionSupported();
 }
 
 void WindowContext::setClipboardText(const std::string& text) const

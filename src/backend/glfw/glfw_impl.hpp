@@ -87,6 +87,7 @@ public:
     bool isMouseButtonPressed(MouseButton button) const override;
     bool isMouseButtonReleased(MouseButton button) const override;
     std::pair<double, double> getMousePosition() const override;
+    void setMousePosition(double x, double y) override;
     std::pair<double, double> getMouseDelta() const override;
     std::pair<double, double> getScrollDelta() const override;
     bool isMouseInside() const override;
@@ -175,6 +176,8 @@ public:
     void setOpacity(float opacity) override;
     void setVSync(bool enabled) override;
     void setCursorMode(CursorMode mode) override;
+    void setMousePosition(double x, double y) override;
+    bool setRawMouseMotion(bool enabled) override;
     void minimize() override;
     void maximize() override;
     void restore() override;
@@ -188,6 +191,7 @@ public:
     std::pair<float, float> getContentScale() const noexcept override;
     float getOpacity() const noexcept override;
     CursorMode getCursorMode() const noexcept override;
+    bool isRawMouseMotionEnabled() const noexcept override;
     WindowMode getWindowMode() const noexcept override;
     bool isFocused() const noexcept override;
     bool isVisible() const noexcept override;
@@ -231,6 +235,7 @@ public:
     std::pair<float, float> getContentScale(uint32_t monitorId) const override;
     std::vector<GamepadInfo> getGamepads() const override;
     std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const override;
+    bool isRawMouseMotionSupported() const override;
     void setClipboardText(const std::string& text) const override;
     std::string getClipboardText() const override;
 

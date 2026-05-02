@@ -437,6 +437,13 @@ std::pair<double, double> GLFWInputState::getMousePosition() const
     return { mousePosX_, mousePosY_ };
 }
 
+void GLFWInputState::setMousePosition(double x, double y)
+{
+    mousePosX_ = x;
+    mousePosY_ = y;
+    hasMousePosition_ = true;
+}
+
 std::pair<double, double> GLFWInputState::getMouseDelta() const
 {
     return { mouseDeltaX_, mouseDeltaY_ };
@@ -1198,6 +1205,9 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     if (desc.cursorMode) {
         setCursorMode(*desc.cursorMode);
     }
+    if (desc.rawMouseMotion) {
+        setRawMouseMotion(*desc.rawMouseMotion);
+    }
     if (desc.vSync) {
         setVSync(*desc.vSync);
     }
@@ -1421,6 +1431,22 @@ void GLFWNativeWindow::setCursorMode(CursorMode mode)
 {
     glfwSetInputMode(handle_.get(), GLFW_CURSOR, toGlfwCursorMode(mode));
     cursorMode_ = mode;
+}
+
+void GLFWNativeWindow::setMousePosition(double x, double y)
+{
+    glfwSetCursorPos(handle_.get(), x, y);
+    storage_->inputState->setMousePosition(x, y);
+}
+
+bool GLFWNativeWindow::setRawMouseMotion(bool enabled)
+{
+    if (enabled && glfwRawMouseMotionSupported() != GLFW_TRUE) {
+        return false;
+    }
+
+    glfwSetInputMode(handle_.get(), GLFW_RAW_MOUSE_MOTION, enabled ? GLFW_TRUE : GLFW_FALSE);
+    return !enabled || isRawMouseMotionEnabled();
 }
 
 void GLFWNativeWindow::minimize()
@@ -1655,6 +1681,11 @@ CursorMode GLFWNativeWindow::getCursorMode() const noexcept
     return cursorMode_;
 }
 
+bool GLFWNativeWindow::isRawMouseMotionEnabled() const noexcept
+{
+    return glfwGetInputMode(handle_.get(), GLFW_RAW_MOUSE_MOTION) == GLFW_TRUE;
+}
+
 WindowMode GLFWNativeWindow::getWindowMode() const noexcept
 {
     return windowMode_;
@@ -1799,6 +1830,11 @@ std::vector<GamepadInfo> GLFWWindowContext::getGamepads() const
 std::optional<GamepadState> GLFWWindowContext::getGamepadState(uint32_t gamepadId) const
 {
     return readStandardGamepadState(gamepadId);
+}
+
+bool GLFWWindowContext::isRawMouseMotionSupported() const
+{
+    return glfwRawMouseMotionSupported() == GLFW_TRUE;
 }
 
 void GLFWWindowContext::setClipboardText(const std::string& text) const

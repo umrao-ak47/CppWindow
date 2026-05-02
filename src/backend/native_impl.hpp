@@ -41,6 +41,7 @@ struct WindowDesc
     std::optional<SizeLimits> sizeLimits;
     std::optional<AspectRatio> aspectRatio;
     std::optional<CursorMode> cursorMode;
+    std::optional<bool> rawMouseMotion;
     std::optional<bool> vSync;
     WindowMode windowMode;
     uint32_t monitorId;
@@ -69,6 +70,7 @@ public:
     virtual bool isMouseButtonPressed(MouseButton button) const = 0;
     virtual bool isMouseButtonReleased(MouseButton button) const = 0;
     virtual std::pair<double, double> getMousePosition() const = 0;
+    virtual void setMousePosition(double x, double y) = 0;
     virtual std::pair<double, double> getMouseDelta() const = 0;
     virtual std::pair<double, double> getScrollDelta() const = 0;
     virtual bool isMouseInside() const = 0;
@@ -106,6 +108,8 @@ public:
     virtual void setOpacity(float opacity) = 0;
     virtual void setVSync(bool enabled) = 0;
     virtual void setCursorMode(CursorMode mode) = 0;
+    virtual void setMousePosition(double x, double y) = 0;
+    virtual bool setRawMouseMotion(bool enabled) = 0;
     virtual void minimize() = 0;
     virtual void maximize() = 0;
     virtual void restore() = 0;
@@ -119,6 +123,7 @@ public:
     virtual std::pair<float, float> getContentScale() const noexcept = 0;
     virtual float getOpacity() const noexcept = 0;
     virtual CursorMode getCursorMode() const noexcept = 0;
+    virtual bool isRawMouseMotionEnabled() const noexcept = 0;
     virtual WindowMode getWindowMode() const noexcept = 0;
     virtual bool isFocused() const noexcept = 0;
     virtual bool isVisible() const noexcept = 0;
@@ -143,6 +148,7 @@ public:
     virtual std::pair<float, float> getContentScale(uint32_t monitorId) const = 0;
     virtual std::vector<GamepadInfo> getGamepads() const = 0;
     virtual std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const = 0;
+    virtual bool isRawMouseMotionSupported() const = 0;
     virtual void setClipboardText(const std::string& text) const = 0;
     virtual std::string getClipboardText() const = 0;
 };

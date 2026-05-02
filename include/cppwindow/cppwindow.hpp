@@ -972,6 +972,101 @@ private:
 };
 
 //----------------------------------------------------------------------------
+//  Input Helpers
+//----------------------------------------------------------------------------
+/// Input sources that can trigger one named action.
+struct ActionBinding
+{
+    /// Keyboard keys that trigger the action.
+    std::vector<Key> keys;
+    /// Mouse buttons that trigger the action.
+    std::vector<MouseButton> mouseButtons;
+    /// Standard gamepad buttons that trigger the action.
+    std::vector<GamepadButton> gamepadButtons;
+};
+
+/// Small action binding map for game/app commands.
+class ActionMap final
+{
+public:
+    /// Binds a key to an action name.
+    ActionMap& bindKey(std::string action, Key key);
+    /// Binds a mouse button to an action name.
+    ActionMap& bindMouseButton(std::string action, MouseButton button);
+    /// Binds a standard gamepad button to an action name.
+    ActionMap& bindGamepadButton(std::string action, GamepadButton button);
+    /// Removes all bindings and state for one action.
+    void clear(const std::string& action);
+    /// Removes every binding and action state.
+    void clearAll();
+    /// Clears action transition state but keeps bindings.
+    void resetState() noexcept;
+
+    /// Updates action states from input and an optional gamepad snapshot.
+    template <typename Input>
+    void update(const Input& input, const std::optional<GamepadState>& gamepad = std::nullopt)
+    {
+        for (auto& entry : entries_) {
+            entry.previousDown = entry.down;
+            entry.down = isBindingDown(entry.binding, input, gamepad);
+        }
+    }
+
+    /// Returns whether an action is currently down.
+    [[nodiscard]] bool isDown(const std::string& action) const;
+    /// Returns whether an action transitioned from up to down on the last update.
+    [[nodiscard]] bool isPressed(const std::string& action) const;
+    /// Returns whether an action transitioned from down to up on the last update.
+    [[nodiscard]] bool isReleased(const std::string& action) const;
+    /// Returns the binding for an action, or null if it does not exist.
+    [[nodiscard]] const ActionBinding* getBinding(const std::string& action) const noexcept;
+
+private:
+    struct Entry
+    {
+        std::string action;
+        ActionBinding binding;
+        bool down = false;
+        bool previousDown = false;
+    };
+
+    [[nodiscard]] Entry* findEntry(const std::string& action) noexcept;
+    [[nodiscard]] const Entry* findEntry(const std::string& action) const noexcept;
+    [[nodiscard]] Entry& getOrCreateEntry(std::string action);
+
+    template <typename Input>
+    static bool isBindingDown(
+        const ActionBinding& binding,
+        const Input& input,
+        const std::optional<GamepadState>& gamepad)
+    {
+        for (Key key : binding.keys) {
+            if (input.isKeyDown(key)) {
+                return true;
+            }
+        }
+
+        for (MouseButton button : binding.mouseButtons) {
+            if (input.isMouseButtonDown(button)) {
+                return true;
+            }
+        }
+
+        if (gamepad) {
+            for (GamepadButton button : binding.gamepadButtons) {
+                if (gamepad->isButtonDown(button)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    std::vector<Entry> entries_;
+};
+
+//----------------------------------------------------------------------------
 //  Window
 //----------------------------------------------------------------------------
 /// Backend-owned window implementation.
@@ -1042,6 +1137,10 @@ public:
     void setVSync(bool enabled);
     /// Sets cursor visibility/capture mode.
     void setCursorMode(CursorMode mode);
+    /// Sets the cursor position in window coordinates.
+    void setMousePosition(double x, double y);
+    /// Enables or disables raw mouse motion when supported by the backend.
+    [[nodiscard]] bool setRawMouseMotion(bool enabled);
     /// Minimizes the window.
     void minimize();
     /// Maximizes the window.
@@ -1069,6 +1168,8 @@ public:
     float getOpacity() const noexcept;
     /// Returns current cursor mode.
     CursorMode getCursorMode() const noexcept;
+    /// Returns whether raw mouse motion is enabled for this window.
+    bool isRawMouseMotionEnabled() const noexcept;
     /// Returns current presentation mode.
     WindowMode getWindowMode() const noexcept;
     /// Returns whether the window has input focus.
@@ -1127,6 +1228,8 @@ public:
     WindowBuilder& aspectRatio(AspectRatio ratio);
     /// Sets initial cursor visibility/capture mode.
     WindowBuilder& cursorMode(CursorMode mode);
+    /// Sets initial raw mouse motion mode when supported by the backend.
+    WindowBuilder& rawMouseMotion(bool enabled = true);
     /// Sets initial OpenGL swap interval behavior.
     WindowBuilder& vSync(bool enabled = true);
     /// Sets the initial presentation mode.
@@ -1183,6 +1286,8 @@ public:
     std::vector<GamepadInfo> getGamepads() const;
     /// Returns the current state for a standard gamepad.
     std::optional<GamepadState> getGamepadState(uint32_t gamepadId = 0) const;
+    /// Returns whether raw mouse motion is supported by the backend/platform.
+    bool isRawMouseMotionSupported() const;
     /// Sets the platform clipboard text.
     void setClipboardText(const std::string& text) const;
     /// Returns the platform clipboard text.

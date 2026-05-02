@@ -18,6 +18,16 @@ cppwindow_add_test(test_static_lookup static_lookup.cpp)
 cppwindow_add_test(test_window_controls_api window_controls_api.cpp)
 cppwindow_add_test(test_app_utilities app_utilities.cpp)
 
+cppwindow_add_test(test_input_helpers input_helpers.cpp)
+target_link_libraries(test_input_helpers
+    PRIVATE
+        glfw
+)
+target_include_directories(test_input_helpers
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/src
+)
+
 cppwindow_add_test(test_glfw_input_state glfw_input_state.cpp)
 target_link_libraries(test_glfw_input_state
     PRIVATE

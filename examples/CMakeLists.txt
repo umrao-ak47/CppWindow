@@ -48,6 +48,12 @@ cppwindow_add_example(example_gamepad gamepad.cpp)
 
 cppwindow_add_example(example_app_utilities app_utilities.cpp)
 
+cppwindow_add_example(example_input_helpers input_helpers.cpp)
+target_link_libraries(example_input_helpers
+    PRIVATE
+        glad
+)
+
 cppwindow_add_example(example_multi_window multi_window.cpp)
 
 cppwindow_add_example(example_event_viewer event_viewer.cpp)
