@@ -13,6 +13,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <bitset>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -166,6 +167,7 @@ public:
     ~GLFWNativeWindow() = default;
 
     void handleEvent(Event&& event);
+    void handleMonitorChanged(uint32_t monitorId);
     void registerCallbacks();
 
     NativeHandles getNativeHandles() const override;
@@ -181,16 +183,44 @@ public:
 
     void setTitle(const std::string& title) override;
     void setSize(int width, int height) override;
+    void setPosition(int x, int y) override;
+    void setSizeLimits(const SizeLimits& limits) override;
+    void clearSizeLimits() override;
+    void setAspectRatio(AspectRatio ratio) override;
+    void clearAspectRatio() override;
+    void setResizable(bool resizable) override;
+    void setDecorated(bool decorated) override;
+    void setFloating(bool floating) override;
+    void setOpacity(float opacity) override;
+    void setVSync(bool enabled) override;
+    void setCursorMode(CursorMode mode) override;
+    void setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
+        override;
     void setFocus(bool focus) const noexcept override;
     void setVisible(bool visible) const noexcept override;
     std::pair<int, int> getSize() const noexcept override;
+    std::pair<int, int> getPosition() const noexcept override;
     std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept override;
+    std::pair<float, float> getContentScale() const noexcept override;
+    float getOpacity() const noexcept override;
+    CursorMode getCursorMode() const noexcept override;
+    WindowMode getWindowMode() const noexcept override;
     bool isFocused() const noexcept override;
     bool isVisible() const noexcept override;
 
 private:
+    void captureWindowedBounds();
+
     UniqueGLFWwindow handle_{};
     std::shared_ptr<WindowStorage> storage_{};
+    CursorMode cursorMode_ = CursorMode::Normal;
+    WindowMode windowMode_ = WindowMode::Windowed;
+    bool hasOpenGLContext_ = false;
+    uint32_t currentMonitorId_ = 0;
+    int windowedX_ = 0;
+    int windowedY_ = 0;
+    int windowedWidth_ = 1280;
+    int windowedHeight_ = 720;
 };
 
 //----------------------------------------------------------------------------
@@ -207,6 +237,10 @@ public:
     ProcLoader getProcLoader() const override;
     bool isVulkanSupported() const override;
     std::vector<std::string> getRequiredVulkanExtensions() const override;
+    std::vector<MonitorInfo> getMonitors() const override;
+    std::optional<MonitorInfo> getPrimaryMonitor() const override;
+    std::vector<VideoMode> getVideoModes(uint32_t monitorId) const override;
+    std::pair<float, float> getContentScale(uint32_t monitorId) const override;
 };
 
 }  // namespace cwin

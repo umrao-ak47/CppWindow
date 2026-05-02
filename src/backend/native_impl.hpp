@@ -83,10 +83,28 @@ public:
 
     virtual void setTitle(const std::string& title) = 0;
     virtual void setSize(int width, int height) = 0;
+    virtual void setPosition(int x, int y) = 0;
+    virtual void setSizeLimits(const SizeLimits& limits) = 0;
+    virtual void clearSizeLimits() = 0;
+    virtual void setAspectRatio(AspectRatio ratio) = 0;
+    virtual void clearAspectRatio() = 0;
+    virtual void setResizable(bool resizable) = 0;
+    virtual void setDecorated(bool decorated) = 0;
+    virtual void setFloating(bool floating) = 0;
+    virtual void setOpacity(float opacity) = 0;
+    virtual void setVSync(bool enabled) = 0;
+    virtual void setCursorMode(CursorMode mode) = 0;
+    virtual void
+    setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode) = 0;
     virtual void setFocus(bool focus) const noexcept = 0;
     virtual void setVisible(bool visible) const noexcept = 0;
     virtual std::pair<int, int> getSize() const noexcept = 0;
+    virtual std::pair<int, int> getPosition() const noexcept = 0;
     virtual std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept = 0;
+    virtual std::pair<float, float> getContentScale() const noexcept = 0;
+    virtual float getOpacity() const noexcept = 0;
+    virtual CursorMode getCursorMode() const noexcept = 0;
+    virtual WindowMode getWindowMode() const noexcept = 0;
     virtual bool isFocused() const noexcept = 0;
     virtual bool isVisible() const noexcept = 0;
 };
@@ -104,6 +122,10 @@ public:
     virtual ProcLoader getProcLoader() const = 0;
     virtual bool isVulkanSupported() const = 0;
     virtual std::vector<std::string> getRequiredVulkanExtensions() const = 0;
+    virtual std::vector<MonitorInfo> getMonitors() const = 0;
+    virtual std::optional<MonitorInfo> getPrimaryMonitor() const = 0;
+    virtual std::vector<VideoMode> getVideoModes(uint32_t monitorId) const = 0;
+    virtual std::pair<float, float> getContentScale(uint32_t monitorId) const = 0;
 };
 
 //----------------------------------------------------------------------------

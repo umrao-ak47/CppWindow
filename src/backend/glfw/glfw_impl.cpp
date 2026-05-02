@@ -6,6 +6,8 @@
 
 #include "glfw_impl.hpp"
 
+#include <algorithm>
+
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
@@ -356,6 +358,137 @@ namespace {
 // per frame
 WindowStorageRegistry<WindowStorage> g_WindowRegistry;
 
+std::vector<GLFWmonitor*> getOrderedMonitors()
+{
+    int count = 0;
+    GLFWmonitor** monitors = glfwGetMonitors(&count);
+    std::vector<GLFWmonitor*> ordered;
+    if (!monitors || count <= 0) {
+        return ordered;
+    }
+
+    GLFWmonitor* primary = glfwGetPrimaryMonitor();
+    if (primary) {
+        ordered.push_back(primary);
+    }
+
+    for (int i = 0; i < count; ++i) {
+        if (monitors[i] && monitors[i] != primary) {
+            ordered.push_back(monitors[i]);
+        }
+    }
+
+    return ordered;
+}
+
+GLFWmonitor* getMonitorById(uint32_t monitorId)
+{
+    auto monitors = getOrderedMonitors();
+    if (monitorId >= monitors.size()) {
+        return nullptr;
+    }
+    return monitors[monitorId];
+}
+
+VideoMode toVideoMode(const GLFWvidmode& mode)
+{
+    return {
+        .width = mode.width,
+        .height = mode.height,
+        .redBits = mode.redBits,
+        .greenBits = mode.greenBits,
+        .blueBits = mode.blueBits,
+        .refreshRate = mode.refreshRate,
+    };
+}
+
+MonitorInfo toMonitorInfo(GLFWmonitor* monitor, uint32_t id, bool primary)
+{
+    MonitorInfo info{};
+    info.id = id;
+    info.primary = primary;
+
+    if (const char* name = glfwGetMonitorName(monitor)) {
+        info.name = name;
+    }
+
+    glfwGetMonitorPos(monitor, &info.x, &info.y);
+    glfwGetMonitorPhysicalSize(monitor, &info.physicalWidthMM, &info.physicalHeightMM);
+    glfwGetMonitorContentScale(monitor, &info.contentScaleX, &info.contentScaleY);
+
+    if (const GLFWvidmode* mode = glfwGetVideoMode(monitor)) {
+        info.currentVideoMode = toVideoMode(*mode);
+    }
+
+    return info;
+}
+
+int toGlfwCursorMode(CursorMode mode)
+{
+    switch (mode) {
+        case CursorMode::Normal:
+            return GLFW_CURSOR_NORMAL;
+        case CursorMode::Hidden:
+            return GLFW_CURSOR_HIDDEN;
+        case CursorMode::Captured:
+            return GLFW_CURSOR_DISABLED;
+    }
+
+    return GLFW_CURSOR_NORMAL;
+}
+
+uint32_t getWindowMonitorId(GLFWwindow* window)
+{
+    auto monitors = getOrderedMonitors();
+    if (monitors.empty()) {
+        return 0;
+    }
+
+    if (GLFWmonitor* fullscreenMonitor = glfwGetWindowMonitor(window)) {
+        for (size_t i = 0; i < monitors.size(); ++i) {
+            if (monitors[i] == fullscreenMonitor) {
+                return static_cast<uint32_t>(i);
+            }
+        }
+    }
+
+    int windowX = 0;
+    int windowY = 0;
+    int windowWidth = 0;
+    int windowHeight = 0;
+    glfwGetWindowPos(window, &windowX, &windowY);
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+    int bestArea = -1;
+    uint32_t bestId = 0;
+
+    for (size_t i = 0; i < monitors.size(); ++i) {
+        int monitorX = 0;
+        int monitorY = 0;
+        glfwGetMonitorPos(monitors[i], &monitorX, &monitorY);
+
+        const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+        if (!mode) {
+            continue;
+        }
+
+        const int overlapLeft = std::max(windowX, monitorX);
+        const int overlapTop = std::max(windowY, monitorY);
+        const int overlapRight = std::min(windowX + windowWidth, monitorX + mode->width);
+        const int overlapBottom = std::min(windowY + windowHeight, monitorY + mode->height);
+        const int overlapWidth = std::max(0, overlapRight - overlapLeft);
+        const int overlapHeight = std::max(0, overlapBottom - overlapTop);
+        const int overlapArea = overlapWidth * overlapHeight;
+
+        if (overlapArea > bestArea) {
+            bestArea = overlapArea;
+            bestId = static_cast<uint32_t>(i);
+        }
+    }
+
+    return bestId;
+}
+
 }  // namespace
 
 //----------------------------------------------------------------------------
@@ -422,10 +555,48 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
 
     glfwSetWindowSizeCallback(handle, [](GLFWwindow* window, int width, int height) {
         auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        self->handleMonitorChanged(getWindowMonitorId(window));
         self->handleEvent(
             Event::Resized{
                 .width = width,
                 .height = height,
+            });
+    });
+
+    glfwSetWindowPosCallback(handle, [](GLFWwindow* window, int x, int y) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        self->handleMonitorChanged(getWindowMonitorId(window));
+        self->handleEvent(
+            Event::Moved{
+                .x = x,
+                .y = y,
+            });
+    });
+
+    glfwSetWindowIconifyCallback(handle, [](GLFWwindow* window, int iconified) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        if (iconified == GLFW_TRUE) {
+            self->handleEvent(Event::Minimized{});
+        } else {
+            self->handleEvent(Event::Restored{});
+        }
+    });
+
+    glfwSetWindowMaximizeCallback(handle, [](GLFWwindow* window, int maximized) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        if (maximized == GLFW_TRUE) {
+            self->handleEvent(Event::Maximized{});
+        } else {
+            self->handleEvent(Event::Restored{});
+        }
+    });
+
+    glfwSetWindowContentScaleCallback(handle, [](GLFWwindow* window, float xScale, float yScale) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        self->handleEvent(
+            Event::ContentScaleChanged{
+                .xScale = xScale,
+                .yScale = yScale,
             });
     });
 
@@ -512,12 +683,23 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
                 .posY = ypos,
             });
     });
+
+    glfwSetCursorEnterCallback(handle, [](GLFWwindow* window, int entered) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        if (entered == GLFW_TRUE) {
+            self->handleEvent(Event::MouseEntered{});
+        } else {
+            self->handleEvent(Event::MouseLeft{});
+        }
+    });
 }
 
 }  // namespace
 
 GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 {
+    hasOpenGLContext_ = std::holds_alternative<OpenGLGraphicsModeTag>(desc.mode);
+
     setupGlfwWindowHints(desc);
     handle_.reset(glfwCreateWindow(
         desc.width,
@@ -537,6 +719,8 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     };
 
     storage_ = std::make_shared<WindowStorage>(std::make_unique<GLFWInputState>());
+    captureWindowedBounds();
+    currentMonitorId_ = getWindowMonitorId(handle_.get());
 
     // set data and register callbacks
     glfwSetWindowUserPointer(handle_.get(), this);
@@ -546,10 +730,34 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     g_WindowRegistry.registerStorage(storage_);
 }
 
+void GLFWNativeWindow::captureWindowedBounds()
+{
+    if (windowMode_ != WindowMode::Windowed || !handle_) {
+        return;
+    }
+
+    glfwGetWindowPos(handle_.get(), &windowedX_, &windowedY_);
+    glfwGetWindowSize(handle_.get(), &windowedWidth_, &windowedHeight_);
+}
+
 void GLFWNativeWindow::handleEvent(Event&& event)
 {
     storage_->inputState->handleEvent(event);
     storage_->eventQueue.push_back(std::move(event));
+}
+
+void GLFWNativeWindow::handleMonitorChanged(uint32_t monitorId)
+{
+    if (monitorId == currentMonitorId_) {
+        return;
+    }
+
+    currentMonitorId_ = monitorId;
+    handleEvent(
+        Event::MonitorChanged{
+            .monitorId = currentMonitorId_,
+            .mode = windowMode_,
+        });
 }
 
 NativeHandles GLFWNativeWindow::getNativeHandles() const
@@ -634,6 +842,146 @@ void GLFWNativeWindow::setTitle(const std::string& title)
 void GLFWNativeWindow::setSize(int width, int height)
 {
     glfwSetWindowSize(handle_.get(), width, height);
+    captureWindowedBounds();
+}
+
+void GLFWNativeWindow::setPosition(int x, int y)
+{
+    glfwSetWindowPos(handle_.get(), x, y);
+    captureWindowedBounds();
+}
+
+void GLFWNativeWindow::setSizeLimits(const SizeLimits& limits)
+{
+    glfwSetWindowSizeLimits(
+        handle_.get(),
+        limits.minWidth.value_or(GLFW_DONT_CARE),
+        limits.minHeight.value_or(GLFW_DONT_CARE),
+        limits.maxWidth.value_or(GLFW_DONT_CARE),
+        limits.maxHeight.value_or(GLFW_DONT_CARE));
+}
+
+void GLFWNativeWindow::clearSizeLimits()
+{
+    glfwSetWindowSizeLimits(
+        handle_.get(),
+        GLFW_DONT_CARE,
+        GLFW_DONT_CARE,
+        GLFW_DONT_CARE,
+        GLFW_DONT_CARE);
+}
+
+void GLFWNativeWindow::setAspectRatio(AspectRatio ratio)
+{
+    if (ratio.numerator <= 0 || ratio.denominator <= 0) {
+        clearAspectRatio();
+        return;
+    }
+
+    glfwSetWindowAspectRatio(handle_.get(), ratio.numerator, ratio.denominator);
+}
+
+void GLFWNativeWindow::clearAspectRatio()
+{
+    glfwSetWindowAspectRatio(handle_.get(), GLFW_DONT_CARE, GLFW_DONT_CARE);
+}
+
+void GLFWNativeWindow::setResizable(bool resizable)
+{
+    glfwSetWindowAttrib(handle_.get(), GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
+}
+
+void GLFWNativeWindow::setDecorated(bool decorated)
+{
+    glfwSetWindowAttrib(handle_.get(), GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
+}
+
+void GLFWNativeWindow::setFloating(bool floating)
+{
+    glfwSetWindowAttrib(handle_.get(), GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE);
+}
+
+void GLFWNativeWindow::setOpacity(float opacity)
+{
+    glfwSetWindowOpacity(handle_.get(), std::clamp(opacity, 0.0f, 1.0f));
+}
+
+void GLFWNativeWindow::setVSync(bool enabled)
+{
+    if (!hasOpenGLContext_) {
+        return;
+    }
+
+    GLFWwindow* previous = glfwGetCurrentContext();
+    glfwMakeContextCurrent(handle_.get());
+    glfwSwapInterval(enabled ? 1 : 0);
+    glfwMakeContextCurrent(previous);
+}
+
+void GLFWNativeWindow::setCursorMode(CursorMode mode)
+{
+    glfwSetInputMode(handle_.get(), GLFW_CURSOR, toGlfwCursorMode(mode));
+    cursorMode_ = mode;
+}
+
+void GLFWNativeWindow::setWindowMode(
+    WindowMode mode,
+    uint32_t monitorId,
+    std::optional<VideoMode> videoMode)
+{
+    if (mode == WindowMode::Windowed) {
+        const bool wasWindowed = windowMode_ == WindowMode::Windowed;
+        windowMode_ = WindowMode::Windowed;
+        if (!wasWindowed) {
+            glfwSetWindowMonitor(
+                handle_.get(),
+                nullptr,
+                windowedX_,
+                windowedY_,
+                windowedWidth_,
+                windowedHeight_,
+                GLFW_DONT_CARE);
+        }
+
+        return;
+    }
+
+    GLFWmonitor* monitor = getMonitorById(monitorId);
+    if (!monitor) {
+        monitor = glfwGetPrimaryMonitor();
+        monitorId = 0;
+    }
+    if (!monitor) {
+        return;
+    }
+
+    captureWindowedBounds();
+
+    int x = 0;
+    int y = 0;
+    glfwGetMonitorPos(monitor, &x, &y);
+
+    VideoMode targetMode{};
+    if (videoMode) {
+        targetMode = *videoMode;
+    } else if (const GLFWvidmode* currentMode = glfwGetVideoMode(monitor)) {
+        targetMode = toVideoMode(*currentMode);
+    }
+    if (targetMode.width <= 0 || targetMode.height <= 0) {
+        return;
+    }
+
+    const int refreshRate =
+        mode == WindowMode::BorderlessFullscreen ? GLFW_DONT_CARE : targetMode.refreshRate;
+    windowMode_ = mode;
+    glfwSetWindowMonitor(
+        handle_.get(),
+        monitor,
+        x,
+        y,
+        targetMode.width,
+        targetMode.height,
+        refreshRate);
 }
 
 void GLFWNativeWindow::setFocus(bool focus) const noexcept
@@ -662,6 +1010,16 @@ std::pair<int, int> GLFWNativeWindow::getSize() const noexcept
     };
 }
 
+std::pair<int, int> GLFWNativeWindow::getPosition() const noexcept
+{
+    int x, y;
+    glfwGetWindowPos(handle_.get(), &x, &y);
+    return {
+        x,
+        y,
+    };
+}
+
 std::pair<uint32_t, uint32_t> GLFWNativeWindow::getFrameBufferSize() const noexcept
 {
     int width, height;
@@ -670,6 +1028,32 @@ std::pair<uint32_t, uint32_t> GLFWNativeWindow::getFrameBufferSize() const noexc
         static_cast<uint32_t>(width),
         static_cast<uint32_t>(height),
     };
+}
+
+std::pair<float, float> GLFWNativeWindow::getContentScale() const noexcept
+{
+    float xScale = 1.0f;
+    float yScale = 1.0f;
+    glfwGetWindowContentScale(handle_.get(), &xScale, &yScale);
+    return {
+        xScale,
+        yScale,
+    };
+}
+
+float GLFWNativeWindow::getOpacity() const noexcept
+{
+    return glfwGetWindowOpacity(handle_.get());
+}
+
+CursorMode GLFWNativeWindow::getCursorMode() const noexcept
+{
+    return cursorMode_;
+}
+
+WindowMode GLFWNativeWindow::getWindowMode() const noexcept
+{
+    return windowMode_;
 }
 
 bool GLFWNativeWindow::isFocused() const noexcept
@@ -726,6 +1110,63 @@ std::vector<std::string> GLFWWindowContext::getRequiredVulkanExtensions() const
     }
 
     return std::vector<std::string>(ext, ext + count);
+}
+
+std::vector<MonitorInfo> GLFWWindowContext::getMonitors() const
+{
+    std::vector<MonitorInfo> infos;
+    auto monitors = getOrderedMonitors();
+    infos.reserve(monitors.size());
+
+    for (size_t i = 0; i < monitors.size(); ++i) {
+        infos.push_back(toMonitorInfo(monitors[i], static_cast<uint32_t>(i), i == 0));
+    }
+
+    return infos;
+}
+
+std::optional<MonitorInfo> GLFWWindowContext::getPrimaryMonitor() const
+{
+    GLFWmonitor* primary = glfwGetPrimaryMonitor();
+    if (!primary) {
+        return std::nullopt;
+    }
+
+    return toMonitorInfo(primary, 0, true);
+}
+
+std::vector<VideoMode> GLFWWindowContext::getVideoModes(uint32_t monitorId) const
+{
+    GLFWmonitor* monitor = getMonitorById(monitorId);
+    if (!monitor) {
+        return {};
+    }
+
+    int count = 0;
+    const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+    if (!modes || count <= 0) {
+        return {};
+    }
+
+    std::vector<VideoMode> result;
+    result.reserve(static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        result.push_back(toVideoMode(modes[i]));
+    }
+    return result;
+}
+
+std::pair<float, float> GLFWWindowContext::getContentScale(uint32_t monitorId) const
+{
+    GLFWmonitor* monitor = getMonitorById(monitorId);
+    if (!monitor) {
+        return { 1.0f, 1.0f };
+    }
+
+    float xScale = 1.0f;
+    float yScale = 1.0f;
+    glfwGetMonitorContentScale(monitor, &xScale, &yScale);
+    return { xScale, yScale };
 }
 
 //----------------------------------------------------------------------------

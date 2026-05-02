@@ -60,6 +60,58 @@ struct OpenGLConfig
     bool coreProfile = true;
 };
 
+enum class CursorMode : uint8_t
+{
+    Normal,
+    Hidden,
+    Captured
+};
+
+enum class WindowMode : uint8_t
+{
+    Windowed,
+    Fullscreen,
+    BorderlessFullscreen
+};
+
+struct VideoMode
+{
+    int width = 0;
+    int height = 0;
+    int redBits = 0;
+    int greenBits = 0;
+    int blueBits = 0;
+    int refreshRate = 0;
+};
+
+struct MonitorInfo
+{
+    uint32_t id = 0;
+    std::string name;
+    int x = 0;
+    int y = 0;
+    int physicalWidthMM = 0;
+    int physicalHeightMM = 0;
+    float contentScaleX = 1.0f;
+    float contentScaleY = 1.0f;
+    VideoMode currentVideoMode;
+    bool primary = false;
+};
+
+struct SizeLimits
+{
+    std::optional<int> minWidth;
+    std::optional<int> minHeight;
+    std::optional<int> maxWidth;
+    std::optional<int> maxHeight;
+};
+
+struct AspectRatio
+{
+    int numerator = 1;
+    int denominator = 1;
+};
+
 enum class Key : uint32_t
 {
     Unknown = 0,
@@ -248,6 +300,33 @@ public:
         int height;
     };
 
+    struct Moved
+    {
+        int x;
+        int y;
+    };
+
+    struct Minimized
+    {};
+
+    struct Restored
+    {};
+
+    struct Maximized
+    {};
+
+    struct ContentScaleChanged
+    {
+        float xScale;
+        float yScale;
+    };
+
+    struct MonitorChanged
+    {
+        uint32_t monitorId;
+        WindowMode mode;
+    };
+
     struct FocusLost
     {};
 
@@ -373,6 +452,12 @@ public:
         FrameBufferResized,
         Closed,
         Resized,
+        Moved,
+        Minimized,
+        Restored,
+        Maximized,
+        ContentScaleChanged,
+        MonitorChanged,
         FocusLost,
         FocusGained,
         TextEntered,
@@ -500,10 +585,30 @@ public:
 
     void setTitle(const std::string& title);
     void setSize(int width, int height);
+    void setPosition(int x, int y);
+    void setSizeLimits(const SizeLimits& limits);
+    void clearSizeLimits();
+    void setAspectRatio(AspectRatio ratio);
+    void clearAspectRatio();
+    void setResizable(bool resizable);
+    void setDecorated(bool decorated);
+    void setFloating(bool floating);
+    void setOpacity(float opacity);
+    void setVSync(bool enabled);
+    void setCursorMode(CursorMode mode);
+    void setWindowMode(
+        WindowMode mode,
+        uint32_t monitorId = 0,
+        std::optional<VideoMode> videoMode = std::nullopt);
     void setFocus(bool focus) const noexcept;
     void setVisible(bool visible) const noexcept;
     std::pair<int, int> getSize() const noexcept;
+    std::pair<int, int> getPosition() const noexcept;
     std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept;
+    std::pair<float, float> getContentScale() const noexcept;
+    float getOpacity() const noexcept;
+    CursorMode getCursorMode() const noexcept;
+    WindowMode getWindowMode() const noexcept;
     bool isFocused() const noexcept;
     bool isVisible() const noexcept;
 
@@ -556,6 +661,10 @@ public:
     ProcLoader getProcLoader() const;
     bool isVulkanSupported() const;
     std::vector<std::string> getRequiredGlfwVulkanExtensions() const;
+    std::vector<MonitorInfo> getMonitors() const;
+    std::optional<MonitorInfo> getPrimaryMonitor() const;
+    std::vector<VideoMode> getVideoModes(uint32_t monitorId = 0) const;
+    std::pair<float, float> getContentScale(uint32_t monitorId = 0) const;
 
 private:
     WindowContext();

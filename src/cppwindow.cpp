@@ -124,6 +124,66 @@ void Window::setSize(int width, int height)
     window_->setSize(width, height);
 }
 
+void Window::setPosition(int x, int y)
+{
+    window_->setPosition(x, y);
+}
+
+void Window::setSizeLimits(const SizeLimits& limits)
+{
+    window_->setSizeLimits(limits);
+}
+
+void Window::clearSizeLimits()
+{
+    window_->clearSizeLimits();
+}
+
+void Window::setAspectRatio(AspectRatio ratio)
+{
+    window_->setAspectRatio(ratio);
+}
+
+void Window::clearAspectRatio()
+{
+    window_->clearAspectRatio();
+}
+
+void Window::setResizable(bool resizable)
+{
+    window_->setResizable(resizable);
+}
+
+void Window::setDecorated(bool decorated)
+{
+    window_->setDecorated(decorated);
+}
+
+void Window::setFloating(bool floating)
+{
+    window_->setFloating(floating);
+}
+
+void Window::setOpacity(float opacity)
+{
+    window_->setOpacity(opacity);
+}
+
+void Window::setVSync(bool enabled)
+{
+    window_->setVSync(enabled);
+}
+
+void Window::setCursorMode(CursorMode mode)
+{
+    window_->setCursorMode(mode);
+}
+
+void Window::setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
+{
+    window_->setWindowMode(mode, monitorId, videoMode);
+}
+
 void Window::setFocus(bool focus) const noexcept
 {
     window_->setFocus(focus);
@@ -139,9 +199,34 @@ std::pair<int, int> Window::getSize() const noexcept
     return window_->getSize();
 }
 
+std::pair<int, int> Window::getPosition() const noexcept
+{
+    return window_->getPosition();
+}
+
 std::pair<uint32_t, uint32_t> Window::getFrameBufferSize() const noexcept
 {
     return window_->getFrameBufferSize();
+}
+
+std::pair<float, float> Window::getContentScale() const noexcept
+{
+    return window_->getContentScale();
+}
+
+float Window::getOpacity() const noexcept
+{
+    return window_->getOpacity();
+}
+
+CursorMode Window::getCursorMode() const noexcept
+{
+    return window_->getCursorMode();
+}
+
+WindowMode Window::getWindowMode() const noexcept
+{
+    return window_->getWindowMode();
 }
 
 bool Window::isFocused() const noexcept
@@ -272,6 +357,26 @@ bool WindowContext::isVulkanSupported() const
 std::vector<std::string> WindowContext::getRequiredGlfwVulkanExtensions() const
 {
     return context_->getRequiredVulkanExtensions();
+}
+
+std::vector<MonitorInfo> WindowContext::getMonitors() const
+{
+    return context_->getMonitors();
+}
+
+std::optional<MonitorInfo> WindowContext::getPrimaryMonitor() const
+{
+    return context_->getPrimaryMonitor();
+}
+
+std::vector<VideoMode> WindowContext::getVideoModes(uint32_t monitorId) const
+{
+    return context_->getVideoModes(monitorId);
+}
+
+std::pair<float, float> WindowContext::getContentScale(uint32_t monitorId) const
+{
+    return context_->getContentScale(monitorId);
 }
 
 }  // namespace cwin
