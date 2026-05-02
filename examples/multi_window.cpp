@@ -1,10 +1,8 @@
 #include <cppwindow/cppwindow.hpp>
 
-#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <string_view>
-#include <thread>
 
 using namespace cwin;
 
@@ -30,8 +28,7 @@ void handleWindow(Window& window, std::string_view name, int& presses)
         }
 
         if (const auto* resized = event.getIf<Event::Resized>()) {
-            std::cout << name << " resized to " << resized->width << "x" << resized->height
-                      << "\n";
+            std::cout << name << " resized to " << resized->width << "x" << resized->height << "\n";
         }
     }
 
@@ -58,6 +55,7 @@ int main()
 
     int leftPresses = 0;
     int rightPresses = 0;
+    FrameLimiter frameLimiter(120.0);
 
     std::cout << "Press Space in either window. Escape closes the focused window.\n";
 
@@ -67,6 +65,6 @@ int main()
         handleWindow(left, "Left", leftPresses);
         handleWindow(right, "Right", rightPresses);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(8));
+        frameLimiter.wait();
     }
 }

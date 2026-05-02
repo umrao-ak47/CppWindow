@@ -1,11 +1,9 @@
 #include <cppwindow/cppwindow.hpp>
 
-#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <thread>
 
 using namespace cwin;
 
@@ -80,6 +78,7 @@ int main()
     std::cout << "Connect a standard-mapped gamepad. Escape closes.\n";
 
     std::string lastTitle;
+    FrameLimiter frameLimiter(60.0);
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
@@ -129,9 +128,9 @@ int main()
         if (gamepads.empty()) {
             title << " - no device";
         } else if (const auto state = ctx.getGamepadState(gamepads.front().id)) {
-            title << " - " << state->name << " LX " << state->getAxis(GamepadAxis::LeftX)
-                  << " LY " << state->getAxis(GamepadAxis::LeftY)
-                  << " A " << state->isButtonDown(GamepadButton::A);
+            title << " - " << state->name << " LX " << state->getAxis(GamepadAxis::LeftX) << " LY "
+                  << state->getAxis(GamepadAxis::LeftY) << " A "
+                  << state->isButtonDown(GamepadButton::A);
         } else {
             title << " - " << gamepads.front().name << " (no standard mapping)";
         }
@@ -142,6 +141,6 @@ int main()
             lastTitle = nextTitle;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        frameLimiter.wait();
     }
 }

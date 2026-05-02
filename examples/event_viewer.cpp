@@ -111,17 +111,18 @@ void logEvent(const Event& event)
             std::cout << " monitor=" << payload.monitorId << " mode=" << enumIndex(payload.mode);
         } else if constexpr (std::is_same_v<T, Event::TextEntered>) {
             std::cout << " codepoint=" << static_cast<uint32_t>(payload.unicode);
-        } else if constexpr (std::is_same_v<T, Event::KeyPressed>
-                             || std::is_same_v<T, Event::KeyReleased>) {
+        } else if constexpr (
+            std::is_same_v<T, Event::KeyPressed> || std::is_same_v<T, Event::KeyReleased>) {
             std::cout << " key=" << enumIndex(payload.key) << " scancode=" << payload.scancode;
             logModifiers(payload.modifiers);
         } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
-            std::cout << " delta=" << payload.deltaX << ", " << payload.deltaY << " pos="
-                      << payload.posX << ", " << payload.posY;
-        } else if constexpr (std::is_same_v<T, Event::MouseButtonPressed>
-                             || std::is_same_v<T, Event::MouseButtonReleased>) {
-            std::cout << " button=" << enumIndex(payload.button) << " pos=" << payload.posX
-                      << ", " << payload.posY;
+            std::cout << " delta=" << payload.deltaX << ", " << payload.deltaY
+                      << " pos=" << payload.posX << ", " << payload.posY;
+        } else if constexpr (
+            std::is_same_v<T, Event::MouseButtonPressed> ||
+            std::is_same_v<T, Event::MouseButtonReleased>) {
+            std::cout << " button=" << enumIndex(payload.button) << " pos=" << payload.posX << ", "
+                      << payload.posY;
             logModifiers(payload.modifiers);
         } else if constexpr (std::is_same_v<T, Event::MouseMoved>) {
             std::cout << " pos=" << payload.posX << ", " << payload.posY;
@@ -130,8 +131,9 @@ void logEvent(const Event& event)
                       << " standard=" << payload.standardMapping;
         } else if constexpr (std::is_same_v<T, Event::GamepadDisconnected>) {
             std::cout << " id=" << payload.gamepadId;
-        } else if constexpr (std::is_same_v<T, Event::GamepadButtonPressed>
-                             || std::is_same_v<T, Event::GamepadButtonReleased>) {
+        } else if constexpr (
+            std::is_same_v<T, Event::GamepadButtonPressed> ||
+            std::is_same_v<T, Event::GamepadButtonReleased>) {
             std::cout << " id=" << payload.gamepadId << " button=" << enumIndex(payload.button);
         } else if constexpr (std::is_same_v<T, Event::GamepadAxisMoved>) {
             std::cout << " id=" << payload.gamepadId << " axis=" << enumIndex(payload.axis)
@@ -141,12 +143,13 @@ void logEvent(const Event& event)
                       << payload.posY;
         } else if constexpr (std::is_same_v<T, Event::JoystickConnected>) {
             std::cout << " id=" << payload.joystickId << " name=" << payload.name
-                      << " standard=" << payload.standardMapping
-                      << " axes=" << payload.axisCount << " buttons=" << payload.buttonCount;
+                      << " standard=" << payload.standardMapping << " axes=" << payload.axisCount
+                      << " buttons=" << payload.buttonCount;
         } else if constexpr (std::is_same_v<T, Event::JoystickDisconnected>) {
             std::cout << " id=" << payload.joystickId;
-        } else if constexpr (std::is_same_v<T, Event::JoystickButtonPressed>
-                             || std::is_same_v<T, Event::JoystickButtonReleased>) {
+        } else if constexpr (
+            std::is_same_v<T, Event::JoystickButtonPressed> ||
+            std::is_same_v<T, Event::JoystickButtonReleased>) {
             std::cout << " id=" << payload.joystickId << " button=" << payload.button;
         } else if constexpr (std::is_same_v<T, Event::JoystickMoved>) {
             std::cout << " id=" << payload.joystickId << " axis=" << payload.axis
@@ -168,6 +171,7 @@ int main()
 
     uint64_t eventCount = 0;
     std::string lastEvent = "none";
+    FrameLimiter frameLimiter(60.0);
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
@@ -195,5 +199,7 @@ int main()
         std::ostringstream title;
         title << "Event Viewer - " << eventCount << " events - last " << lastEvent;
         window.setTitle(title.str());
+
+        frameLimiter.wait();
     }
 }

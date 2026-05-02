@@ -33,7 +33,10 @@ int main()
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
-    window.setVSync(true);
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(120.0);
+    frameLimiter.setVSyncEnabled(useVSync);
 
     std::cout << "Keys: F fullscreen with title bar, B borderless fullscreen, "
                  "E exclusive fullscreen, W windowed, Esc close\n";
@@ -92,5 +95,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         window.swapBuffers();
+        frameLimiter.wait();
     }
 }

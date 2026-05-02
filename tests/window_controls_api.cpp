@@ -10,6 +10,11 @@
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Window&>().events()),
               std::span<const cwin::Event>>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::Window&>().getDpiScale()), cwin::DpiScale>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().getDpiScale()),
+              cwin::DpiScale>);
 
 int main()
 {

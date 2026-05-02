@@ -165,6 +165,24 @@ Use framebuffer size for OpenGL viewport and render target sizing. Window size
 is in screen coordinates; framebuffer size is in pixels. They can differ on
 high-DPI displays.
 
+## DPI Helpers
+
+Use `DpiScale` when you need to convert between window coordinates and
+framebuffer pixels:
+
+```cpp
+cwin::DpiScale dpi = window.getDpiScale();
+
+auto [framebufferX, framebufferY] =
+    dpi.windowToFramebuffer(mouseX, mouseY);
+
+auto [framebufferWidth, framebufferHeight] =
+    dpi.windowSizeToFramebuffer(uiWidth, uiHeight);
+```
+
+`Window::getDpiScale()` uses the window content scale. `WindowContext` also
+offers `getDpiScale(monitorId)` for monitor-level conversions.
+
 ## Vulkan Windows
 
 For Vulkan, create a window with `.noAPI()`.
@@ -467,6 +485,7 @@ for (const auto& monitor : ctx.getMonitors()) {
 auto primary = ctx.getPrimaryMonitor();
 auto modes = ctx.getVideoModes(primary ? primary->id : 0);
 auto [scaleX, scaleY] = ctx.getContentScale();
+cwin::DpiScale dpi = ctx.getDpiScale();
 ```
 
 Pass a monitor id to `setWindowMode` when you want a specific monitor:
@@ -496,16 +515,31 @@ CppWindow intentionally leaves the loop under your control.
 
 ```cpp
 cwin::FrameTimer timer;
+cwin::FpsCounter fps;
+cwin::FrameLimiter limiter(60.0);
+
+const bool useVSync = true;
+window.setVSync(useVSync);
+limiter.setVSyncEnabled(useVSync);
 
 while (!window.shouldClose()) {
     cwin::FrameTime frame = timer.tick();
+    if (fps.update(frame)) {
+        updateFpsDisplay(fps.framesPerSecond());
+    }
 
     ctx.pollEvents();
     handleEvents(window.events());
     update(frame.deltaSeconds, window.getInput());
     render(window);
+    window.swapBuffers(); // OpenGL apps; Vulkan apps present from their renderer.
+    limiter.wait();
 }
 ```
+
+`FrameLimiter` does not run the loop. It only sleeps when `wait()` is called.
+When VSync is enabled, set `limiter.setVSyncEnabled(true)` so the limiter does
+not add a second software delay on top of the presentation wait.
 
 For a fixed-step simulation, use `FixedStepAccumulator` in application code:
 
@@ -524,7 +558,8 @@ while (!window.shouldClose()) {
 }
 ```
 
-`Clock`, `FrameTimer`, and `FixedStepAccumulator` do not own or run the loop.
+`Clock`, `FrameTimer`, `FixedStepAccumulator`, `FpsCounter`, and
+`FrameLimiter` do not own or run the loop.
 
 ## Native Handles
 
@@ -566,11 +601,12 @@ GLFW error code and description, are included in `what()` when available.
 - `examples/mouse_capture.cpp`: captured cursor behavior with an OpenGL status bar.
 - `examples/text_input.cpp`: Unicode text input events.
 - `examples/gamepad.cpp`: standard gamepad queries and events.
-- `examples/app_utilities.cpp`: clipboard, file drop events, and timing helpers.
+- `examples/app_utilities.cpp`: clipboard, file drop events, FPS, and frame limiting.
 - `examples/input_helpers.cpp`: action bindings, mouse positioning, and raw mouse mode.
 - `examples/multi_window.cpp`: independent event/input handling for multiple windows.
 - `examples/event_viewer.cpp`: logs all event payloads with `Event::visit`.
 - `examples/monitor_info.cpp`: monitor metadata, content scale, and video modes.
 - `examples/native_handles.cpp`: platform handle and Vulkan extension inspection.
-- `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation timing.
+- `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation,
+  FPS sampling, and frame limiting.
 - `examples/particles.cpp`: richer OpenGL rendering example.

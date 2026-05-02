@@ -202,6 +202,25 @@ struct AspectRatio
     int denominator = 1;
 };
 
+/// Window-to-framebuffer content scale helper.
+struct DpiScale
+{
+    /// Horizontal scale from window coordinates to framebuffer pixels.
+    float x = 1.0f;
+    /// Vertical scale from window coordinates to framebuffer pixels.
+    float y = 1.0f;
+
+    /// Converts a position from window coordinates to framebuffer pixels.
+    [[nodiscard]] std::pair<double, double> windowToFramebuffer(double x, double y) const noexcept;
+    /// Converts a position from framebuffer pixels to window coordinates.
+    [[nodiscard]] std::pair<double, double> framebufferToWindow(double x, double y) const noexcept;
+    /// Converts a size from window coordinates to framebuffer pixels.
+    [[nodiscard]] std::pair<int, int> windowSizeToFramebuffer(int width, int height) const noexcept;
+    /// Converts a size from framebuffer pixels to window coordinates.
+    [[nodiscard]] std::pair<double, double> framebufferSizeToWindow(double width, double height)
+        const noexcept;
+};
+
 /// Keyboard key code.
 enum class Key : uint32_t
 {
@@ -563,6 +582,68 @@ public:
 private:
     double fixedDeltaSeconds_ = 1.0 / 60.0;
     double accumulatedSeconds_ = 0.0;
+};
+
+/// Periodically samples frames per second from caller-provided frame deltas.
+class FpsCounter final
+{
+public:
+    /// Creates a counter that refreshes reported FPS after the update interval.
+    explicit FpsCounter(double updateIntervalSeconds = 0.5) noexcept;
+
+    /// Clears all accumulated and reported state.
+    void reset() noexcept;
+    /// Adds one frame delta and returns true when a new FPS sample is available.
+    [[nodiscard]] bool update(double deltaSeconds) noexcept;
+    /// Adds one frame timing sample and returns true when a new FPS sample is available.
+    [[nodiscard]] bool update(const FrameTime& frameTime) noexcept;
+    /// Returns the last sampled frames per second.
+    [[nodiscard]] double framesPerSecond() const noexcept;
+    /// Returns the last sampled average frame duration.
+    [[nodiscard]] double frameSeconds() const noexcept;
+    /// Returns the configured sampling interval in seconds.
+    [[nodiscard]] double updateIntervalSeconds() const noexcept;
+    /// Returns total frames passed to `update`.
+    [[nodiscard]] uint64_t totalFrames() const noexcept;
+
+private:
+    double updateIntervalSeconds_ = 0.5;
+    double accumulatedSeconds_ = 0.0;
+    uint64_t accumulatedFrames_ = 0;
+    uint64_t totalFrames_ = 0;
+    double framesPerSecond_ = 0.0;
+    double frameSeconds_ = 0.0;
+};
+
+/// Optional frame pacing helper that never owns the application loop.
+class FrameLimiter final
+{
+public:
+    /// Creates a limiter. A target FPS of zero disables sleep pacing.
+    explicit FrameLimiter(double targetFramesPerSecond = 0.0) noexcept;
+
+    /// Resets scheduling state.
+    void reset() noexcept;
+    /// Sets target FPS. Values less than or equal to zero disable sleep pacing.
+    void setTargetFramesPerSecond(double framesPerSecond) noexcept;
+    /// Disables sleep pacing.
+    void clearTargetFramesPerSecond() noexcept;
+    /// Returns target FPS, or zero when sleep pacing is disabled.
+    [[nodiscard]] double targetFramesPerSecond() const noexcept;
+    /// Returns target frame duration, or zero when sleep pacing is disabled.
+    [[nodiscard]] double targetFrameSeconds() const noexcept;
+    /// Records whether presentation is already paced by VSync.
+    void setVSyncEnabled(bool enabled) noexcept;
+    /// Returns whether VSync pacing is enabled.
+    [[nodiscard]] bool isVSyncEnabled() const noexcept;
+    /// Sleeps until the next target frame time unless disabled or VSync-paced.
+    void wait() noexcept;
+
+private:
+    double targetFrameSeconds_ = 0.0;
+    bool vSyncEnabled_ = false;
+    bool started_ = false;
+    Clock::TimePoint nextFrameTime_{};
 };
 
 //----------------------------------------------------------------------------
@@ -1164,6 +1245,8 @@ public:
     std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept;
     /// Returns content scale for the window.
     std::pair<float, float> getContentScale() const noexcept;
+    /// Returns DPI/content scale conversion helper for this window.
+    DpiScale getDpiScale() const noexcept;
     /// Returns current window opacity.
     float getOpacity() const noexcept;
     /// Returns current cursor mode.
@@ -1282,6 +1365,8 @@ public:
     std::vector<VideoMode> getVideoModes(uint32_t monitorId = 0) const;
     /// Returns monitor content scale, defaulting to the primary monitor.
     std::pair<float, float> getContentScale(uint32_t monitorId = 0) const;
+    /// Returns DPI/content scale conversion helper for a monitor.
+    DpiScale getDpiScale(uint32_t monitorId = 0) const;
     /// Returns connected standard gamepads.
     std::vector<GamepadInfo> getGamepads() const;
     /// Returns the current state for a standard gamepad.

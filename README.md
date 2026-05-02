@@ -23,7 +23,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 - Window controls and monitor queries
 - Mouse delta, text input, raw joystick events, and standard gamepad support
 - Action bindings, mouse positioning, and raw mouse motion controls
-- Clipboard, file drop events, and lightweight timing helpers
+- Clipboard, file drop events, DPI conversion, FPS, and frame pacing helpers
 - Zero global input state
 - Backend abstraction (currently GLFW)
 - Minimal runtime overhead

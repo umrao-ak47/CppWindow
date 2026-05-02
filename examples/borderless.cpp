@@ -16,6 +16,11 @@ int main()
                       .build();
     window.makeContextCurrent();
 
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(60.0);
+    frameLimiter.setVSyncEnabled(useVSync);
+
     while (!window.shouldClose()) {
         ctx.pollEvents();
 
@@ -29,5 +34,6 @@ int main()
             }
         }
         window.swapBuffers();
+        frameLimiter.wait();
     }
 }

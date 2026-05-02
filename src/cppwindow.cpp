@@ -5,6 +5,9 @@
 
 #include <cppwindow/cppwindow.hpp>
 
+#include <cmath>
+#include <thread>
+
 #include "backend/native_impl.hpp"
 
 namespace cwin {
@@ -21,6 +24,48 @@ Error::Error(ErrorCode code, std::string message)
 ErrorCode Error::code() const noexcept
 {
     return code_;
+}
+
+//----------------------------------------------------------------------------
+//  DPI Implementation
+//----------------------------------------------------------------------------
+namespace {
+
+[[nodiscard]] double sanitizedScale(float scale) noexcept
+{
+    return scale > 0.0f && std::isfinite(scale) ? static_cast<double>(scale) : 1.0;
+}
+
+}  // namespace
+
+std::pair<double, double> DpiScale::windowToFramebuffer(double xPos, double yPos) const noexcept
+{
+    return {
+        xPos * sanitizedScale(x),
+        yPos * sanitizedScale(y),
+    };
+}
+
+std::pair<double, double> DpiScale::framebufferToWindow(double xPos, double yPos) const noexcept
+{
+    return {
+        xPos / sanitizedScale(x),
+        yPos / sanitizedScale(y),
+    };
+}
+
+std::pair<int, int> DpiScale::windowSizeToFramebuffer(int width, int height) const noexcept
+{
+    return {
+        static_cast<int>(std::lround(width * sanitizedScale(x))),
+        static_cast<int>(std::lround(height * sanitizedScale(y))),
+    };
+}
+
+std::pair<double, double> DpiScale::framebufferSizeToWindow(double width, double height)
+    const noexcept
+{
+    return framebufferToWindow(width, height);
 }
 
 //----------------------------------------------------------------------------
@@ -119,6 +164,142 @@ double FixedStepAccumulator::accumulatedSeconds() const noexcept
 double FixedStepAccumulator::fixedDeltaSeconds() const noexcept
 {
     return fixedDeltaSeconds_;
+}
+
+FpsCounter::FpsCounter(double updateIntervalSeconds) noexcept
+    : updateIntervalSeconds_(
+          updateIntervalSeconds > 0.0 && std::isfinite(updateIntervalSeconds)
+              ? updateIntervalSeconds
+              : 0.5)
+{
+}
+
+void FpsCounter::reset() noexcept
+{
+    accumulatedSeconds_ = 0.0;
+    accumulatedFrames_ = 0;
+    totalFrames_ = 0;
+    framesPerSecond_ = 0.0;
+    frameSeconds_ = 0.0;
+}
+
+bool FpsCounter::update(double deltaSeconds) noexcept
+{
+    ++totalFrames_;
+    const double elapsedSeconds =
+        deltaSeconds > 0.0 && std::isfinite(deltaSeconds) ? deltaSeconds : 0.0;
+    if (elapsedSeconds <= 0.0) {
+        return false;
+    }
+
+    ++accumulatedFrames_;
+    accumulatedSeconds_ += elapsedSeconds;
+
+    if (accumulatedSeconds_ < updateIntervalSeconds_ || accumulatedFrames_ == 0) {
+        return false;
+    }
+
+    framesPerSecond_ = static_cast<double>(accumulatedFrames_) / accumulatedSeconds_;
+    frameSeconds_ = accumulatedSeconds_ / static_cast<double>(accumulatedFrames_);
+    accumulatedSeconds_ = 0.0;
+    accumulatedFrames_ = 0;
+    return true;
+}
+
+bool FpsCounter::update(const FrameTime& frameTime) noexcept
+{
+    return update(frameTime.deltaSeconds);
+}
+
+double FpsCounter::framesPerSecond() const noexcept
+{
+    return framesPerSecond_;
+}
+
+double FpsCounter::frameSeconds() const noexcept
+{
+    return frameSeconds_;
+}
+
+double FpsCounter::updateIntervalSeconds() const noexcept
+{
+    return updateIntervalSeconds_;
+}
+
+uint64_t FpsCounter::totalFrames() const noexcept
+{
+    return totalFrames_;
+}
+
+FrameLimiter::FrameLimiter(double targetFramesPerSecond) noexcept
+{
+    setTargetFramesPerSecond(targetFramesPerSecond);
+}
+
+void FrameLimiter::reset() noexcept
+{
+    started_ = false;
+    nextFrameTime_ = Clock::TimePoint{};
+}
+
+void FrameLimiter::setTargetFramesPerSecond(double framesPerSecond) noexcept
+{
+    targetFrameSeconds_ =
+        framesPerSecond > 0.0 && std::isfinite(framesPerSecond) ? 1.0 / framesPerSecond : 0.0;
+    reset();
+}
+
+void FrameLimiter::clearTargetFramesPerSecond() noexcept
+{
+    targetFrameSeconds_ = 0.0;
+    reset();
+}
+
+double FrameLimiter::targetFramesPerSecond() const noexcept
+{
+    return targetFrameSeconds_ > 0.0 ? 1.0 / targetFrameSeconds_ : 0.0;
+}
+
+double FrameLimiter::targetFrameSeconds() const noexcept
+{
+    return targetFrameSeconds_;
+}
+
+void FrameLimiter::setVSyncEnabled(bool enabled) noexcept
+{
+    vSyncEnabled_ = enabled;
+    reset();
+}
+
+bool FrameLimiter::isVSyncEnabled() const noexcept
+{
+    return vSyncEnabled_;
+}
+
+void FrameLimiter::wait() noexcept
+{
+    if (vSyncEnabled_ || targetFrameSeconds_ <= 0.0) {
+        reset();
+        return;
+    }
+
+    const auto targetDuration = std::chrono::duration_cast<Clock::Duration>(
+        std::chrono::duration<double>(targetFrameSeconds_));
+    const Clock::TimePoint now = Clock::SteadyClock::now();
+
+    if (!started_) {
+        nextFrameTime_ = now + targetDuration;
+        started_ = true;
+    } else {
+        nextFrameTime_ += targetDuration;
+        if (now > nextFrameTime_ + targetDuration) {
+            nextFrameTime_ = now + targetDuration;
+        }
+    }
+
+    if (now < nextFrameTime_) {
+        std::this_thread::sleep_until(nextFrameTime_);
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -517,6 +698,12 @@ std::pair<float, float> Window::getContentScale() const noexcept
     return window_->getContentScale();
 }
 
+DpiScale Window::getDpiScale() const noexcept
+{
+    auto [x, y] = getContentScale();
+    return DpiScale{ .x = x, .y = y };
+}
+
 float Window::getOpacity() const noexcept
 {
     return window_->getOpacity();
@@ -784,6 +971,12 @@ std::vector<VideoMode> WindowContext::getVideoModes(uint32_t monitorId) const
 std::pair<float, float> WindowContext::getContentScale(uint32_t monitorId) const
 {
     return context_->getContentScale(monitorId);
+}
+
+DpiScale WindowContext::getDpiScale(uint32_t monitorId) const
+{
+    auto [x, y] = getContentScale(monitorId);
+    return DpiScale{ .x = x, .y = y };
 }
 
 std::vector<GamepadInfo> WindowContext::getGamepads() const

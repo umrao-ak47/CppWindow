@@ -1,14 +1,11 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <glad/glad.h>
-
-#include "status_text.hpp"
-
-#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <thread>
+
+#include "status_text.hpp"
 
 using namespace cwin;
 
@@ -58,7 +55,10 @@ int main()
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
-    window.setVSync(true);
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(120.0);
+    frameLimiter.setVSyncEnabled(useVSync);
 
     ActionMap actions;
     actions.bindKey("quit", Key::Escape)
@@ -109,6 +109,8 @@ int main()
 
         auto [x, y] = window.getInput().getMousePosition();
         auto [dx, dy] = window.getInput().getMouseDelta();
+        const DpiScale dpi = window.getDpiScale();
+        auto [fbMouseX, fbMouseY] = dpi.windowToFramebuffer(x, y);
 
         std::ostringstream state;
         state << "JUMP:" << (actions.isDown("jump") ? "ON" : "OFF")
@@ -117,6 +119,7 @@ int main()
 
         std::ostringstream mouse;
         mouse << "MOUSE:" << static_cast<int>(x) << "," << static_cast<int>(y)
+              << " FB:" << static_cast<int>(fbMouseX) << "," << static_cast<int>(fbMouseY)
               << " DELTA:" << static_cast<int>(dx) << "," << static_cast<int>(dy);
 
         auto [fbWidth, fbHeight] = window.getFrameBufferSize();
@@ -128,6 +131,6 @@ int main()
             mouse.str());
         window.swapBuffers();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(8));
+        frameLimiter.wait();
     }
 }

@@ -28,6 +28,11 @@ int main()
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     std::cout << "OpenGL Version : " << major << "." << minor << "\n";
 
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(60.0);
+    frameLimiter.setVSyncEnabled(useVSync);
+
     while (!window.shouldClose()) {
         ctx.pollEvents();
 
@@ -37,9 +42,13 @@ int main()
             }
         }
 
+        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
+
         glClearColor(0.5f, 0.1f, 0.9f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         window.swapBuffers();
+        frameLimiter.wait();
     }
 }

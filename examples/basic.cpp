@@ -9,6 +9,7 @@ int main()
     auto& ctx = WindowContext::Get();
 
     auto window = WindowBuilder{}.title("Basic Example").size(1280, 720).build();
+    FrameLimiter frameLimiter(60.0);
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
@@ -22,5 +23,7 @@ int main()
                 window.requestClose();
             }
         }
+
+        frameLimiter.wait();
     }
 }

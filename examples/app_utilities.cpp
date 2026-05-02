@@ -1,9 +1,8 @@
 #include <cppwindow/cppwindow.hpp>
 
-#include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <thread>
 
 using namespace cwin;
 
@@ -11,17 +10,22 @@ int main()
 {
     auto& ctx = WindowContext::Get();
 
-    auto window =
-        WindowBuilder{}.title("App Utilities").size(840, 420).noAPI().resizable().build();
+    auto window = WindowBuilder{}.title("App Utilities").size(840, 420).noAPI().resizable().build();
 
     std::cout << "Keys: C copy text, V print clipboard, Esc close. Drop files onto the window.\n";
 
     FrameTimer frameTimer;
     FixedStepAccumulator fixedStep(1.0 / 60.0);
+    FpsCounter fpsCounter(0.5);
+    FrameLimiter frameLimiter(60.0);
     uint64_t fixedSteps = 0;
+    double displayedFps = 0.0;
 
     while (!window.shouldClose()) {
         const FrameTime frame = frameTimer.tick();
+        if (fpsCounter.update(frame)) {
+            displayedFps = fpsCounter.framesPerSecond();
+        }
         fixedStep.add(frame.deltaSeconds);
         while (fixedStep.consumeStep()) {
             ++fixedSteps;
@@ -56,10 +60,12 @@ int main()
         }
 
         std::ostringstream title;
-        title << "App Utilities - frame " << frame.frameIndex << " dt " << frame.deltaSeconds
-              << " fixed " << fixedSteps << " alpha " << fixedStep.alpha();
+        title << "App Utilities - frame " << frame.frameIndex << " dt " << std::fixed
+              << std::setprecision(3) << frame.deltaSeconds << " fps " << std::setprecision(1)
+              << displayedFps << " fixed " << fixedSteps << " alpha " << std::setprecision(2)
+              << fixedStep.alpha();
         window.setTitle(title.str());
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        frameLimiter.wait();
     }
 }

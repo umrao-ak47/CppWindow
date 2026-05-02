@@ -10,8 +10,7 @@ namespace {
 void printVideoMode(const VideoMode& mode)
 {
     std::cout << mode.width << "x" << mode.height << " @" << mode.refreshRate << "Hz"
-              << " rgb(" << mode.redBits << ", " << mode.greenBits << ", " << mode.blueBits
-              << ")";
+              << " rgb(" << mode.redBits << ", " << mode.greenBits << ", " << mode.blueBits << ")";
 }
 
 void printMonitors(const WindowContext& ctx)
@@ -25,9 +24,9 @@ void printMonitors(const WindowContext& ctx)
             std::cout << " primary";
         }
 
-        std::cout << " pos=" << monitor.x << ", " << monitor.y << " scale="
-                  << monitor.contentScaleX << ", " << monitor.contentScaleY << " physical="
-                  << monitor.physicalWidthMM << "x" << monitor.physicalHeightMM << "mm current=";
+        std::cout << " pos=" << monitor.x << ", " << monitor.y << " scale=" << monitor.contentScaleX
+                  << ", " << monitor.contentScaleY << " physical=" << monitor.physicalWidthMM << "x"
+                  << monitor.physicalHeightMM << "mm current=";
         printVideoMode(monitor.currentVideoMode);
         std::cout << "\n";
 
@@ -54,6 +53,8 @@ int main()
     std::cout << "Press M to print monitor info again. Escape closes.\n";
     printMonitors(ctx);
 
+    FrameLimiter frameLimiter(60.0);
+
     while (!window.shouldClose()) {
         ctx.pollEvents();
 
@@ -73,11 +74,15 @@ int main()
 
         auto [width, height] = window.getSize();
         auto [fbWidth, fbHeight] = window.getFrameBufferSize();
-        auto [scaleX, scaleY] = window.getContentScale();
+        const DpiScale dpi = window.getDpiScale();
+        auto [scaledWidth, scaledHeight] = dpi.windowSizeToFramebuffer(width, height);
 
         std::ostringstream title;
         title << "Monitor Info - size " << width << "x" << height << " framebuffer " << fbWidth
-              << "x" << fbHeight << " scale " << scaleX << ", " << scaleY;
+              << "x" << fbHeight << " scale " << dpi.x << ", " << dpi.y << " dpi-size "
+              << scaledWidth << "x" << scaledHeight;
         window.setTitle(title.str());
+
+        frameLimiter.wait();
     }
 }

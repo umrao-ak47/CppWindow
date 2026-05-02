@@ -45,6 +45,7 @@ int main()
     std::cout << "Type text. Backspace deletes, Escape closes.\n";
 
     std::u32string text;
+    FrameLimiter frameLimiter(60.0);
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
@@ -74,5 +75,7 @@ int main()
             title += " - " + toUtf8(text);
         }
         window.setTitle(title);
+
+        frameLimiter.wait();
     }
 }

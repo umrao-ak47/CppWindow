@@ -1,6 +1,6 @@
 #include <cppwindow/cppwindow.hpp>
 
-#include <chrono>
+#include <algorithm>
 #include <cmath>
 #include <glad/glad.h>
 #include <iostream>
@@ -201,6 +201,11 @@ int main()
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader())))
         throw std::runtime_error("Failed to load OpenGL");
 
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(60.0);
+    frameLimiter.setVSyncEnabled(useVSync);
+
     constexpr int GRID = 128;
 
     auto vertices = createGrid(GRID, 4.f);
@@ -237,37 +242,20 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    Mat4 proj = mat4Perspective(45.f * 3.1415926f / 180.f, 1280.f / 720.f, 0.1f, 100.f);
-
-    using clock = std::chrono::steady_clock;
-
-    auto fpsTime = clock::now();
-    auto prevFrame = clock::now();
-
-    int frames = 0;
+    FrameTimer frameTimer;
+    FpsCounter fpsCounter(1.0);
     float time = 0.f;
     float cameraAngle = 0.f;
 
     while (!window.shouldClose()) {
-        auto now = clock::now();
-
-        // delta time
-        std::chrono::duration<float> dt = now - prevFrame;
-        prevFrame = now;
-        float deltaTime = dt.count();
+        const FrameTime frame = frameTimer.tick();
+        const float deltaTime = static_cast<float>(std::min(frame.deltaSeconds, 1.0 / 30.0));
         time += deltaTime;
         cameraAngle += 0.25f * deltaTime;
 
-        // FPS counting
-        frames++;
-        std::chrono::duration<double> fpsDelta = now - fpsTime;
-
-        if (fpsDelta.count() >= 1.0) {
-            double fps = frames / fpsDelta.count();
-            frames = 0;
-            fpsTime = now;
-
-            std::cout << "OpenGL Heightmap | FPS: " << static_cast<int>(fps) << "\n";
+        if (fpsCounter.update(frame)) {
+            std::cout << "OpenGL Heightmap | FPS: "
+                      << static_cast<int>(fpsCounter.framesPerSecond()) << "\n";
         }
 
         ctx.pollEvents();
@@ -280,7 +268,13 @@ int main()
         Vec3 eye{ std::cos(cameraAngle) * 3.0f, 2.0f, std::sin(cameraAngle) * 3.0f };
 
         Mat4 view = mat4LookAt(eye, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
+        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        fbWidth = std::max<uint32_t>(fbWidth, 1);
+        fbHeight = std::max<uint32_t>(fbHeight, 1);
+        glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
+        const float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
+        Mat4 proj = mat4Perspective(45.f * 3.1415926f / 180.f, aspect, 0.1f, 100.f);
         Mat4 mvp = mat4Multiply(proj, view);
 
         glClearColor(0.05f, 0.05f, 0.08f, 1.f);
@@ -298,5 +292,6 @@ int main()
             nullptr);
 
         window.swapBuffers();
+        frameLimiter.wait();
     }
 }

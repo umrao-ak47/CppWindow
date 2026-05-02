@@ -39,7 +39,10 @@ int main()
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
-    window.setVSync(true);
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(120.0);
+    frameLimiter.setVSyncEnabled(useVSync);
 
     std::cout << "Monitors:\n";
     for (const auto& monitor : ctx.getMonitors()) {
@@ -138,5 +141,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         window.swapBuffers();
+        frameLimiter.wait();
     }
 }

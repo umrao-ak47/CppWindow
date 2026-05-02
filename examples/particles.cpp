@@ -1,12 +1,12 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <glad/glad.h>
 #include <iostream>
 #include <random>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -298,6 +298,11 @@ int main()
         throw std::runtime_error("Failed to load OpenGL");
     }
 
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(60.0);
+    frameLimiter.setVSyncEnabled(useVSync);
+
     std::mt19937 rng{ std::random_device{}() };
     constexpr size_t ParticleCount = 4500;
     auto particles = createParticles(ParticleCount, rng);
@@ -351,16 +356,20 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glDisable(GL_DEPTH_TEST);
 
-    using clock = std::chrono::steady_clock;
-    auto lastTime = clock::now();
+    FrameTimer frameTimer;
+    FpsCounter fpsCounter(0.5);
     float elapsed = 0.0f;
 
     while (!window.shouldClose()) {
-        auto now = clock::now();
-        std::chrono::duration<float> dt = now - lastTime;
-        lastTime = now;
-        const float deltaTime = std::min(dt.count(), 1.0f / 30.0f);
+        const FrameTime frame = frameTimer.tick();
+        const float deltaTime = static_cast<float>(std::min(frame.deltaSeconds, 1.0 / 30.0));
         elapsed += deltaTime;
+        if (fpsCounter.update(frame)) {
+            std::ostringstream title;
+            title << "Particle Fountain (OpenGL 4.1) - FPS "
+                  << static_cast<int>(fpsCounter.framesPerSecond());
+            window.setTitle(title.str());
+        }
 
         ctx.pollEvents();
         for (auto& e : window.events()) {
@@ -425,6 +434,7 @@ int main()
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(vertices.size()));
 
         window.swapBuffers();
+        frameLimiter.wait();
     }
 
     glDeleteProgram(program);

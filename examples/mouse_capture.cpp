@@ -1,15 +1,13 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <glad/glad.h>
-
-#include "status_text.hpp"
-
-#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+#include "status_text.hpp"
 
 using namespace cwin;
 
@@ -41,14 +39,17 @@ int main()
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
-    window.setVSync(true);
+    const bool useVSync = true;
+    window.setVSync(useVSync);
+    FrameLimiter frameLimiter(120.0);
+    frameLimiter.setVSyncEnabled(useVSync);
 
     std::cout << "Keys: C toggle captured cursor, Esc close\n";
 
     bool captured = false;
     double displayDeltaX = 0.0;
     double displayDeltaY = 0.0;
-    auto lastStatusReset = std::chrono::steady_clock::now();
+    Clock statusResetClock;
 
     while (!window.shouldClose()) {
         ctx.pollEvents();
@@ -85,11 +86,12 @@ int main()
         example::drawStatusBar(fbWidth, fbHeight, status);
         window.swapBuffers();
 
-        const auto now = std::chrono::steady_clock::now();
-        if (now - lastStatusReset >= std::chrono::milliseconds(80)) {
+        if (statusResetClock.elapsedSeconds() >= 0.08) {
             displayDeltaX = 0.0;
             displayDeltaY = 0.0;
-            lastStatusReset = now;
+            statusResetClock.reset();
         }
+
+        frameLimiter.wait();
     }
 }

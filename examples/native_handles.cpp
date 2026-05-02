@@ -56,6 +56,8 @@ int main()
     printNativeHandles(window);
     printVulkanInfo(ctx);
 
+    FrameLimiter frameLimiter(60.0);
+
     while (!window.shouldClose()) {
         ctx.pollEvents();
 
@@ -74,5 +76,7 @@ int main()
                 }
             }
         }
+
+        frameLimiter.wait();
     }
 }

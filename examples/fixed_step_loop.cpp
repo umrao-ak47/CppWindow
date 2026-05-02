@@ -1,10 +1,9 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <algorithm>
-#include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <thread>
 
 using namespace cwin;
 
@@ -44,11 +43,17 @@ int main()
 
     FrameTimer frameTimer;
     FixedStepAccumulator fixedStep(1.0 / 60.0);
+    FpsCounter fpsCounter(0.5);
+    FrameLimiter frameLimiter(60.0);
     Simulation simulation;
+    double displayedFps = 0.0;
 
     while (!window.shouldClose()) {
         const FrameTime frame = frameTimer.tick();
         const double clampedDelta = std::min(frame.deltaSeconds, 0.25);
+        if (fpsCounter.update(frame)) {
+            displayedFps = fpsCounter.framesPerSecond();
+        }
 
         ctx.pollEvents();
 
@@ -73,11 +78,12 @@ int main()
         }
 
         std::ostringstream title;
-        title << "Fixed Step Loop - frame " << frame.frameIndex << " dt " << clampedDelta
-              << " steps " << simulation.steps << " alpha " << fixedStep.alpha() << " pos "
-              << static_cast<int>(simulation.position);
+        title << "Fixed Step Loop - frame " << frame.frameIndex << " dt " << std::fixed
+              << std::setprecision(3) << clampedDelta << " fps " << std::setprecision(1)
+              << displayedFps << " steps " << simulation.steps << " alpha " << std::setprecision(2)
+              << fixedStep.alpha() << " pos " << static_cast<int>(simulation.position);
         window.setTitle(title.str());
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        frameLimiter.wait();
     }
 }
