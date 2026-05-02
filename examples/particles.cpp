@@ -1,69 +1,127 @@
 #include <cppwindow/cppwindow.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <glad/glad.h>
 #include <iostream>
 #include <random>
+#include <stdexcept>
 #include <vector>
 
 using namespace cwin;
 
-/* ===================== Particle Struct ===================== */
+namespace {
 
-struct Particle
-{
-    float x, y, z;
-    float vx, vy, vz;
-    float lifetime;
-};
-
-/* ===================== Helpers ===================== */
-
-void randomParticle(Particle& p)
-{
-    p.x = ((rand() % 1000) / 100.f - 5.f);
-    p.y = ((rand() % 1000) / 200.f);
-    p.z = ((rand() % 1000) / 100.f - 5.f);
-    p.vx = ((rand() % 1000) / 1000.f - 1.f);
-    p.vy = ((rand() % 1000) / 500.f);
-    p.vz = ((rand() % 1000) / 1000.f - 1.f);
-    p.lifetime = 1.f + (rand() % 3000) / 1000.f;
-}
-
-std::vector<Particle> createParticles(int count)
-{
-    std::vector<Particle> particles(count);
-    for (auto& p : particles) {
-        randomParticle(p);
-    }
-    return particles;
-}
-
-/* ===================== Minimal Math ===================== */
+constexpr float Pi = 3.14159265358979323846f;
 
 struct Vec3
 {
     float x, y, z;
 };
+
+struct Vec4
+{
+    float x, y, z, w;
+};
+
 struct Mat4
 {
     float m[16];
 };
 
+struct Particle
+{
+    Vec3 position;
+    Vec3 velocity;
+    float age;
+    float lifetime;
+    float size;
+};
+
+struct ParticleVertex
+{
+    Vec3 position;
+    Vec4 color;
+    float size;
+};
+
+static float randomFloat(std::mt19937& rng, float min, float max)
+{
+    std::uniform_real_distribution<float> dist(min, max);
+    return dist(rng);
+}
+
+static Vec3 operator+(Vec3 a, Vec3 b)
+{
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+static Vec3 operator*(Vec3 v, float s)
+{
+    return { v.x * s, v.y * s, v.z * s };
+}
+
+static Vec3 mix(Vec3 a, Vec3 b, float t)
+{
+    return {
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+        a.z + (b.z - a.z) * t,
+    };
+}
+
+static float smoothstep(float edge0, float edge1, float x)
+{
+    float t = std::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
+
+static void resetParticle(Particle& p, std::mt19937& rng, bool scatter)
+{
+    const float angle = randomFloat(rng, 0.0f, 2.0f * Pi);
+    const float radius = std::sqrt(randomFloat(rng, 0.0f, 1.0f)) * 0.26f;
+    const float speed = randomFloat(rng, 2.9f, 5.8f);
+    const float drift = randomFloat(rng, 0.10f, 0.72f);
+
+    p.position = {
+        std::cos(angle) * radius,
+        randomFloat(rng, -0.08f, 0.12f),
+        std::sin(angle) * radius,
+    };
+    p.velocity = {
+        std::cos(angle) * drift + randomFloat(rng, -0.16f, 0.16f),
+        speed,
+        std::sin(angle) * drift + randomFloat(rng, -0.16f, 0.16f),
+    };
+    p.lifetime = randomFloat(rng, 1.25f, 2.9f);
+    p.age = scatter ? randomFloat(rng, 0.0f, p.lifetime) : 0.0f;
+    p.size = randomFloat(rng, 18.0f, 42.0f);
+}
+
+static std::vector<Particle> createParticles(size_t count, std::mt19937& rng)
+{
+    std::vector<Particle> particles(count);
+    for (auto& p : particles) {
+        resetParticle(p, rng, true);
+    }
+    return particles;
+}
+
 static Mat4 mat4Identity()
 {
     Mat4 r{};
-    r.m[0] = r.m[5] = r.m[10] = r.m[15] = 1.f;
+    r.m[0] = r.m[5] = r.m[10] = r.m[15] = 1.0f;
     return r;
 }
 
 static Mat4 mat4Multiply(const Mat4& a, const Mat4& b)
 {
     Mat4 r{};
-    for (int c = 0; c < 4; c++) {
-        for (int r0 = 0; r0 < 4; r0++) {
-            for (int k = 0; k < 4; k++) {
+    for (int c = 0; c < 4; ++c) {
+        for (int r0 = 0; r0 < 4; ++r0) {
+            for (int k = 0; k < 4; ++k) {
                 r.m[c * 4 + r0] += a.m[k * 4 + r0] * b.m[c * 4 + k];
             }
         }
@@ -73,19 +131,22 @@ static Mat4 mat4Multiply(const Mat4& a, const Mat4& b)
 
 static Mat4 mat4Perspective(float fov, float aspect, float zn, float zf)
 {
-    float f = 1.f / std::tan(fov * 0.5f);
+    float f = 1.0f / std::tan(fov * 0.5f);
     Mat4 r{};
-    r.m[0] = f / aspect;
+    r.m[0] = f / std::max(aspect, 0.001f);
     r.m[5] = f;
     r.m[10] = (zf + zn) / (zn - zf);
-    r.m[11] = -1.f;
-    r.m[14] = (2.f * zf * zn) / (zn - zf);  // corrected below
+    r.m[11] = -1.0f;
+    r.m[14] = (2.0f * zf * zn) / (zn - zf);
     return r;
 }
 
 static Vec3 normalize(Vec3 v)
 {
     float l = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    if (l <= 0.0001f) {
+        return { 0.0f, 1.0f, 0.0f };
+    }
     return { v.x / l, v.y / l, v.z / l };
 }
 
@@ -113,149 +174,260 @@ static Mat4 mat4LookAt(Vec3 eye, Vec3 center, Vec3 up)
 
     r.m[12] = -(s.x * eye.x + s.y * eye.y + s.z * eye.z);
     r.m[13] = -(u.x * eye.x + u.y * eye.y + u.z * eye.z);
-    r.m[14] = (f.x * eye.x + f.y * eye.y + f.z * eye.z);
+    r.m[14] = f.x * eye.x + f.y * eye.y + f.z * eye.z;
     return r;
 }
 
-/* ===================== Shaders ===================== */
-
-const char* vs = R"(
-#version 410 core
-layout(location=0) in vec3 aPos;
-uniform mat4 uMVP;
-void main() {
-    gl_Position = uMVP * vec4(aPos,1.0);
-    gl_PointSize = 5.0;
-}
-)";
-
-const char* fs = R"(
-#version 410 core
-out vec4 FragColor;
-void main() {
-    FragColor = vec4(1.0,0.7,0.2,1.0);
-}
-)";
-
-GLuint compileShader(GLenum type, const char* src)
+static ParticleVertex makeVertex(const Particle& p)
 {
-    GLuint s = glCreateShader(type);
-    glShaderSource(s, 1, &src, nullptr);
-    glCompileShader(s);
-    GLint ok;
-    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+    const float t = std::clamp(p.age / p.lifetime, 0.0f, 1.0f);
+    const Vec3 hot = { 1.0f, 0.86f, 0.34f };
+    const Vec3 ember = { 1.0f, 0.25f, 0.08f };
+    const Vec3 smokeBlue = { 0.20f, 0.42f, 1.0f };
+
+    Vec3 color =
+        t < 0.42f ? mix(hot, ember, t / 0.42f) : mix(ember, smokeBlue, (t - 0.42f) / 0.58f);
+    const float fadeIn = smoothstep(0.0f, 0.08f, t);
+    const float fadeOut = std::pow(1.0f - t, 1.55f);
+
+    return {
+        .position = p.position,
+        .color = { color.x, color.y, color.z, fadeIn * fadeOut },
+        .size = p.size * (0.55f + 1.85f * t),
+    };
+}
+
+static const char* VertexShader = R"(
+#version 410 core
+
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec4 aColor;
+layout(location = 2) in float aSize;
+
+uniform mat4 uMVP;
+
+out vec4 vColor;
+
+void main()
+{
+    vec4 clip = uMVP * vec4(aPos, 1.0);
+    gl_Position = clip;
+    gl_PointSize = aSize * clamp(1.0 / max(clip.w * 0.16, 0.45), 0.35, 2.2);
+    vColor = aColor;
+}
+)";
+
+static const char* FragmentShader = R"(
+#version 410 core
+
+in vec4 vColor;
+out vec4 FragColor;
+
+void main()
+{
+    vec2 p = gl_PointCoord * 2.0 - 1.0;
+    float r2 = dot(p, p);
+    if (r2 > 1.0) {
+        discard;
+    }
+
+    float core = smoothstep(0.20, 0.0, r2);
+    float halo = smoothstep(1.0, 0.12, r2);
+    vec3 color = mix(vColor.rgb * 0.22, vColor.rgb, core);
+    FragColor = vec4(color, vColor.a * halo);
+}
+)";
+
+static GLuint compileShader(GLenum type, const char* src)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+
+    GLint ok = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
     if (!ok) {
-        char log[512];
-        glGetShaderInfoLog(s, 512, nullptr, log);
+        char log[1024];
+        glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
         throw std::runtime_error(log);
     }
-    return s;
+
+    return shader;
 }
 
-GLuint createProgram()
+static GLuint createProgram()
 {
-    GLuint vsId = compileShader(GL_VERTEX_SHADER, vs);
-    GLuint fsId = compileShader(GL_FRAGMENT_SHADER, fs);
-    GLuint prog = glCreateProgram();
-    glAttachShader(prog, vsId);
-    glAttachShader(prog, fsId);
-    glLinkProgram(prog);
-    glDeleteShader(vsId);
-    glDeleteShader(fsId);
-    return prog;
+    GLuint vs = compileShader(GL_VERTEX_SHADER, VertexShader);
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, FragmentShader);
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    GLint ok = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char log[1024];
+        glGetProgramInfoLog(program, sizeof(log), nullptr, log);
+        throw std::runtime_error(log);
+    }
+
+    return program;
 }
 
-/* ===================== Main ===================== */
+}  // namespace
 
 int main()
 {
-    srand(time(NULL));
     auto& ctx = WindowContext::Get();
 
     auto window = WindowBuilder{}
-                      .title("Particle Example (OpenGL 4.1)")
+                      .title("Particle Fountain (OpenGL 4.1)")
                       .size(1280, 720)
                       .openGL({ 4, 1, true })
+                      .resizable()
                       .build();
 
     window.makeContextCurrent();
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
-        throw std::runtime_error("GLAD failed");
+        throw std::runtime_error("Failed to load OpenGL");
     }
 
-    const int NUM_PARTICLES = 1000;
-    auto particles = createParticles(NUM_PARTICLES);
+    std::mt19937 rng{ std::random_device{}() };
+    constexpr size_t ParticleCount = 4500;
+    auto particles = createParticles(ParticleCount, rng);
+    std::vector<ParticleVertex> vertices(ParticleCount);
 
-    GLuint vao, vbo;
+    GLuint vao = 0;
+    GLuint vbo = 0;
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
     glBindVertexArray(vao);
+
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(vertices.size() * sizeof(ParticleVertex)),
+        nullptr,
+        GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(
+        0,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(ParticleVertex),
+        reinterpret_cast<void*>(offsetof(ParticleVertex, position)));
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1,
+        4,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(ParticleVertex),
+        reinterpret_cast<void*>(offsetof(ParticleVertex, color)));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(
+        2,
+        1,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(ParticleVertex),
+        reinterpret_cast<void*>(offsetof(ParticleVertex, size)));
 
     GLuint program = createProgram();
     GLint uMVP = glGetUniformLocation(program, "uMVP");
 
     glEnable(GL_PROGRAM_POINT_SIZE);
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glDisable(GL_DEPTH_TEST);
 
-    // Camera
-    Mat4 proj = mat4Perspective(45.f * 3.14159f / 180.f, 1280.f / 720.f, 0.1f, 100.f);
-    Mat4 view = mat4LookAt({ 0, 5, 8 }, { 0, 0, 0 }, { 0, 1, 0 });
-    Mat4 mvp = mat4Multiply(proj, view);
+    using clock = std::chrono::steady_clock;
+    auto lastTime = clock::now();
+    float elapsed = 0.0f;
 
-    auto lastTime = std::chrono::steady_clock::now();
-
-    std::vector<float> buffer(NUM_PARTICLES * 3);
     while (!window.shouldClose()) {
-        auto now = std::chrono::steady_clock::now();
+        auto now = clock::now();
         std::chrono::duration<float> dt = now - lastTime;
         lastTime = now;
-        float deltaTime = dt.count();
+        const float deltaTime = std::min(dt.count(), 1.0f / 30.0f);
+        elapsed += deltaTime;
 
         ctx.pollEvents();
         for (auto& e : window.events()) {
             if (e.is<Event::Closed>()) {
                 window.requestClose();
             }
-        }
-
-        // Update particles
-        for (auto& p : particles) {
-            p.vy -= 9.8f * deltaTime;  // gravity
-            p.x += p.vx * deltaTime;
-            p.y += p.vy * deltaTime;
-            p.z += p.vz * deltaTime;
-
-            p.lifetime -= deltaTime;
-            if (p.lifetime <= 0.f) {
-                randomParticle(p);
+            if (const auto* key = e.getIf<Event::KeyPressed>()) {
+                if (key->key == Key::Escape) {
+                    window.requestClose();
+                }
             }
         }
 
-        // Upload positions
-        for (int i = 0; i < NUM_PARTICLES; i++) {
-            buffer[i * 3 + 0] = particles[i].x;
-            buffer[i * 3 + 1] = particles[i].y;
-            buffer[i * 3 + 2] = particles[i].z;
-        }
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, buffer.size() * sizeof(float), buffer.data());
+        for (size_t i = 0; i < particles.size(); ++i) {
+            Particle& p = particles[i];
+            const float t = std::clamp(p.age / p.lifetime, 0.0f, 1.0f);
+            const Vec3 swirl = {
+                -p.position.z * (0.90f + t * 0.35f),
+                -1.85f - t * 1.20f,
+                p.position.x * (0.90f + t * 0.35f),
+            };
 
-        // Render
-        glClearColor(0.0f, 0.0f, 0.05f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            p.velocity = p.velocity + swirl * deltaTime;
+            p.position = p.position + p.velocity * deltaTime;
+            p.age += deltaTime;
+
+            if (p.age >= p.lifetime || p.position.y < -0.45f) {
+                resetParticle(p, rng, false);
+            }
+
+            vertices[i] = makeVertex(p);
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferSubData(
+            GL_ARRAY_BUFFER,
+            0,
+            static_cast<GLsizeiptr>(vertices.size() * sizeof(ParticleVertex)),
+            vertices.data());
+
+        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        fbWidth = std::max<uint32_t>(fbWidth, 1);
+        fbHeight = std::max<uint32_t>(fbHeight, 1);
+        glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
+
+        const float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
+        const float orbit = elapsed * 0.22f;
+        Mat4 proj = mat4Perspective(48.0f * Pi / 180.0f, aspect, 0.1f, 100.0f);
+        Mat4 view = mat4LookAt(
+            { std::cos(orbit) * 4.2f, 2.4f, std::sin(orbit) * 4.2f + 4.7f },
+            { 0.0f, 1.75f, 0.0f },
+            { 0.0f, 1.0f, 0.0f });
+        Mat4 mvp = mat4Multiply(proj, view);
+
+        glClearColor(0.006f, 0.008f, 0.018f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(program);
         glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
 
         glBindVertexArray(vao);
-        glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(vertices.size()));
 
         window.swapBuffers();
     }
+
+    glDeleteProgram(program);
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
 }
