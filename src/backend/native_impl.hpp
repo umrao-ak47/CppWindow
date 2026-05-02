@@ -31,10 +31,20 @@ struct WindowDesc
     std::string title;
     uint32_t width;
     uint32_t height;
+    std::optional<std::pair<int, int>> position;
     bool resizable;
     bool visible;
     bool decorated;
     bool focused;
+    bool floating;
+    std::optional<float> opacity;
+    std::optional<SizeLimits> sizeLimits;
+    std::optional<AspectRatio> aspectRatio;
+    std::optional<CursorMode> cursorMode;
+    std::optional<bool> vSync;
+    WindowMode windowMode;
+    uint32_t monitorId;
+    std::optional<VideoMode> videoMode;
 };
 
 //----------------------------------------------------------------------------
@@ -80,7 +90,7 @@ public:
     virtual bool shouldClose() const noexcept = 0;
     virtual void requestClose() noexcept = 0;
 
-    virtual std::span<Event> events() const noexcept = 0;
+    virtual std::span<const Event> events() const noexcept = 0;
     virtual const NativeInputState* getInput() const noexcept = 0;
 
     virtual void setTitle(const std::string& title) = 0;

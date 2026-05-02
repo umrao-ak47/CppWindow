@@ -10,6 +10,20 @@
 namespace cwin {
 
 //----------------------------------------------------------------------------
+//  Error Implementation
+//----------------------------------------------------------------------------
+Error::Error(ErrorCode code, std::string message)
+    : std::runtime_error(std::move(message)),
+      code_(code)
+{
+}
+
+ErrorCode Error::code() const noexcept
+{
+    return code_;
+}
+
+//----------------------------------------------------------------------------
 //  Timing Implementation
 //----------------------------------------------------------------------------
 Clock::Clock() noexcept
@@ -249,7 +263,7 @@ void Window::requestClose() noexcept
     window_->requestClose();
 }
 
-std::span<Event> Window::events() const noexcept
+std::span<const Event> Window::events() const noexcept
 {
     return window_->events();
 }
@@ -408,10 +422,20 @@ struct WindowBuilder::Data
     std::string title = "CppWindow";
     uint32_t width = 1280;
     uint32_t height = 720;
+    std::optional<std::pair<int, int>> position;
     bool resizable = false;
     bool visible = true;
     bool decorated = true;
     bool focused = true;
+    bool floating = false;
+    std::optional<float> opacity;
+    std::optional<SizeLimits> sizeLimits;
+    std::optional<AspectRatio> aspectRatio;
+    std::optional<CursorMode> cursorMode;
+    std::optional<bool> vSync;
+    WindowMode windowMode = WindowMode::Windowed;
+    uint32_t monitorId = 0;
+    std::optional<VideoMode> videoMode;
 };
 
 WindowBuilder::WindowBuilder()
@@ -432,6 +456,12 @@ WindowBuilder& WindowBuilder::size(int w, int h)
     return *this;
 }
 
+WindowBuilder& WindowBuilder::position(int x, int y)
+{
+    data_->position = std::pair<int, int>{ x, y };
+    return *this;
+}
+
 WindowBuilder& WindowBuilder::openGL(OpenGLConfig cfg)
 {
     data_->mode = OpenGLGraphicsModeTag{
@@ -446,22 +476,87 @@ WindowBuilder& WindowBuilder::noAPI()
     return *this;
 }
 
-WindowBuilder& WindowBuilder::hidden()
+WindowBuilder& WindowBuilder::visible(bool visible)
 {
-    data_->visible = false;
-    data_->focused = false;
+    data_->visible = visible;
+    if (!visible) {
+        data_->focused = false;
+    }
     return *this;
 }
 
-WindowBuilder& WindowBuilder::resizable()
+WindowBuilder& WindowBuilder::hidden()
 {
-    data_->resizable = true;
+    return visible(false);
+}
+
+WindowBuilder& WindowBuilder::resizable(bool resizable)
+{
+    data_->resizable = resizable;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::focused(bool focused)
+{
+    data_->focused = focused;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::decorated(bool decorated)
+{
+    data_->decorated = decorated;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::borderless()
 {
-    data_->decorated = false;
+    return decorated(false);
+}
+
+WindowBuilder& WindowBuilder::floating(bool floating)
+{
+    data_->floating = floating;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::opacity(float opacity)
+{
+    data_->opacity = opacity;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::sizeLimits(const SizeLimits& limits)
+{
+    data_->sizeLimits = limits;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::aspectRatio(AspectRatio ratio)
+{
+    data_->aspectRatio = ratio;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::cursorMode(CursorMode mode)
+{
+    data_->cursorMode = mode;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::vSync(bool enabled)
+{
+    data_->vSync = enabled;
+    return *this;
+}
+
+WindowBuilder& WindowBuilder::windowMode(
+    WindowMode mode,
+    uint32_t monitorId,
+    std::optional<VideoMode> videoMode)
+{
+    data_->windowMode = mode;
+    data_->monitorId = monitorId;
+    data_->videoMode = videoMode;
     return *this;
 }
 
@@ -472,10 +567,20 @@ Window WindowBuilder::build()
         .title = data_->title,
         .width = data_->width,
         .height = data_->height,
+        .position = data_->position,
         .resizable = data_->resizable,
         .visible = data_->visible,
         .decorated = data_->decorated,
         .focused = data_->focused,
+        .floating = data_->floating,
+        .opacity = data_->opacity,
+        .sizeLimits = data_->sizeLimits,
+        .aspectRatio = data_->aspectRatio,
+        .cursorMode = data_->cursorMode,
+        .vSync = data_->vSync,
+        .windowMode = data_->windowMode,
+        .monitorId = data_->monitorId,
+        .videoMode = data_->videoMode,
     };
     auto native = factory::createNativeWindow(std::move(desc));
     return Window(std::move(native));

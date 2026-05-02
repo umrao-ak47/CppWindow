@@ -106,6 +106,28 @@ int main()
 then collects new events for the current frame. Read `window.events()` and
 `window.getInput()` after polling.
 
+Builder options can cover most initial window state:
+
+```cpp
+auto window = cwin::WindowBuilder{}
+                  .title("Configured App")
+                  .size(1280, 720)
+                  .position(120, 80)
+                  .noAPI()
+                  .resizable()
+                  .decorated()
+                  .floating(false)
+                  .sizeLimits({ .minWidth = 640, .minHeight = 360 })
+                  .aspectRatio({ 16, 9 })
+                  .cursorMode(cwin::CursorMode::Normal)
+                  .windowMode(cwin::WindowMode::Windowed)
+                  .build();
+```
+
+Use `.hidden()`, `.visible(false)`, `.focused(false)`, `.borderless()`,
+`.opacity(value)`, `.vSync(enabled)`, or `.windowMode(...)` when those states
+should be applied before the first frame instead of immediately after `build()`.
+
 ## OpenGL Windows
 
 CppWindow can create an OpenGL context. You still need an OpenGL loader such
@@ -234,11 +256,24 @@ Common event types:
 - `GamepadConnected`, `GamepadDisconnected`
 - `GamepadButtonPressed`, `GamepadButtonReleased`
 - `GamepadAxisMoved`
+- `JoystickConnected`, `JoystickDisconnected`
+- `JoystickButtonPressed`, `JoystickButtonReleased`
+- `JoystickMoved`
 - `FilesDropped`
 
 `TextEntered` reports Unicode code points after keyboard layout and input
 method processing. Use it for text fields, and use `KeyPressed` for commands
 and shortcuts.
+
+Keyboard and mouse button events carry a `Modifiers` value:
+
+```cpp
+if (const auto* key = event.getIf<cwin::Event::KeyPressed>()) {
+    if (key->key == cwin::Key::S && key->modifiers.control) {
+        save();
+    }
+}
+```
 
 ## Gamepads
 
@@ -268,6 +303,10 @@ devices with a standard mapping.
 
 Gamepad connection, button, and axis events are delivered to window event
 queues after `pollEvents()`.
+
+Raw joystick events are also delivered for every present GLFW joystick slot.
+Use `Joystick*` events when you need backend button/axis indices, and use
+`Gamepad*` events when you want GLFW's standard controller mapping.
 
 ## Clipboard And File Drop
 
@@ -464,6 +503,24 @@ cwin::NativeHandles handles = window.getNativeHandles();
 
 `handles.system` identifies the platform. The `window` and `display` pointers
 are backend/platform-specific and should only be used at integration boundaries.
+
+## Error Handling
+
+CppWindow throws `cwin::Error` for unrecoverable public API failures, such as
+backend initialization failure, native window creation failure, or Vulkan
+surface creation failure.
+
+```cpp
+try {
+    auto& ctx = cwin::WindowContext::Get();
+    auto window = cwin::WindowBuilder{}.title("App").noAPI().build();
+} catch (const cwin::Error& error) {
+    std::cerr << error.what() << "\n";
+}
+```
+
+`cwin::Error::code()` returns an `ErrorCode` category. Backend details, such as
+GLFW error code and description, are included in `what()` when available.
 
 ## Examples
 

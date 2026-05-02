@@ -41,10 +41,75 @@ extern "C" VkResult glfwCreateWindowSurface(
 namespace cwin {
 
 //----------------------------------------------------------------------------
-//  GLFW Input Mapping Implementation
+//  GLFW Error Handling
 //----------------------------------------------------------------------------
 namespace {
 
+struct GlfwError
+{
+    int code = GLFW_NO_ERROR;
+    std::string description;
+};
+
+thread_local GlfwError g_LastGlfwError;
+
+void glfwErrorCallback(int code, const char* description)
+{
+    g_LastGlfwError.code = code;
+    g_LastGlfwError.description = description ? description : "";
+}
+
+GlfwError takeGlfwError()
+{
+    const char* description = nullptr;
+    const int code = glfwGetError(&description);
+    if (code != GLFW_NO_ERROR) {
+        g_LastGlfwError = {};
+        return GlfwError{
+            .code = code,
+            .description = description ? description : "",
+        };
+    }
+
+    GlfwError stored = std::move(g_LastGlfwError);
+    g_LastGlfwError = {};
+    return stored;
+}
+
+void clearGlfwError()
+{
+    (void)takeGlfwError();
+}
+
+Error makeGlfwError(ErrorCode code, const std::string& message)
+{
+    GlfwError glfwError = takeGlfwError();
+    std::string fullMessage = message;
+
+    if (glfwError.code != GLFW_NO_ERROR) {
+        fullMessage += " [GLFW code " + std::to_string(glfwError.code);
+        if (!glfwError.description.empty()) {
+            fullMessage += ": " + glfwError.description;
+        }
+        fullMessage += "]";
+    }
+
+    return Error(code, std::move(fullMessage));
+}
+
+Error makeGlfwError(ErrorCode code, const std::string& message, const std::string& detail)
+{
+    Error error = makeGlfwError(code, message);
+    std::string fullMessage = error.what();
+    if (!detail.empty()) {
+        fullMessage += " [" + detail + "]";
+    }
+    return Error(code, std::move(fullMessage));
+}
+
+//----------------------------------------------------------------------------
+//  GLFW Input Mapping Implementation
+//----------------------------------------------------------------------------
 static constexpr KeyMapLookup KeyMap(
     {
         /* Printable keys */
@@ -486,6 +551,16 @@ int toGlfwCursorMode(CursorMode mode)
     return GLFW_CURSOR_NORMAL;
 }
 
+Modifiers toModifiers(int mods)
+{
+    return Modifiers{
+        .alt = (mods & GLFW_MOD_ALT) != 0,
+        .control = (mods & GLFW_MOD_CONTROL) != 0,
+        .shift = (mods & GLFW_MOD_SHIFT) != 0,
+        .system = (mods & GLFW_MOD_SUPER) != 0,
+    };
+}
+
 uint32_t getWindowMonitorId(GLFWwindow* window)
 {
     auto monitors = getOrderedMonitors();
@@ -667,12 +742,118 @@ std::optional<GamepadInfo> readGamepadInfo(uint32_t gamepadId)
     return info;
 }
 
+struct JoystickSnapshot
+{
+    std::string name;
+    bool standardMapping = false;
+    std::vector<unsigned char> buttons;
+    std::vector<float> axes;
+};
+
+std::optional<JoystickSnapshot> readJoystickSnapshot(uint32_t joystickId)
+{
+    if (joystickId >= MaxJoysticks || !glfwJoystickPresent(static_cast<int>(joystickId))) {
+        return std::nullopt;
+    }
+
+    const int backendId = static_cast<int>(joystickId);
+    JoystickSnapshot snapshot{};
+    snapshot.standardMapping = glfwJoystickIsGamepad(backendId) == GLFW_TRUE;
+
+    if (const char* name = glfwGetJoystickName(backendId)) {
+        snapshot.name = name;
+    }
+
+    int buttonCount = 0;
+    if (const unsigned char* buttons = glfwGetJoystickButtons(backendId, &buttonCount)) {
+        snapshot.buttons.assign(buttons, buttons + buttonCount);
+    }
+
+    int axisCount = 0;
+    if (const float* axes = glfwGetJoystickAxes(backendId, &axisCount)) {
+        snapshot.axes.assign(axes, axes + axisCount);
+    }
+
+    return snapshot;
+}
+
 void dispatchEventToAllWindows(const Event& event)
 {
     g_WindowRegistry.forEach([&](WindowStorage& storage) {
         storage.inputState->handleEvent(event);
         storage.eventQueue.push_back(event);
     });
+}
+
+void pollJoysticks()
+{
+    static std::array<std::optional<JoystickSnapshot>, MaxJoysticks> previousStates{};
+    constexpr float AxisEpsilon = 0.01f;
+
+    for (uint32_t id = 0; id < MaxJoysticks; ++id) {
+        auto current = readJoystickSnapshot(id);
+        auto& previous = previousStates[id];
+
+        if (current && !previous) {
+            dispatchEventToAllWindows(
+                Event::JoystickConnected{
+                    .joystickId = id,
+                    .name = current->name,
+                    .standardMapping = current->standardMapping,
+                    .axisCount = static_cast<uint32_t>(current->axes.size()),
+                    .buttonCount = static_cast<uint32_t>(current->buttons.size()),
+                });
+        } else if (!current && previous) {
+            dispatchEventToAllWindows(
+                Event::JoystickDisconnected{
+                    .joystickId = id,
+                });
+        } else if (current && previous) {
+            const size_t buttonCount = std::max(current->buttons.size(), previous->buttons.size());
+            for (size_t button = 0; button < buttonCount; ++button) {
+                const bool currentDown =
+                    button < current->buttons.size() && current->buttons[button] == GLFW_PRESS;
+                const bool previousDown =
+                    button < previous->buttons.size() && previous->buttons[button] == GLFW_PRESS;
+                if (currentDown == previousDown) {
+                    continue;
+                }
+
+                if (currentDown) {
+                    dispatchEventToAllWindows(
+                        Event::JoystickButtonPressed{
+                            .joystickId = id,
+                            .button = static_cast<uint32_t>(button),
+                        });
+                } else {
+                    dispatchEventToAllWindows(
+                        Event::JoystickButtonReleased{
+                            .joystickId = id,
+                            .button = static_cast<uint32_t>(button),
+                        });
+                }
+            }
+
+            const size_t axisCount = std::max(current->axes.size(), previous->axes.size());
+            for (size_t axis = 0; axis < axisCount; ++axis) {
+                const float currentValue = axis < current->axes.size() ? current->axes[axis] : 0.0f;
+                const float previousValue =
+                    axis < previous->axes.size() ? previous->axes[axis] : 0.0f;
+                if (std::abs(currentValue - previousValue) <= AxisEpsilon) {
+                    continue;
+                }
+
+                dispatchEventToAllWindows(
+                    Event::JoystickMoved{
+                        .joystickId = id,
+                        .axis = static_cast<uint32_t>(axis),
+                        .position = currentValue,
+                    });
+            }
+        }
+
+        previous = std::move(current);
+    }
 }
 
 void pollGamepads()
@@ -748,11 +929,15 @@ namespace {
 void setupGlfwWindowHints(const WindowDesc& desc)
 {
     glfwDefaultWindowHints();
+    const bool createVisible =
+        desc.visible && !desc.position && !desc.opacity && desc.windowMode == WindowMode::Windowed;
+
     // Common Window hints
     glfwWindowHint(GLFW_RESIZABLE, desc.resizable);
-    glfwWindowHint(GLFW_VISIBLE, desc.visible);
+    glfwWindowHint(GLFW_VISIBLE, createVisible ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FOCUSED, desc.focused);
     glfwWindowHint(GLFW_DECORATED, desc.decorated);
+    glfwWindowHint(GLFW_FLOATING, desc.floating);
     // special Window Hints
     const auto visitor = Visitor{
         [](NoneGraphicsModeTag) {
@@ -859,20 +1044,14 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
                 Event::KeyPressed{
                     .key = mappedKey,
                     .scancode = scancode,
-                    .alt = (mods & GLFW_MOD_ALT) != 0,
-                    .control = (mods & GLFW_MOD_CONTROL) != 0,
-                    .shift = (mods & GLFW_MOD_SHIFT) != 0,
-                    .system = (mods & GLFW_MOD_SUPER) != 0,
+                    .modifiers = toModifiers(mods),
                 });
         } else if (action == GLFW_RELEASE) {
             self->handleEvent(
                 Event::KeyReleased{
                     .key = mappedKey,
                     .scancode = scancode,
-                    .alt = (mods & GLFW_MOD_ALT) != 0,
-                    .control = (mods & GLFW_MOD_CONTROL) != 0,
-                    .shift = (mods & GLFW_MOD_SHIFT) != 0,
-                    .system = (mods & GLFW_MOD_SUPER) != 0,
+                    .modifiers = toModifiers(mods),
                 });
         }
     });
@@ -899,10 +1078,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
                     .button = mappedButton,
                     .posX = xpos,
                     .posY = ypos,
-                    .alt = (mods & GLFW_MOD_ALT) != 0,
-                    .control = (mods & GLFW_MOD_CONTROL) != 0,
-                    .shift = (mods & GLFW_MOD_SHIFT) != 0,
-                    .system = (mods & GLFW_MOD_SUPER) != 0,
+                    .modifiers = toModifiers(mods),
                 });
         } else if (action == GLFW_RELEASE) {
             self->handleEvent(
@@ -910,10 +1086,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
                     .button = mappedButton,
                     .posX = xpos,
                     .posY = ypos,
-                    .alt = (mods & GLFW_MOD_ALT) != 0,
-                    .control = (mods & GLFW_MOD_CONTROL) != 0,
-                    .shift = (mods & GLFW_MOD_SHIFT) != 0,
-                    .system = (mods & GLFW_MOD_SUPER) != 0,
+                    .modifiers = toModifiers(mods),
                 });
         }
     });
@@ -978,9 +1151,12 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 {
     hasOpenGLContext_ = std::holds_alternative<OpenGLGraphicsModeTag>(desc.mode);
     decorated_ = desc.decorated;
+    floating_ = desc.floating;
     windowedDecorated_ = decorated_;
+    windowedFloating_ = floating_;
 
     setupGlfwWindowHints(desc);
+    clearGlfwError();
     handle_.reset(glfwCreateWindow(
         desc.width,
         desc.height,
@@ -990,13 +1166,17 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
         ));
 
     if (!handle_) {
-        throw GLFWException("Failed to create window");
+        throw makeGlfwError(ErrorCode::WindowCreationFailed, "Failed to create GLFW window");
     }
 
     // issue: https://github.com/glfw/glfw/issues/2060
     if (!desc.decorated) {
         glfwSetWindowAttrib(handle_.get(), GLFW_DECORATED, GLFW_FALSE);
     };
+
+    if (desc.position) {
+        glfwSetWindowPos(handle_.get(), desc.position->first, desc.position->second);
+    }
 
     storage_ = std::make_shared<WindowStorage>(std::make_unique<GLFWInputState>(handle_.get()));
     captureWindowedBounds();
@@ -1005,6 +1185,31 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     // set data and register callbacks
     glfwSetWindowUserPointer(handle_.get(), this);
     registerGlfwCallbacks(handle_.get());
+
+    if (desc.sizeLimits) {
+        setSizeLimits(*desc.sizeLimits);
+    }
+    if (desc.aspectRatio) {
+        setAspectRatio(*desc.aspectRatio);
+    }
+    if (desc.opacity) {
+        setOpacity(*desc.opacity);
+    }
+    if (desc.cursorMode) {
+        setCursorMode(*desc.cursorMode);
+    }
+    if (desc.vSync) {
+        setVSync(*desc.vSync);
+    }
+    if (desc.windowMode != WindowMode::Windowed) {
+        setWindowMode(desc.windowMode, desc.monitorId, desc.videoMode);
+    }
+    if (desc.visible && (desc.position || desc.opacity || desc.windowMode != WindowMode::Windowed)) {
+        glfwShowWindow(handle_.get());
+        if (desc.focused) {
+            glfwFocusWindow(handle_.get());
+        }
+    }
 
     // register to registry
     g_WindowRegistry.registerStorage(storage_);
@@ -1072,6 +1277,7 @@ VulkanHandle GLFWNativeWindow::createVulkanSurface(void* instance) const
 {
     VkSurfaceKHR surface = 0;
 
+    clearGlfwError();
     // 3. Call the function directly
     // The linker will find this inside the glfw3 library you are linking against
     VkResult result = glfwCreateWindowSurface(
@@ -1081,7 +1287,10 @@ VulkanHandle GLFWNativeWindow::createVulkanSurface(void* instance) const
         &surface);
     // VK_SUCCESS is 0
     if (result != 0) {
-        throw GLFWException("Failed to create window surface via GLFW");
+        throw makeGlfwError(
+            ErrorCode::VulkanSurfaceCreationFailed,
+            "Failed to create Vulkan window surface",
+            "VkResult " + std::to_string(result));
     }
     return static_cast<VulkanHandle>(surface);
 }
@@ -1106,9 +1315,9 @@ void GLFWNativeWindow::requestClose() noexcept
     glfwSetWindowShouldClose(handle_.get(), GLFW_TRUE);
 }
 
-std::span<Event> GLFWNativeWindow::events() const noexcept
+std::span<const Event> GLFWNativeWindow::events() const noexcept
 {
-    return storage_->eventQueue;
+    return std::span<const Event>{ storage_->eventQueue.data(), storage_->eventQueue.size() };
 }
 
 const NativeInputState* GLFWNativeWindow::getInput() const noexcept
@@ -1466,14 +1675,21 @@ bool GLFWNativeWindow::isVisible() const noexcept
 //----------------------------------------------------------------------------
 GLFWWindowContext::GLFWWindowContext()
 {
+    previousErrorCallback_ = glfwSetErrorCallback(glfwErrorCallback);
+    clearGlfwError();
+
     if (!glfwInit()) {
-        throw GLFWException("Failed to initialize GLFW");
+        GLFWerrorfun previous = previousErrorCallback_;
+        previousErrorCallback_ = nullptr;
+        glfwSetErrorCallback(previous);
+        throw makeGlfwError(ErrorCode::InitializationFailed, "Failed to initialize GLFW");
     }
 }
 
 GLFWWindowContext::~GLFWWindowContext()
 {
     glfwTerminate();
+    glfwSetErrorCallback(previousErrorCallback_);
 }
 
 void GLFWWindowContext::pollEvents() noexcept
@@ -1482,6 +1698,7 @@ void GLFWWindowContext::pollEvents() noexcept
     g_WindowRegistry.resetAll();
     // poll new events
     glfwPollEvents();
+    pollJoysticks();
     pollGamepads();
 }
 

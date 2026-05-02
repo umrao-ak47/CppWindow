@@ -21,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -28,6 +29,33 @@
 #include <vector>
 
 namespace cwin {
+
+/// Public error category for failures reported by CppWindow.
+enum class ErrorCode : uint8_t
+{
+    /// Backend failure that does not fit a narrower category.
+    BackendFailure,
+    /// Failed to initialize the backend/windowing system.
+    InitializationFailed,
+    /// Failed to create a native window.
+    WindowCreationFailed,
+    /// Failed to create a Vulkan surface for a window.
+    VulkanSurfaceCreationFailed
+};
+
+/// Exception thrown for unrecoverable CppWindow API failures.
+class Error : public std::runtime_error
+{
+public:
+    /// Creates an error with a category and human-readable message.
+    Error(ErrorCode code, std::string message);
+
+    /// Returns the error category.
+    [[nodiscard]] ErrorCode code() const noexcept;
+
+private:
+    ErrorCode code_;
+};
 
 /// Generic function pointer returned by a graphics procedure loader.
 using ProcFunction = void (*)();
@@ -313,6 +341,25 @@ enum class Action : int
     Repeat
 };
 
+/// Keyboard or mouse modifier state.
+struct Modifiers
+{
+    /// Whether Alt/Option was held.
+    bool alt = false;
+    /// Whether Control was held.
+    bool control = false;
+    /// Whether Shift was held.
+    bool shift = false;
+    /// Whether the system/super/command modifier was held.
+    bool system = false;
+
+    /// Returns whether any modifier is held.
+    [[nodiscard]] bool any() const noexcept
+    {
+        return alt || control || shift || system;
+    }
+};
+
 /// Mouse button code.
 enum class MouseButton : uint8_t
 {
@@ -400,6 +447,8 @@ inline constexpr std::size_t GamepadButtonCount{
 inline constexpr std::size_t GamepadAxisCount{ static_cast<std::size_t>(GamepadAxis::Last) + 1 };
 /// Maximum gamepad slots scanned by the backend.
 inline constexpr std::size_t MaxGamepads{ 16 };
+/// Maximum joystick slots scanned by the backend.
+inline constexpr std::size_t MaxJoysticks{ 16 };
 
 /// Connected gamepad metadata.
 struct GamepadInfo
@@ -623,14 +672,8 @@ public:
         Key key{};
         /// Platform scancode.
         int scancode{};
-        /// Whether Alt was held.
-        bool alt{};
-        /// Whether Control was held.
-        bool control{};
-        /// Whether Shift was held.
-        bool shift{};
-        /// Whether the system/super modifier was held.
-        bool system{};
+        /// Modifier keys held for this event.
+        Modifiers modifiers{};
     };
 
     /// Key release event.
@@ -640,14 +683,8 @@ public:
         Key key{};
         /// Platform scancode.
         int scancode{};
-        /// Whether Alt was held.
-        bool alt{};
-        /// Whether Control was held.
-        bool control{};
-        /// Whether Shift was held.
-        bool shift{};
-        /// Whether the system/super modifier was held.
-        bool system{};
+        /// Modifier keys held for this event.
+        Modifiers modifiers{};
     };
 
     /// Mouse wheel or trackpad scroll event.
@@ -666,14 +703,8 @@ public:
         MouseButton button{};
         /// Cursor x/y position in window coordinates.
         double posX, posY;
-        /// Whether Alt was held.
-        bool alt{};
-        /// Whether Control was held.
-        bool control{};
-        /// Whether Shift was held.
-        bool shift{};
-        /// Whether the system/super modifier was held.
-        bool system{};
+        /// Modifier keys held for this event.
+        Modifiers modifiers{};
     };
 
     /// Mouse button release event.
@@ -683,14 +714,8 @@ public:
         MouseButton button{};
         /// Cursor x/y position in window coordinates.
         double posX, posY;
-        /// Whether Alt was held.
-        bool alt{};
-        /// Whether Control was held.
-        bool control{};
-        /// Whether Shift was held.
-        bool shift{};
-        /// Whether the system/super modifier was held.
-        bool system{};
+        /// Modifier keys held for this event.
+        Modifiers modifiers{};
     };
 
     /// Mouse move event.
@@ -766,77 +791,55 @@ public:
         double posY{};
     };
 
-    /// Reserved joystick button press payload.
+    /// Raw joystick button press event.
     struct JoystickButtonPressed
     {
         /// Joystick slot id.
-        unsigned int joystickId{};
+        uint32_t joystickId{};
         /// Backend button index.
-        unsigned int button{};
+        uint32_t button{};
     };
 
-    /// Reserved joystick button release payload.
+    /// Raw joystick button release event.
     struct JoystickButtonReleased
     {
         /// Joystick slot id.
-        unsigned int joystickId{};
+        uint32_t joystickId{};
         /// Backend button index.
-        unsigned int button{};
+        uint32_t button{};
     };
 
-    /// Reserved joystick axis movement payload.
+    /// Raw joystick axis movement event.
     struct JoystickMoved
     {
         /// Joystick slot id.
-        unsigned int joystickId{};
-        // Joystick::Axis axis{};
+        uint32_t joystickId{};
+        /// Backend axis index.
+        uint32_t axis{};
         /// Backend axis position.
         float position{};
     };
 
-    /// Reserved joystick connection payload.
+    /// Raw joystick connection event.
     struct JoystickConnected
     {
         /// Joystick slot id.
-        unsigned int joystickId{};
+        uint32_t joystickId{};
+        /// Human-readable name when available.
+        std::string name;
+        /// Whether GLFW has a standard gamepad mapping for this joystick.
+        bool standardMapping{};
+        /// Number of raw axes reported by the backend.
+        uint32_t axisCount{};
+        /// Number of raw buttons reported by the backend.
+        uint32_t buttonCount{};
     };
 
-    /// Reserved joystick disconnection payload.
+    /// Raw joystick disconnection event.
     struct JoystickDisconnected
     {
         /// Joystick slot id.
-        unsigned int joystickId{};
-    };
-
-    /// Reserved touch begin payload.
-    struct TouchBegan
-    {
-        /// Touch/finger id.
-        unsigned int finger{};
-        // Vector2i position;
-    };
-
-    /// Reserved touch move payload.
-    struct TouchMoved
-    {
-        /// Touch/finger id.
-        unsigned int finger{};
-        // Vector2i position;
-    };
-
-    /// Reserved touch end payload.
-    struct TouchEnded
-    {
-        /// Touch/finger id.
-        unsigned int finger{};
-        // Vector2i position;
-    };
-
-    /// Reserved sensor change payload.
-    struct SensorChanged
-    {
-        // Sensor::Type type{};
-        // Vector3f value;
+        uint32_t joystickId{};
     };
 
     /// Variant containing every event payload type.
@@ -871,11 +874,7 @@ public:
         JoystickButtonReleased,
         JoystickMoved,
         JoystickConnected,
-        JoystickDisconnected,
-        TouchBegan,
-        TouchMoved,
-        TouchEnded,
-        SensorChanged>;
+        JoystickDisconnected>;
 
     /// Creates a default event payload.
     Event() = default;
@@ -1012,8 +1011,8 @@ public:
     /// Requests that the window close.
     void requestClose() noexcept;
 
-    /// Returns events collected by the last context poll.
-    std::span<Event> events() const noexcept;
+    /// Returns read-only events collected by the last context poll.
+    std::span<const Event> events() const noexcept;
     /// Returns the input query interface for this window.
     const InputState& getInput() const noexcept;
 
@@ -1100,16 +1099,41 @@ public:
     WindowBuilder& title(std::string t);
     /// Sets the initial content size.
     WindowBuilder& size(int w, int h);
+    /// Sets the initial window position in virtual desktop coordinates.
+    WindowBuilder& position(int x, int y);
     /// Requests an OpenGL context with the given configuration.
     WindowBuilder& openGL(OpenGLConfig cfg = {});
     /// Requests no graphics API for this window.
     WindowBuilder& noAPI();
+    /// Sets whether the window is initially visible.
+    WindowBuilder& visible(bool visible = true);
     /// Creates the window hidden and unfocused.
     WindowBuilder& hidden();
-    /// Allows the user to resize the window.
-    WindowBuilder& resizable();
+    /// Sets whether the user can resize the window.
+    WindowBuilder& resizable(bool resizable = true);
+    /// Sets whether the window initially has input focus.
+    WindowBuilder& focused(bool focused = true);
+    /// Sets whether the window uses platform decorations.
+    WindowBuilder& decorated(bool decorated = true);
     /// Creates the window without platform decorations.
     WindowBuilder& borderless();
+    /// Sets whether the window is initially always-on-top.
+    WindowBuilder& floating(bool floating = true);
+    /// Sets initial platform opacity.
+    WindowBuilder& opacity(float opacity);
+    /// Sets initial min/max size limits.
+    WindowBuilder& sizeLimits(const SizeLimits& limits);
+    /// Sets initial aspect ratio.
+    WindowBuilder& aspectRatio(AspectRatio ratio);
+    /// Sets initial cursor visibility/capture mode.
+    WindowBuilder& cursorMode(CursorMode mode);
+    /// Sets initial OpenGL swap interval behavior.
+    WindowBuilder& vSync(bool enabled = true);
+    /// Sets the initial presentation mode.
+    WindowBuilder& windowMode(
+        WindowMode mode,
+        uint32_t monitorId = 0,
+        std::optional<VideoMode> videoMode = std::nullopt);
     /// Creates the window.
     Window build();
 

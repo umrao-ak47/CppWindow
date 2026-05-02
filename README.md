@@ -17,10 +17,11 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 - Builder-based window creation
 - Per-window input state
 - Strongly typed event system
+- Structured modifier state and CppWindow error categories
 - Vulkan surface support
 - OpenGL context support
 - Window controls and monitor queries
-- Mouse delta, text input, and standard gamepad support
+- Mouse delta, text input, raw joystick events, and standard gamepad support
 - Clipboard, file drop events, and lightweight timing helpers
 - Zero global input state
 - Backend abstraction (currently GLFW)

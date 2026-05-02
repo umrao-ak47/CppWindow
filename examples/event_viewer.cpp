@@ -65,8 +65,18 @@ constexpr const char* eventName()
         return "GamepadAxisMoved";
     } else if constexpr (std::is_same_v<T, Event::FilesDropped>) {
         return "FilesDropped";
+    } else if constexpr (std::is_same_v<T, Event::JoystickConnected>) {
+        return "JoystickConnected";
+    } else if constexpr (std::is_same_v<T, Event::JoystickDisconnected>) {
+        return "JoystickDisconnected";
+    } else if constexpr (std::is_same_v<T, Event::JoystickButtonPressed>) {
+        return "JoystickButtonPressed";
+    } else if constexpr (std::is_same_v<T, Event::JoystickButtonReleased>) {
+        return "JoystickButtonReleased";
+    } else if constexpr (std::is_same_v<T, Event::JoystickMoved>) {
+        return "JoystickMoved";
     } else {
-        return "ReservedEvent";
+        return "UnknownEvent";
     }
 }
 
@@ -74,6 +84,12 @@ template <typename Enum>
 int enumIndex(Enum value)
 {
     return static_cast<int>(value);
+}
+
+void logModifiers(const Modifiers& modifiers)
+{
+    std::cout << " alt=" << modifiers.alt << " control=" << modifiers.control
+              << " shift=" << modifiers.shift << " system=" << modifiers.system;
 }
 
 void logEvent(const Event& event)
@@ -97,9 +113,8 @@ void logEvent(const Event& event)
             std::cout << " codepoint=" << static_cast<uint32_t>(payload.unicode);
         } else if constexpr (std::is_same_v<T, Event::KeyPressed>
                              || std::is_same_v<T, Event::KeyReleased>) {
-            std::cout << " key=" << enumIndex(payload.key) << " scancode=" << payload.scancode
-                      << " alt=" << payload.alt << " control=" << payload.control
-                      << " shift=" << payload.shift << " system=" << payload.system;
+            std::cout << " key=" << enumIndex(payload.key) << " scancode=" << payload.scancode;
+            logModifiers(payload.modifiers);
         } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
             std::cout << " delta=" << payload.deltaX << ", " << payload.deltaY << " pos="
                       << payload.posX << ", " << payload.posY;
@@ -107,6 +122,7 @@ void logEvent(const Event& event)
                              || std::is_same_v<T, Event::MouseButtonReleased>) {
             std::cout << " button=" << enumIndex(payload.button) << " pos=" << payload.posX
                       << ", " << payload.posY;
+            logModifiers(payload.modifiers);
         } else if constexpr (std::is_same_v<T, Event::MouseMoved>) {
             std::cout << " pos=" << payload.posX << ", " << payload.posY;
         } else if constexpr (std::is_same_v<T, Event::GamepadConnected>) {
@@ -123,6 +139,18 @@ void logEvent(const Event& event)
         } else if constexpr (std::is_same_v<T, Event::FilesDropped>) {
             std::cout << " files=" << payload.paths.size() << " pos=" << payload.posX << ", "
                       << payload.posY;
+        } else if constexpr (std::is_same_v<T, Event::JoystickConnected>) {
+            std::cout << " id=" << payload.joystickId << " name=" << payload.name
+                      << " standard=" << payload.standardMapping
+                      << " axes=" << payload.axisCount << " buttons=" << payload.buttonCount;
+        } else if constexpr (std::is_same_v<T, Event::JoystickDisconnected>) {
+            std::cout << " id=" << payload.joystickId;
+        } else if constexpr (std::is_same_v<T, Event::JoystickButtonPressed>
+                             || std::is_same_v<T, Event::JoystickButtonReleased>) {
+            std::cout << " id=" << payload.joystickId << " button=" << payload.button;
+        } else if constexpr (std::is_same_v<T, Event::JoystickMoved>) {
+            std::cout << " id=" << payload.joystickId << " axis=" << payload.axis
+                      << " position=" << payload.position;
         }
 
         std::cout << "\n";
