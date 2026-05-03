@@ -54,6 +54,39 @@
       }
     },
     {
+      "name": "ci-release",
+      "displayName": "CI Release",
+      "description": "Release CI build with examples and tests.",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CPPWINDOW_BUILD_EXAMPLES": "ON",
+        "CPPWINDOW_BUILD_TESTS": "ON",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
+      "name": "ci-imgui",
+      "displayName": "CI ImGui",
+      "description": "Release CI build with optional Dear ImGui targets.",
+      "inherits": "ci-release",
+      "cacheVariables": {
+        "CPPWINDOW_BUILD_IMGUI": "ON"
+      }
+    },
+    {
+      "name": "ci-windows",
+      "displayName": "CI Windows",
+      "description": "Visual Studio release CI build with examples and tests.",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build-presets/ci-windows",
+      "cacheVariables": {
+        "CPPWINDOW_BUILD_EXAMPLES": "ON",
+        "CPPWINDOW_BUILD_TESTS": "ON",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
       "name": "install",
       "displayName": "Install",
       "description": "Release install/package validation build.",
@@ -116,6 +149,19 @@
       "configurePreset": "imgui"
     },
     {
+      "name": "ci-release",
+      "configurePreset": "ci-release"
+    },
+    {
+      "name": "ci-imgui",
+      "configurePreset": "ci-imgui"
+    },
+    {
+      "name": "ci-windows-release",
+      "configurePreset": "ci-windows",
+      "configuration": "Release"
+    },
+    {
       "name": "docs",
       "configurePreset": "docs",
       "targets": [
@@ -168,6 +214,28 @@
     {
       "name": "imgui",
       "configurePreset": "imgui",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-release",
+      "configurePreset": "ci-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-imgui",
+      "configurePreset": "ci-imgui",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-windows-release",
+      "configurePreset": "ci-windows",
+      "configuration": "Release",
       "output": {
         "outputOnFailure": true
       }

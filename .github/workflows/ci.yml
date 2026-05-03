@@ -23,19 +23,31 @@ jobs:
             os: ubuntu-latest
             cc: gcc
             cxx: g++
+            configure_preset: ci-release
+            build_preset: ci-release
+            test_preset: ci-release
             cmake_extra_args: -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
           - name: Ubuntu Clang
             os: ubuntu-latest
             cc: clang
             cxx: clang++
+            configure_preset: ci-release
+            build_preset: ci-release
+            test_preset: ci-release
             cmake_extra_args: -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
           - name: macOS Clang
             os: macos-latest
             cc: clang
             cxx: clang++
+            configure_preset: ci-release
+            build_preset: ci-release
+            test_preset: ci-release
             cmake_extra_args: ""
           - name: Windows MSVC
             os: windows-latest
+            configure_preset: ci-windows
+            build_preset: ci-windows-release
+            test_preset: ci-windows-release
             cmake_extra_args: ""
 
     steps:
@@ -46,35 +58,63 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+          sudo apt-get install -y ninja-build pkg-config xvfb xorg-dev libgl1-mesa-dev libglu1-mesa-dev
 
       - name: Configure
         if: runner.os != 'Windows'
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
-        run: >
-          cmake -S . -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DCPPWINDOW_BUILD_EXAMPLES=ON
-          -DCPPWINDOW_BUILD_TESTS=ON
-          -DCPPWINDOW_BUILD_DOCS=OFF
-          ${{ matrix.cmake_extra_args }}
+        run: cmake --preset ${{ matrix.configure_preset }} ${{ matrix.cmake_extra_args }}
 
       - name: Configure
         if: runner.os == 'Windows'
-        run: >
-          cmake -S . -B build
-          -DCPPWINDOW_BUILD_EXAMPLES=ON
-          -DCPPWINDOW_BUILD_TESTS=ON
-          -DCPPWINDOW_BUILD_DOCS=OFF
-          ${{ matrix.cmake_extra_args }}
+        run: cmake --preset ${{ matrix.configure_preset }} ${{ matrix.cmake_extra_args }}
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build --preset ${{ matrix.build_preset }} --parallel
 
       - name: Test
-        run: ctest --test-dir build --build-config Release --output-on-failure
+        if: runner.os != 'Linux'
+        run: ctest --preset ${{ matrix.test_preset }}
+
+      - name: Test
+        if: runner.os == 'Linux'
+        run: xvfb-run -a ctest --preset ${{ matrix.test_preset }}
+
+  imgui:
+    name: ImGui
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config xvfb xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Configure ImGui preset
+        run: cmake --preset ci-imgui -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build ImGui preset
+        run: cmake --build --preset ci-imgui --parallel
+
+      - name: Test ImGui preset
+        run: xvfb-run -a ctest --preset ci-imgui
+
+      - name: Configure ImGui target provider preset
+        working-directory: tests/imgui_target_provider
+        run: cmake --preset target-provider -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build ImGui target provider preset
+        working-directory: tests/imgui_target_provider
+        run: cmake --build --preset target-provider --parallel
+
+      - name: Test ImGui target provider preset
+        working-directory: tests/imgui_target_provider
+        run: ctest --preset target-provider
 
   sanitizers:
     name: ${{ matrix.name }}
@@ -111,23 +151,21 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+          sudo apt-get install -y clang ninja-build pkg-config xvfb xorg-dev libgl1-mesa-dev libglu1-mesa-dev
 
       - name: Configure sanitizer build
-        run: >
-          cmake -S . -B build-sanitizers
-          -DCMAKE_BUILD_TYPE=Debug
-          -DCPPWINDOW_ENABLE_SANITIZERS=ON
-          -DCPPWINDOW_BUILD_EXAMPLES=ON
-          -DCPPWINDOW_BUILD_TESTS=ON
-          -DCPPWINDOW_BUILD_DOCS=OFF
-          ${{ matrix.cmake_extra_args }}
+        run: cmake --preset sanitizers ${{ matrix.cmake_extra_args }}
 
       - name: Build sanitizer configuration
-        run: cmake --build build-sanitizers --config Debug --parallel
+        run: cmake --build --preset sanitizers --parallel
 
       - name: Test sanitizer configuration
-        run: ctest --test-dir build-sanitizers --build-config Debug --output-on-failure --timeout 120
+        if: runner.os != 'Linux'
+        run: ctest --preset sanitizers
+
+      - name: Test sanitizer configuration
+        if: runner.os == 'Linux'
+        run: xvfb-run -a ctest --preset sanitizers
 
   package:
     name: Package Install
@@ -140,37 +178,43 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+          sudo apt-get install -y ninja-build pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
 
       - name: Configure install build
-        run: >
-          cmake -S . -B build-install
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
-          -DCPPWINDOW_INSTALL=ON
-          -DCPPWINDOW_BUILD_EXAMPLES=OFF
-          -DCPPWINDOW_BUILD_TESTS=OFF
-          -DCPPWINDOW_BUILD_DOCS=OFF
-          -DGLFW_BUILD_X11=ON
-          -DGLFW_BUILD_WAYLAND=OFF
+        run: cmake --preset install -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
 
       - name: Build install package
-        run: cmake --build build-install --config Release --parallel
-
-      - name: Install package
-        run: cmake --install build-install --config Release
+        run: cmake --build --preset install --parallel
 
       - name: Configure package consumer
-        run: >
-          cmake -S tests/package_consumer -B build-package-consumer
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
+        working-directory: tests/package_consumer
+        run: cmake --preset installed
 
       - name: Build package consumer
-        run: cmake --build build-package-consumer --config Release --parallel
+        working-directory: tests/package_consumer
+        run: cmake --build --preset installed --parallel
 
       - name: Test package consumer
-        run: ctest --test-dir build-package-consumer --build-config Release --output-on-failure
+        working-directory: tests/package_consumer
+        run: ctest --preset installed
+
+      - name: Configure ImGui install build
+        run: cmake --preset install-imgui -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build ImGui install package
+        run: cmake --build --preset install-imgui --parallel
+
+      - name: Configure ImGui package consumer
+        working-directory: tests/package_consumer
+        run: cmake --preset installed-imgui
+
+      - name: Build ImGui package consumer
+        working-directory: tests/package_consumer
+        run: cmake --build --preset installed-imgui --parallel
+
+      - name: Test ImGui package consumer
+        working-directory: tests/package_consumer
+        run: ctest --preset installed-imgui
 
   docs:
     name: Docs
@@ -183,14 +227,10 @@ jobs:
       - name: Install Doxygen
         run: |
           sudo apt-get update
-          sudo apt-get install -y doxygen
+          sudo apt-get install -y doxygen ninja-build
 
       - name: Configure docs
-        run: >
-          cmake -S . -B build-docs
-          -DCPPWINDOW_BUILD_DOCS=ON
-          -DCPPWINDOW_BUILD_EXAMPLES=OFF
-          -DCPPWINDOW_BUILD_TESTS=OFF
+        run: cmake --preset docs
 
       - name: Build docs
-        run: cmake --build build-docs --target cppwindow_docs
+        run: cmake --build --preset docs

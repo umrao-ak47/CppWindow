@@ -19,6 +19,14 @@ cppwindow_add_test(test_api_compile api_compile.cpp)
 cppwindow_add_test(test_window_controls_api window_controls_api.cpp)
 cppwindow_add_test(test_app_utilities app_utilities.cpp)
 
+cppwindow_add_test(test_runtime_smoke runtime_smoke.cpp)
+set_tests_properties(test_runtime_smoke
+    PROPERTIES
+        SKIP_RETURN_CODE 77
+        TIMEOUT 15
+        LABELS runtime
+)
+
 cppwindow_add_test(test_input_helpers input_helpers.cpp)
 target_link_libraries(test_input_helpers
     PRIVATE

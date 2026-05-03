@@ -16,14 +16,41 @@ constexpr GLuint PositionAttribute = 0;
 constexpr GLuint TexCoordAttribute = 1;
 constexpr GLuint ColorAttribute = 2;
 
+struct OpenGLVersion
+{
+    GLint major = 0;
+    GLint minor = 0;
+};
+
 [[nodiscard]] std::string shaderSource(const char* glslVersion, std::string_view body)
 {
     std::string source = (glslVersion != nullptr && glslVersion[0] != '\0')
         ? glslVersion
-        : "#version 410";
+        : "#version 330";
     source += '\n';
     source += body;
     return source;
+}
+
+[[nodiscard]] std::string openGLVersionString()
+{
+    const auto* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    return version != nullptr ? version : "unknown";
+}
+
+[[nodiscard]] OpenGLVersion requireSupportedOpenGL()
+{
+    OpenGLVersion version{};
+    glGetIntegerv(GL_MAJOR_VERSION, &version.major);
+    glGetIntegerv(GL_MINOR_VERSION, &version.minor);
+
+    if (version.major < 3 || (version.major == 3 && version.minor < 3)) {
+        throw std::runtime_error(
+            "CppWindow ImGui OpenGL example renderer requires OpenGL 3.3 or newer; reported "
+            + openGLVersionString());
+    }
+
+    return version;
 }
 
 [[nodiscard]] std::string shaderLog(GLuint shader)
@@ -222,6 +249,8 @@ struct OpenGLImGuiRenderer::State
 
     explicit State(const char* glslVersion)
     {
+        (void)requireSupportedOpenGL();
+
         static constexpr std::string_view VertexShader = R"(
 layout (location = 0) in vec2 Position;
 layout (location = 1) in vec2 TexCoord;
@@ -378,8 +407,6 @@ void main()
                 GL_UNSIGNED_BYTE,
                 texture.GetPixels());
 
-            texture.BackendUserData =
-                reinterpret_cast<void*>(static_cast<std::uintptr_t>(textureHandle));
             texture.SetTexID(toTextureId(textureHandle));
             texture.SetStatus(ImTextureStatus_OK);
             return;
@@ -392,7 +419,6 @@ void main()
             glBindTexture(GL_TEXTURE_2D, fromTextureId(texture.TexID));
 #ifdef GL_UNPACK_ROW_LENGTH
             glPixelStorei(GL_UNPACK_ROW_LENGTH, texture.Width);
-#endif
             for (int updateIndex = 0; updateIndex < texture.Updates.Size; ++updateIndex) {
                 const ImTextureRect& update = texture.Updates[updateIndex];
                 glTexSubImage2D(
@@ -406,6 +432,23 @@ void main()
                     GL_UNSIGNED_BYTE,
                     texture.GetPixelsAt(update.x, update.y));
             }
+#else
+            for (int updateIndex = 0; updateIndex < texture.Updates.Size; ++updateIndex) {
+                const ImTextureRect& update = texture.Updates[updateIndex];
+                for (int row = 0; row < update.h; ++row) {
+                    glTexSubImage2D(
+                        GL_TEXTURE_2D,
+                        0,
+                        update.x,
+                        update.y + row,
+                        update.w,
+                        1,
+                        GL_RGBA,
+                        GL_UNSIGNED_BYTE,
+                        texture.GetPixelsAt(update.x, update.y + row));
+                }
+            }
+#endif
             texture.SetStatus(ImTextureStatus_OK);
             return;
         }
@@ -417,7 +460,7 @@ void main()
 
     void destroyTexture(ImTextureData& texture) const
     {
-        if (texture.BackendUserData == nullptr) {
+        if (texture.TexID == ImTextureID_Invalid) {
             return;
         }
 
@@ -437,12 +480,13 @@ void loadOpenGL(cwin::WindowContext& context)
 }
 
 OpenGLImGuiRenderer::OpenGLImGuiRenderer(const char* glslVersion)
-    : state_(std::make_unique<State>(glslVersion))
 {
     ImGuiIO& io = ImGui::GetIO();
     if (io.BackendRendererUserData != nullptr) {
         throw std::runtime_error("Dear ImGui already has a renderer backend");
     }
+
+    state_ = std::make_unique<State>(glslVersion);
 
     io.BackendRendererName = "cppwindow_example_opengl";
     io.BackendRendererUserData = state_.get();

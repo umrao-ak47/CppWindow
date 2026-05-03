@@ -541,7 +541,8 @@ The library does not export an OpenGL ImGui renderer target. The included ImGui
 examples provide a local OpenGL renderer adapter in
 `extras/imgui/examples/opengl_imgui_renderer.cpp`. It uploads ImGui texture
 requests, owns the OpenGL shader, buffers, and vertex array, and renders
-`ImDrawData` directly:
+`ImDrawData` directly. The adapter requires OpenGL 3.3 or newer; the examples
+request OpenGL 4.1 core for macOS compatibility:
 
 ```cpp
 #include "opengl_imgui_renderer.hpp"
