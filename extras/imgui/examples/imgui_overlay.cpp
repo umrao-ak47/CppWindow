@@ -1,44 +1,12 @@
 #include <cppwindow/cppwindow.hpp>
 #include <cppwindow/imgui.hpp>
 
+#include "opengl_imgui_renderer.hpp"
+
 #include <algorithm>
-#include <glad/glad.h>
 #include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <stdexcept>
 
 using namespace cwin;
-
-class OpenGLImGuiRenderer final
-{
-public:
-    explicit OpenGLImGuiRenderer(const char* glslVersion)
-    {
-        if (!ImGui_ImplOpenGL3_Init(glslVersion)) {
-            throw std::runtime_error("Failed to initialize ImGui OpenGL renderer");
-        }
-    }
-
-    ~OpenGLImGuiRenderer()
-    {
-        ImGui_ImplOpenGL3_Shutdown();
-    }
-
-    OpenGLImGuiRenderer(const OpenGLImGuiRenderer&) = delete;
-    OpenGLImGuiRenderer& operator=(const OpenGLImGuiRenderer&) = delete;
-    OpenGLImGuiRenderer(OpenGLImGuiRenderer&&) = delete;
-    OpenGLImGuiRenderer& operator=(OpenGLImGuiRenderer&&) = delete;
-
-    void newFrame()
-    {
-        ImGui_ImplOpenGL3_NewFrame();
-    }
-
-    void render(ImDrawData* drawData)
-    {
-        ImGui_ImplOpenGL3_RenderDrawData(drawData);
-    }
-};
 
 int main()
 {
@@ -51,10 +19,7 @@ int main()
                       .resizable()
                       .build();
     window.makeContextCurrent();
-
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
-        throw std::runtime_error("Failed to initialize GLAD");
-    }
+    example::loadOpenGL(ctx);
 
     const bool useVSync = true;
     window.setVSync(useVSync);
@@ -66,7 +31,7 @@ int main()
     ImGui::StyleColorsDark();
 
     {
-        cwin::imgui::Layer<OpenGLImGuiRenderer> imguiLayer(window, "#version 410");
+        cwin::imgui::Layer<example::OpenGLImGuiRenderer> imguiLayer(window, "#version 410");
 
         ActionMap actions;
         const ActionId quit = actions.getOrCreateActionId("quit");
@@ -131,11 +96,7 @@ int main()
                 ImGui::ShowDemoWindow(&showDemo);
             }
 
-            auto [fbWidth, fbHeight] = window.getFramebufferSize();
-            glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
-            glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
-            glClear(GL_COLOR_BUFFER_BIT);
-
+            example::clearFramebuffer(window, clearColor);
             imguiLayer.render();
             window.swapBuffers();
 

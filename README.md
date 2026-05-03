@@ -75,6 +75,13 @@ cmake --build --preset imgui
 ctest --preset imgui
 ```
 
+Apps link `cppwindow::imgui`; extensions such as ImPlot link
+`cppwindow::dear_imgui` so the app and extensions share the same ImGui context
+and configuration. See the [guide](docs/guide.md#dear-imgui) for renderer
+adapter and extension examples. Example targets include `example_imgui_minimal`,
+`example_imgui_overlay`, `example_imgui_input_capture`, and
+`example_imgui_style_demo`.
+
 ## 🚀 Quick Start
 
 ### Window Creation

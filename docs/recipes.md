@@ -116,7 +116,16 @@ wake a waiting UI loop.
 
 Use the optional ImGui layer with a renderer adapter owned by the app.
 
+```cmake
+set(CPPWINDOW_BUILD_IMGUI ON)
+add_subdirectory(external/CppWindow)
+
+target_link_libraries(app PRIVATE cppwindow::imgui)
+```
+
 ```cpp
+#include <cppwindow/imgui.hpp>
+
 class MyImGuiRenderer {
 public:
     void newFrame();
@@ -146,6 +155,68 @@ ImGui::CreateContext();
     }
 }
 ImGui::DestroyContext();
+```
+
+## ImGui Platform Only
+
+Use `Platform` directly when your renderer already owns the draw-data step.
+
+```cpp
+#include <cppwindow/imgui.hpp>
+
+cwin::imgui::Platform imguiPlatform(window);
+
+ctx.pollEvents();
+imguiPlatform.handleEvents(window.events());
+imguiPlatform.newFrame();
+ImGui::NewFrame();
+
+drawTools();
+
+ImGui::Render();
+engineRenderer.drawImgui(ImGui::GetDrawData());
+```
+
+## ImGui Extensions
+
+Link extensions such as ImPlot to `cppwindow::dear_imgui`, then link the app to
+both the extension and `cppwindow::imgui`.
+
+```cmake
+add_library(implot
+    external/implot/implot.cpp
+    external/implot/implot_items.cpp)
+target_include_directories(implot PUBLIC external/implot)
+target_link_libraries(implot PUBLIC cppwindow::dear_imgui)
+
+target_link_libraries(app PRIVATE
+    cppwindow::imgui
+    implot)
+```
+
+```cpp
+ImGui::Begin("Profiler");
+if (ImPlot::BeginPlot("Frame Time")) {
+    ImPlot::PlotLine("ms", frameTimes.data(), frameTimes.size());
+    ImPlot::EndPlot();
+}
+ImGui::End();
+```
+
+## ImGui Input Capture
+
+Use ImGui capture state to disable gameplay actions while tool windows are
+active.
+
+```cpp
+imguiLayer.newFrame();
+
+actions.setContextEnabled(
+    "gameplay",
+    !imguiLayer.wantsMouse() && !imguiLayer.wantsKeyboard());
+actions.setContextEnabled("shortcuts", !imguiLayer.wantsTextInput());
+
+actions.update(window.getInput());
 ```
 
 ## Action Contexts
