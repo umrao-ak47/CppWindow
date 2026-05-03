@@ -14,6 +14,7 @@ include(GNUInstallDirs)
 option(CPPWINDOW_INSTALL "Create install target" OFF)
 option(CPPWINDOW_BUILD_DOCS "Build cppwindow API documentation with Doxygen" OFF)
 option(CPPWINDOW_ENABLE_SANITIZERS "Build with address and undefined behavior sanitizers" OFF)
+option(CPPWINDOW_BUILD_IMGUI "Build optional Dear ImGui integration targets" OFF)
 set(CPPWINDOW_GLFW_SOURCE_DIR
     "${CMAKE_CURRENT_SOURCE_DIR}/.deps/glfw"
     CACHE PATH "GLFW source directory used by FetchContent")
@@ -145,6 +146,34 @@ target_compile_definitions(cppwindow PRIVATE
 )
 
 # ------------------------------------------------------------------------------
+# Tests bootstrap
+# ------------------------------------------------------------------------------
+if(CPPWINDOW_BUILD_TESTS)
+    include(CTest)
+endif()
+
+# ------------------------------------------------------------------------------
+# Examples
+# ------------------------------------------------------------------------------
+if(CPPWINDOW_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+# ------------------------------------------------------------------------------
+# Optional Dear ImGui integration
+# ------------------------------------------------------------------------------
+if(CPPWINDOW_BUILD_IMGUI)
+    add_subdirectory(extras/imgui)
+endif()
+
+# ------------------------------------------------------------------------------
+# Tests
+# ------------------------------------------------------------------------------
+if(CPPWINDOW_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
+
+# ------------------------------------------------------------------------------
 # Install rules
 # ------------------------------------------------------------------------------
 if(CPPWINDOW_INSTALL)
@@ -186,24 +215,9 @@ if(CPPWINDOW_INSTALL)
     )
 endif()
 
-# -----------------------------
-# Examples
-# -----------------------------
-if(CPPWINDOW_BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
-
-# -----------------------------
-# Tests
-# -----------------------------
-if(CPPWINDOW_BUILD_TESTS)
-    include(CTest)
-    add_subdirectory(tests)
-endif()
-
-# -----------------------------
+# ------------------------------------------------------------------------------
 # Documentation
-# -----------------------------
+# ------------------------------------------------------------------------------
 if(CPPWINDOW_BUILD_DOCS)
     cppwindow_add_docs_target()
 endif()

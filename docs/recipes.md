@@ -112,6 +112,42 @@ while (!window.shouldClose()) {
 Call `WindowContext::postEmptyEvent()` from another thread when it needs to
 wake a waiting UI loop.
 
+## ImGui Tool Loop
+
+Use the optional ImGui layer with a renderer adapter owned by the app.
+
+```cpp
+class MyImGuiRenderer {
+public:
+    void newFrame();
+    void render(ImDrawData* drawData);
+};
+
+IMGUI_CHECKVERSION();
+ImGui::CreateContext();
+{
+    cwin::imgui::Layer<MyImGuiRenderer> imguiLayer(window);
+
+    while (!window.shouldClose()) {
+        ctx.pollEvents();
+        dispatcher.dispatch(window.events());
+        imguiLayer.handleEvents(window.events());
+        imguiLayer.newFrame();
+
+        actions.setContextEnabled(
+            "gameplay",
+            !imguiLayer.wantsMouse() && !imguiLayer.wantsKeyboard());
+
+        drawTools();
+
+        renderScene();
+        imguiLayer.render();
+        window.swapBuffers();
+    }
+}
+ImGui::DestroyContext();
+```
+
 ## Action Contexts
 
 Use contexts to disable whole sets of actions, such as gameplay input while a

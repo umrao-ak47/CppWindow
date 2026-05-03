@@ -1,0 +1,21 @@
+add_executable(example_imgui_overlay
+    imgui_overlay.cpp
+    "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/backends/imgui_impl_opengl3.cpp"
+)
+target_include_directories(example_imgui_overlay
+    PRIVATE
+        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/backends"
+)
+target_link_libraries(example_imgui_overlay
+    PRIVATE
+        cppwindow::imgui
+        glad
+)
+target_compile_features(example_imgui_overlay
+    PRIVATE
+        cxx_std_20
+)
+set_target_properties(example_imgui_overlay
+    PROPERTIES
+        FOLDER "examples"
+)

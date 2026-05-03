@@ -15,18 +15,40 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_PREFIX_PATH": "${sourceDir}/../../install"
       }
+    },
+    {
+      "name": "installed-imgui",
+      "displayName": "Installed Package Consumer ImGui",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../build-presets/package-consumer-imgui",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "${sourceDir}/../../install",
+        "CPPWINDOW_PACKAGE_CONSUMER_USE_IMGUI": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "installed",
       "configurePreset": "installed"
+    },
+    {
+      "name": "installed-imgui",
+      "configurePreset": "installed-imgui"
     }
   ],
   "testPresets": [
     {
       "name": "installed",
       "configurePreset": "installed",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "installed-imgui",
+      "configurePreset": "installed-imgui",
       "output": {
         "outputOnFailure": true
       }

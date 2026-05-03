@@ -10,7 +10,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 
 - [CppWindow Guide](docs/guide.md): setup, event loop, OpenGL/Vulkan usage, input, events, monitors, window controls, and fullscreen behavior.
 - [Recipes](docs/recipes.md): copyable game loop, tool loop, action context, multi-window, and fullscreen patterns.
-- [API Reference](docs/api.md): generated public API reference from `cppwindow.hpp`.
+- [API Reference](docs/api.md): generated public API reference from public headers.
 - [Release Process](docs/release.md): manual release workflow and artifacts.
 
 ## ✨ Features
@@ -26,6 +26,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 - Mouse delta, text input, raw joystick events, and standard gamepad support
 - Action bindings, mouse positioning, and raw mouse motion controls
 - Clipboard status, file drop events, DPI conversion, FPS, and frame pacing helpers
+- Optional Dear ImGui core target, platform backend, and renderer-agnostic layer
 - Zero global input state
 - Backend abstraction (currently GLFW)
 - Minimal runtime overhead
@@ -34,7 +35,8 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 
 - **CMake**: 3.20 or higher
 - **C++ Compiler**: Support for C++20 (e.g., GCC 11+, Clang 13+, MSVC 19.29+)
-- **Dependencies**: GLFW 3.4 (Automatically managed via `FetchContent`)
+- **Dependencies**: GLFW 3.4 (automatically managed via `FetchContent`)
+- **Optional Dependencies**: Dear ImGui when `CPPWINDOW_BUILD_IMGUI=ON`
 
 ## 🛠 Integration
 
@@ -61,6 +63,16 @@ GLFW with its own flags.
 cmake --preset dev
 cmake --build --preset dev
 ctest --preset dev
+```
+
+Optional Dear ImGui integration is disabled by default. Enable it when you want
+the reusable ImGui target, CppWindow platform backend, and renderer-agnostic
+layer:
+
+```bash
+cmake --preset imgui
+cmake --build --preset imgui
+ctest --preset imgui
 ```
 
 ## 🚀 Quick Start

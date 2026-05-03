@@ -77,6 +77,18 @@ jobs:
       - name: Test release preset
         run: ctest --preset multi-release
 
+      - name: Configure ImGui preset
+        run: >
+          cmake --preset imgui
+          -DGLFW_BUILD_X11=ON
+          -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build ImGui preset
+        run: cmake --build --preset imgui --parallel
+
+      - name: Test ImGui preset
+        run: ctest --preset imgui
+
       - name: Configure docs preset
         run: cmake --preset docs
 
@@ -103,6 +115,27 @@ jobs:
       - name: Test package consumer preset
         working-directory: tests/package_consumer
         run: ctest --preset installed
+
+      - name: Configure ImGui install preset
+        run: >
+          cmake --preset install-imgui
+          -DGLFW_BUILD_X11=ON
+          -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build ImGui install preset
+        run: cmake --build --preset install-imgui --parallel
+
+      - name: Configure ImGui package consumer preset
+        working-directory: tests/package_consumer
+        run: cmake --preset installed-imgui
+
+      - name: Build ImGui package consumer preset
+        working-directory: tests/package_consumer
+        run: cmake --build --preset installed-imgui --parallel
+
+      - name: Test ImGui package consumer preset
+        working-directory: tests/package_consumer
+        run: ctest --preset installed-imgui
 
       - name: Create release artifacts
         shell: bash

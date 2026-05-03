@@ -59,13 +59,24 @@ ctest --preset sanitizers
 cmake --preset docs
 cmake --build --preset docs
 
+cmake --preset imgui
+cmake --build --preset imgui
+ctest --preset imgui
+
 cmake --preset install
 cmake --build --preset install
+
+cmake --preset install-imgui
+cmake --build --preset install-imgui
 
 cd tests/package_consumer
 cmake --preset installed
 cmake --build --preset installed
 ctest --preset installed
+
+cmake --preset installed-imgui
+cmake --build --preset installed-imgui
+ctest --preset installed-imgui
 ```
 
 Use the `multi` preset when you want Debug and Release from one build tree:
@@ -95,6 +106,7 @@ cmake --build build --target example_monitor_info
 cmake --build build --target example_native_handles
 cmake --build build --target example_fixed_step_loop
 cmake --build build --target example_particles
+cmake --build --preset imgui --target example_imgui_overlay
 ```
 
 Build the generated API reference:
@@ -347,6 +359,115 @@ actions.replaceKey(jump, cwin::Key::J);
 actions.replaceKeyCombo(leftDash, cwin::Key::A, { cwin::Key::LShift });
 actions.replaceGamepadAxis(moveX, cwin::GamepadAxis::LeftX, 0.25f);
 ```
+
+## Dear ImGui
+
+CppWindow exposes optional Dear ImGui targets without owning the renderer
+backend:
+
+- `cppwindow::dear_imgui`: builds Dear ImGui and exposes its headers.
+- `cppwindow::imgui`: feeds CppWindow events, clipboard, cursors, DPI, and
+  display size into ImGui.
+- `cwin::imgui::Layer`: coordinates the common platform + renderer frame flow
+  with a renderer adapter supplied by the app.
+
+The optional headers live outside CppWindow's base include tree and are exposed
+only by the ImGui targets. Include the umbrella header when you use the
+integration:
+
+```cpp
+#include <cppwindow/imgui.hpp>
+```
+
+Enable the targets at build time:
+
+```cmake
+set(CPPWINDOW_BUILD_IMGUI ON)
+add_subdirectory(external/CppWindow)
+
+target_link_libraries(app PRIVATE
+    cppwindow::imgui)
+```
+
+Set `CPPWINDOW_IMGUI_SOURCE_DIR` to an existing Dear ImGui checkout when the app
+needs a custom branch or `imconfig.h`. Otherwise CppWindow fetches the pinned
+default source into `.deps/imgui`.
+
+When consuming an installed package:
+
+```cmake
+find_package(cppwindow CONFIG REQUIRED COMPONENTS imgui)
+target_link_libraries(app PRIVATE cppwindow::imgui)
+```
+
+Extensions should link to the same ImGui target. This keeps ImPlot, ImGuizmo,
+or other add-ons on the same `imgui.h`, `imconfig.h`, compile definitions, and
+context as the app:
+
+```cmake
+add_library(implot
+    external/implot/implot.cpp
+    external/implot/implot_items.cpp)
+target_include_directories(implot PUBLIC external/implot)
+target_link_libraries(implot PUBLIC cppwindow::dear_imgui)
+```
+
+Use `cwin::imgui::Platform` directly when your app already has a renderer:
+
+```cpp
+#include <cppwindow/imgui.hpp>
+
+cwin::imgui::Platform imguiPlatform(window);
+
+ctx.pollEvents();
+imguiPlatform.handleEvents(window.events());
+imguiPlatform.newFrame();
+ImGui::NewFrame();
+
+// Build UI.
+
+ImGui::Render();
+myRenderer.render(ImGui::GetDrawData());
+```
+
+Use `cwin::imgui::Layer` when you want CppWindow to coordinate the frame flow.
+The renderer adapter can wrap Dear ImGui's official OpenGL, Vulkan, Metal, or
+DX backends, or a renderer owned by your engine:
+
+```cpp
+#include <cppwindow/imgui.hpp>
+
+class MyImGuiRenderer {
+public:
+    void newFrame();
+    void render(ImDrawData* drawData);
+};
+
+IMGUI_CHECKVERSION();
+ImGui::CreateContext();
+{
+    cwin::imgui::Layer<MyImGuiRenderer> imguiLayer(window);
+
+    while (!window.shouldClose()) {
+        ctx.pollEvents();
+        imguiLayer.handleEvents(window.events());
+        imguiLayer.newFrame();
+
+        ImGui::Begin("Debug");
+        ImGui::Text("Hello");
+        ImGui::End();
+
+        renderScene();
+        imguiLayer.render();
+        window.swapBuffers();
+    }
+}
+ImGui::DestroyContext();
+```
+
+Create the ImGui context before constructing `Platform` or `Layer`, and destroy
+it after those objects have been destroyed. Use `wantsMouse()` and
+`wantsKeyboard()` to disable gameplay input contexts while UI captures input.
 
 ## Events
 
@@ -787,6 +908,8 @@ GLFW error code and description, are included in `what()` when available.
 - `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation,
   FPS sampling, and frame limiting.
 - `examples/particles.cpp`: richer OpenGL rendering example.
+- `extras/imgui/examples/imgui_overlay.cpp`: optional Dear ImGui layer with an
+  app-owned OpenGL renderer adapter.
 
 For short, copyable patterns that combine these APIs, see
 the [Recipes](recipes.md).

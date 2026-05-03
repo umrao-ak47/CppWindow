@@ -19,9 +19,10 @@ Open **Actions > Release > Run workflow** and provide:
 
 The workflow reads `VERSION`, creates release tag `v<VERSION>`, verifies that
 the tag and release do not already exist, runs the release build/test through
-the `multi-release` preset, builds docs with the `docs` preset, validates
-installation with the `install` preset and package consumer preset, and creates
-these artifacts:
+the `multi-release` preset, validates optional ImGui targets with the `imgui`
+preset, builds docs with the `docs` preset, validates installation with the
+`install` and `install-imgui` presets plus their package consumer presets, and
+creates these artifacts:
 
 - `CppWindow-X.Y.Z.tar.gz`
 - `CppWindow-X.Y.Z.zip`

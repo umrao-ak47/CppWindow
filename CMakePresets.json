@@ -41,6 +41,19 @@
       }
     },
     {
+      "name": "imgui",
+      "displayName": "ImGui",
+      "description": "Debug build with optional Dear ImGui core and platform targets.",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CPPWINDOW_BUILD_IMGUI": "ON",
+        "CPPWINDOW_BUILD_EXAMPLES": "ON",
+        "CPPWINDOW_BUILD_TESTS": "ON",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
       "name": "install",
       "displayName": "Install",
       "description": "Release install/package validation build.",
@@ -52,6 +65,15 @@
         "CPPWINDOW_BUILD_EXAMPLES": "OFF",
         "CPPWINDOW_BUILD_TESTS": "OFF",
         "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
+      "name": "install-imgui",
+      "displayName": "Install ImGui",
+      "description": "Release install/package validation build with optional Dear ImGui targets.",
+      "inherits": "install",
+      "cacheVariables": {
+        "CPPWINDOW_BUILD_IMGUI": "ON"
       }
     },
     {
@@ -90,6 +112,10 @@
       "configurePreset": "sanitizers"
     },
     {
+      "name": "imgui",
+      "configurePreset": "imgui"
+    },
+    {
       "name": "docs",
       "configurePreset": "docs",
       "targets": [
@@ -99,6 +125,13 @@
     {
       "name": "install",
       "configurePreset": "install",
+      "targets": [
+        "install"
+      ]
+    },
+    {
+      "name": "install-imgui",
+      "configurePreset": "install-imgui",
       "targets": [
         "install"
       ]
@@ -130,6 +163,13 @@
       },
       "execution": {
         "timeout": 120
+      }
+    },
+    {
+      "name": "imgui",
+      "configurePreset": "imgui",
+      "output": {
+        "outputOnFailure": true
       }
     },
     {
