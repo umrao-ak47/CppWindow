@@ -116,6 +116,7 @@ add_library(cppwindow::cppwindow ALIAS cppwindow)
 target_sources(cppwindow
     PRIVATE
         src/backend/glfw/glfw_impl.cpp
+        src/backend/glfw/glfw_native_handles.cpp
         src/cppwindow.cpp
 )
 

@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.target_ref }}
           fetch-depth: 0
@@ -172,7 +172,7 @@ jobs:
           sha256sum dist/* > "dist/CppWindow-${version}-SHA256SUMS.txt"
 
       - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cppwindow-${{ steps.version.outputs.tag }}-release-artifacts
           path: dist/*
