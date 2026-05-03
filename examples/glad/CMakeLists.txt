@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GLAD LANGUAGES C)
+project(CppWindowExampleGlad LANGUAGES C)
 
-add_library(glad STATIC
-        src/glad.c
+add_library(_cppwindow_example_glad STATIC
+    src/glad.c
 )
 
-target_include_directories(glad
+target_include_directories(_cppwindow_example_glad
     PUBLIC
-        include
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+set_target_properties(_cppwindow_example_glad
+    PROPERTIES
+        FOLDER "examples"
 )

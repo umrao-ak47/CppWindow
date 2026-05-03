@@ -156,6 +156,7 @@ endif()
 # Examples
 # ------------------------------------------------------------------------------
 if(CPPWINDOW_BUILD_EXAMPLES)
+    add_subdirectory(examples/glad)
     add_subdirectory(examples)
 endif()
 

@@ -9,7 +9,7 @@ target_include_directories(example_imgui_overlay
 target_link_libraries(example_imgui_overlay
     PRIVATE
         cppwindow::imgui
-        glad
+        _cppwindow_example_glad
 )
 target_compile_features(example_imgui_overlay
     PRIVATE

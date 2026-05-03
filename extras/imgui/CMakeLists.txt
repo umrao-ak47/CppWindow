@@ -107,10 +107,11 @@ if(CPPWINDOW_INSTALL)
 endif()
 
 if(CPPWINDOW_BUILD_EXAMPLES)
-    if(TARGET glad)
+    if(TARGET _cppwindow_example_glad)
         add_subdirectory(examples)
     else()
-        message(STATUS "cppwindow: Skipping ImGui example because glad target is unavailable")
+        message(STATUS
+            "cppwindow: Skipping ImGui example because _cppwindow_example_glad is unavailable")
     endif()
 endif()
 

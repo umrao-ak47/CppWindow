@@ -18,9 +18,6 @@ function(cppwindow_add_example TARGET)
     )
 endfunction()
 
-# add dependencies
-add_subdirectory(glad)
-
 cppwindow_add_example(example_basic basic.cpp)
 
 cppwindow_add_example(example_borderless borderless.cpp)
@@ -28,18 +25,18 @@ cppwindow_add_example(example_borderless borderless.cpp)
 cppwindow_add_example(example_window_controls window_controls.cpp)
 target_link_libraries(example_window_controls
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
 
 cppwindow_add_example(example_fullscreen_toggle fullscreen_toggle.cpp)
 target_link_libraries(example_fullscreen_toggle
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
 cppwindow_add_example(example_mouse_capture mouse_capture.cpp)
 target_link_libraries(example_mouse_capture
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
 
 cppwindow_add_example(example_text_input text_input.cpp)
@@ -51,7 +48,7 @@ cppwindow_add_example(example_app_utilities app_utilities.cpp)
 cppwindow_add_example(example_input_helpers input_helpers.cpp)
 target_link_libraries(example_input_helpers
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
 
 cppwindow_add_example(example_multi_window multi_window.cpp)
@@ -67,17 +64,17 @@ cppwindow_add_example(example_fixed_step_loop fixed_step_loop.cpp)
 cppwindow_add_example(example_opengl opengl.cpp)
 target_link_libraries(example_opengl
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
 
 cppwindow_add_example(example_heightmap heightmap.cpp)
 target_link_libraries(example_heightmap
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
 
 cppwindow_add_example(example_particles particles.cpp)
 target_link_libraries(example_particles
     PRIVATE
-        glad
+        _cppwindow_example_glad
 )
