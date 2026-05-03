@@ -235,3 +235,5 @@ public types and methods.
 ## ⚖️ License
 
 Licensed under the MIT License. See the [LICENSE](LICENSE) file for full text.
+Third-party dependency notices are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
