@@ -1054,7 +1054,8 @@ private:
 template <typename Handler, typename T>
 concept EventPayloadHandlerFor =
     std::copy_constructible<std::decay_t<Handler>> &&
-    (std::invocable<std::decay_t<Handler>&, const T&> ||
+    ((std::invocable<std::decay_t<Handler>&, const T&> &&
+      !std::invocable<std::decay_t<Handler>&, const Event&>) ||
      std::invocable<std::decay_t<Handler>&>);
 
 /// True when `Handler` can receive raw events from `EventDispatcher`.

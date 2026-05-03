@@ -13,6 +13,7 @@ include(GNUInstallDirs)
 # ------------------------------------------------------------------------------
 option(CPPWINDOW_INSTALL "Create install target" OFF)
 option(CPPWINDOW_BUILD_DOCS "Build cppwindow API documentation with Doxygen" OFF)
+option(CPPWINDOW_ENABLE_SANITIZERS "Build with address and undefined behavior sanitizers" OFF)
 # Enable examples and tests automatically if this is the root project
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(CPPWINDOW_BUILD_EXAMPLES "Build cppwindow examples" ON)
@@ -46,6 +47,19 @@ else()
     if(FOUND_VERSION VERSION_LESS CPPWINDOW_REQUIRED_GLFW_VERSION)
         message(FATAL_ERROR "cppwindow: Existing glfw target is too old (${FOUND_VERSION}).")
     endif()
+endif()
+
+# ------------------------------------------------------------------------------
+# Sanitizers
+# ------------------------------------------------------------------------------
+if(CPPWINDOW_ENABLE_SANITIZERS)
+    if(MSVC)
+        message(FATAL_ERROR "CPPWINDOW_ENABLE_SANITIZERS is only supported with GCC/Clang-like compilers")
+    endif()
+
+    set(CPPWINDOW_SANITIZER_FLAGS -fsanitize=address,undefined)
+    add_compile_options(${CPPWINDOW_SANITIZER_FLAGS} -fno-omit-frame-pointer)
+    add_link_options(${CPPWINDOW_SANITIZER_FLAGS})
 endif()
 
 # ------------------------------------------------------------------------------

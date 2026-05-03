@@ -17,10 +17,6 @@ Delete items as they are completed and remove this file once the list is empty.
 
 ## Next Work
 
-- [ ] Testing and CI
-  - [ ] Add sanitizer builds where supported.
-  - [ ] Ensure CI compiles all examples on macOS, Linux, and Windows.
-  - [ ] Add more compile-time API regression tests.
 - [ ] Docs and examples
   - [ ] Add recipe-style examples for game loop, editor/tool loop, action
         contexts, multi-window, and fullscreen mode selection.

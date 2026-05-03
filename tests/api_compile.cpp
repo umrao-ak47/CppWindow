@@ -1,0 +1,155 @@
+#include <cppwindow/cppwindow.hpp>
+
+#include <concepts>
+#include <optional>
+#include <span>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+namespace {
+
+struct ClosedHandler
+{
+    void operator()(const cwin::Event::Closed&) const {}
+};
+
+struct RawEventHandler
+{
+    void operator()(const cwin::Event&) const {}
+};
+
+struct VoidHandler
+{
+    void operator()() const {}
+};
+
+struct BadHandler
+{
+    void operator()(int) const {}
+};
+
+struct MoveOnlyHandler
+{
+    MoveOnlyHandler() = default;
+    MoveOnlyHandler(MoveOnlyHandler&&) = default;
+    MoveOnlyHandler(const MoveOnlyHandler&) = delete;
+    void operator()() const {}
+};
+
+struct CompileInput
+{
+    bool isKeyDown(cwin::Key) const
+    {
+        return false;
+    }
+
+    bool isMouseButtonDown(cwin::MouseButton) const
+    {
+        return false;
+    }
+};
+
+template <typename Handler>
+concept CanSubscribeClosed = requires(cwin::EventDispatcher dispatcher, Handler handler) {
+    {
+        dispatcher.subscribe<cwin::Event::Closed>(handler)
+    } -> std::same_as<cwin::EventDispatcher::Subscription>;
+};
+
+template <typename Handler>
+concept CanSubscribeEach = requires(cwin::EventDispatcher dispatcher, Handler handler) {
+    { dispatcher.subscribeEach(handler) } -> std::same_as<cwin::EventDispatcher::Subscription>;
+};
+
+}  // namespace
+
+static_assert(cwin::EventSubtypeOf<cwin::Event::Closed, cwin::Event>);
+static_assert(cwin::EventSubtypeOf<cwin::Event::KeyPressed, cwin::Event>);
+static_assert(!cwin::EventSubtypeOf<int, cwin::Event>);
+
+static_assert(cwin::EventPayloadHandlerFor<ClosedHandler, cwin::Event::Closed>);
+static_assert(cwin::EventPayloadHandlerFor<VoidHandler, cwin::Event::Closed>);
+static_assert(!cwin::EventPayloadHandlerFor<RawEventHandler, cwin::Event::Closed>);
+static_assert(!cwin::EventPayloadHandlerFor<BadHandler, cwin::Event::Closed>);
+static_assert(!cwin::EventPayloadHandlerFor<MoveOnlyHandler, cwin::Event::Closed>);
+
+static_assert(cwin::EventHandlerFor<RawEventHandler>);
+static_assert(cwin::EventHandlerFor<VoidHandler>);
+static_assert(!cwin::EventHandlerFor<ClosedHandler>);
+static_assert(!cwin::EventHandlerFor<BadHandler>);
+static_assert(!cwin::EventHandlerFor<MoveOnlyHandler>);
+
+static_assert(CanSubscribeClosed<ClosedHandler>);
+static_assert(CanSubscribeClosed<VoidHandler>);
+static_assert(!CanSubscribeClosed<RawEventHandler>);
+static_assert(!CanSubscribeClosed<BadHandler>);
+static_assert(!CanSubscribeClosed<MoveOnlyHandler>);
+
+static_assert(CanSubscribeEach<RawEventHandler>);
+static_assert(CanSubscribeEach<VoidHandler>);
+static_assert(!CanSubscribeEach<ClosedHandler>);
+static_assert(!CanSubscribeEach<BadHandler>);
+static_assert(!CanSubscribeEach<MoveOnlyHandler>);
+
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::EventDispatcher&>().on<cwin::Event::Closed>(
+                  std::declval<ClosedHandler>())),
+              cwin::EventDispatcher&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::EventDispatcher&>().each(
+                  std::declval<RawEventHandler>())),
+              cwin::EventDispatcher&>);
+
+static_assert(std::is_same_v<decltype(cwin::WindowContext::Get()), cwin::WindowContext&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().getMonitors()),
+              std::vector<cwin::MonitorInfo>>);
+
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::ActionMap&>().bindKey("jump", cwin::Key::Space)),
+              cwin::ActionMap&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::ActionMap&>().bindKeyChord(
+                  "dash",
+                  cwin::Key::A,
+                  std::declval<std::vector<cwin::Key>>())),
+              cwin::ActionMap&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::ActionMap&>().bindGamepadAxis(
+                  "look",
+                  cwin::GamepadAxis::RightX,
+                  0.2f,
+                  cwin::ActionAxisDirection::Positive)),
+              cwin::ActionMap&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::ActionMap&>().getBinding(
+                  std::declval<const std::string&>())),
+              const cwin::ActionBinding*>);
+static_assert(requires(
+    cwin::ActionMap actions,
+    CompileInput input,
+    std::optional<cwin::GamepadState> gamepad) {
+    actions.update(input);
+    actions.update(input, gamepad);
+});
+
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::WindowBuilder&>().size(640, 480).title("app").noAPI()),
+              cwin::WindowBuilder&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::WindowBuilder&>().windowMode(
+                  cwin::WindowMode::BorderlessFullscreen,
+                  0,
+                  std::optional<cwin::VideoMode>{})),
+              cwin::WindowBuilder&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::Window&>().setIcons(
+                  std::declval<std::span<const cwin::ImageRgba>>())),
+              bool>);
+
+int main()
+{
+    return 0;
+}

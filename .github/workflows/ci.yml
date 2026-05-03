@@ -76,6 +76,59 @@ jobs:
       - name: Test
         run: ctest --test-dir build --build-config Release --output-on-failure
 
+  sanitizers:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu Clang Sanitizers
+            os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+            asan_options: detect_leaks=1:halt_on_error=1
+            cmake_extra_args: -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+          - name: macOS Clang Sanitizers
+            os: macos-latest
+            cc: clang
+            cxx: clang++
+            asan_options: detect_leaks=0:halt_on_error=1
+            cmake_extra_args: ""
+
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+      ASAN_OPTIONS: ${{ matrix.asan_options }}
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Configure sanitizer build
+        run: >
+          cmake -S . -B build-sanitizers
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCPPWINDOW_ENABLE_SANITIZERS=ON
+          -DCPPWINDOW_BUILD_EXAMPLES=ON
+          -DCPPWINDOW_BUILD_TESTS=ON
+          -DCPPWINDOW_BUILD_DOCS=OFF
+          ${{ matrix.cmake_extra_args }}
+
+      - name: Build sanitizer configuration
+        run: cmake --build build-sanitizers --config Debug --parallel
+
+      - name: Test sanitizer configuration
+        run: ctest --test-dir build-sanitizers --build-config Debug --output-on-failure --timeout 120
+
   package:
     name: Package Install
     runs-on: ubuntu-latest

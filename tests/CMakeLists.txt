@@ -15,6 +15,7 @@ function(cppwindow_add_test TARGET)
 endfunction()
 
 cppwindow_add_test(test_static_lookup static_lookup.cpp)
+cppwindow_add_test(test_api_compile api_compile.cpp)
 cppwindow_add_test(test_window_controls_api window_controls_api.cpp)
 cppwindow_add_test(test_app_utilities app_utilities.cpp)
 
