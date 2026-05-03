@@ -125,7 +125,7 @@ public:
     virtual void setVisible(bool visible) const noexcept = 0;
     virtual std::pair<int, int> getSize() const noexcept = 0;
     virtual std::pair<int, int> getPosition() const noexcept = 0;
-    virtual std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept = 0;
+    virtual std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept = 0;
     virtual std::pair<float, float> getContentScale() const noexcept = 0;
     virtual float getOpacity() const noexcept = 0;
     virtual CursorMode getCursorMode() const noexcept = 0;

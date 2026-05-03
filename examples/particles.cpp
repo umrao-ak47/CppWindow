@@ -283,7 +283,7 @@ static GLuint createProgram()
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("Particle Fountain (OpenGL 4.1)")
@@ -411,7 +411,7 @@ int main()
             static_cast<GLsizeiptr>(vertices.size() * sizeof(ParticleVertex)),
             vertices.data());
 
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         fbWidth = std::max<uint32_t>(fbWidth, 1);
         fbHeight = std::max<uint32_t>(fbHeight, 1);
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));

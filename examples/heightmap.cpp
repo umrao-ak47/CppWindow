@@ -188,7 +188,7 @@ static GLuint createProgram()
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("Orbit Camera + Vertex Heightmap (GL 4.1)")
@@ -268,7 +268,7 @@ int main()
         Vec3 eye{ std::cos(cameraAngle) * 3.0f, 2.0f, std::sin(cameraAngle) * 3.0f };
 
         Mat4 view = mat4LookAt(eye, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         fbWidth = std::max<uint32_t>(fbWidth, 1);
         fbHeight = std::max<uint32_t>(fbHeight, 1);
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));

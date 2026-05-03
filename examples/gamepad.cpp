@@ -71,9 +71,10 @@ const char* axisName(GamepadAxis axis)
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
-    auto window = WindowBuilder{}.title("Gamepad").size(720, 360).noAPI().resizable().build();
+    auto window =
+        WindowBuilder{}.title("Gamepad").size(720, 360).noGraphicsApi().resizable().build();
 
     std::cout << "Controls:\n"
               << "  Connect standard gamepad: show state\n"

@@ -52,7 +52,7 @@ void drawInputPanel(
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("Input Helpers")
@@ -77,14 +77,14 @@ int main()
         .bindGamepadAxis("move_x", GamepadAxis::LeftX, 0.20f)
         .bindMouseButton("fire", MouseButton::Left)
         .bindKey("save", Key::S, Modifiers{ .control = true })
-        .bindKeyChord("left_shift_a", Key::A, { Key::LShift })
-        .bindKeyChord("right_shift_a", Key::A, { Key::RShift })
+        .bindKeyCombo("left_shift_a", Key::A, { Key::LShift })
+        .bindKeyCombo("right_shift_a", Key::A, { Key::RShift })
         .bindKey("toggle_gameplay", Key::G)
         .bindKey("capture", Key::C)
         .bindKey("center_mouse", Key::R)
-        .setGroup("jump", "gameplay")
-        .setGroup("fire", "gameplay")
-        .setGroup("move_x", "gameplay");
+        .setContext("jump", "gameplay")
+        .setContext("fire", "gameplay")
+        .setContext("move_x", "gameplay");
 
     bool captured = false;
     bool rawMouse = false;
@@ -100,7 +100,7 @@ int main()
     std::cout << "  Ctrl+S: save action\n";
     std::cout << "  Left Shift+A: left_shift_a action\n";
     std::cout << "  Right Shift+A: right_shift_a action\n";
-    std::cout << "  G: toggle gameplay action group\n";
+    std::cout << "  G: toggle gameplay action context\n";
     std::cout << "  C: toggle captured cursor and raw mouse motion\n";
     std::cout << "  R: center mouse cursor\n";
 
@@ -130,7 +130,7 @@ int main()
 
         if (actions.isPressed("toggle_gameplay")) {
             gameplayEnabled = !gameplayEnabled;
-            actions.setGroupEnabled("gameplay", gameplayEnabled);
+            actions.setContextEnabled("gameplay", gameplayEnabled);
         }
 
         if (actions.isPressed("capture")) {
@@ -166,7 +166,7 @@ int main()
               << " FB:" << static_cast<int>(fbMouseX) << "," << static_cast<int>(fbMouseY)
               << " DELTA:" << static_cast<int>(dx) << "," << static_cast<int>(dy);
 
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         drawInputPanel(
             fbWidth,
             fbHeight,

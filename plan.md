@@ -14,10 +14,3 @@ Delete items as they are completed and remove this file once the list is empty.
   semantics.
 - [ ] Revisit fullscreen transition behavior after the macOS-specific issues are
   understood. Keep current `Fullscreen` as decorated maximized window for now.
-
-## Next Work
-
-- [ ] Docs and examples
-  - [ ] Add recipe-style examples for game loop, editor/tool loop, action
-        contexts, multi-window, and fullscreen mode selection.
-  - [ ] Document platform-specific fullscreen behavior after investigation.

@@ -83,7 +83,7 @@ cwin::ImageRgba imageFrom(const std::vector<uint8_t>& pixels, uint32_t width, ui
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("Window Controls")
@@ -229,7 +229,7 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
         const float decorationTint = decorated ? 0.10f : 0.42f;

@@ -1,0 +1,152 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ninja-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-presets/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Dev",
+      "description": "Debug build with examples and tests.",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CPPWINDOW_BUILD_EXAMPLES": "ON",
+        "CPPWINDOW_BUILD_TESTS": "ON",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
+      "name": "sanitizers",
+      "displayName": "Sanitizers",
+      "description": "Debug build with AddressSanitizer and UndefinedBehaviorSanitizer.",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CPPWINDOW_ENABLE_SANITIZERS": "ON",
+        "CPPWINDOW_BUILD_EXAMPLES": "ON",
+        "CPPWINDOW_BUILD_TESTS": "ON",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
+      "name": "install",
+      "displayName": "Install",
+      "description": "Release install/package validation build.",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "CPPWINDOW_INSTALL": "ON",
+        "CPPWINDOW_BUILD_EXAMPLES": "OFF",
+        "CPPWINDOW_BUILD_TESTS": "OFF",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    },
+    {
+      "name": "docs",
+      "displayName": "Docs",
+      "description": "Docs-only build. This does not configure GLFW.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-presets/docs",
+      "cacheVariables": {
+        "CPPWINDOW_BUILD_DOCS": "ON",
+        "CPPWINDOW_BUILD_EXAMPLES": "OFF",
+        "CPPWINDOW_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "multi",
+      "displayName": "Multi-Config",
+      "description": "Ninja Multi-Config build for Debug and Release from one build tree.",
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build-presets/multi",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
+        "CPPWINDOW_BUILD_EXAMPLES": "ON",
+        "CPPWINDOW_BUILD_TESTS": "ON",
+        "CPPWINDOW_BUILD_DOCS": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "sanitizers",
+      "configurePreset": "sanitizers"
+    },
+    {
+      "name": "docs",
+      "configurePreset": "docs",
+      "targets": [
+        "cppwindow_docs"
+      ]
+    },
+    {
+      "name": "install",
+      "configurePreset": "install",
+      "targets": [
+        "install"
+      ]
+    },
+    {
+      "name": "multi-debug",
+      "configurePreset": "multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "multi-release",
+      "configurePreset": "multi",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitizers",
+      "configurePreset": "sanitizers",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "timeout": 120
+      }
+    },
+    {
+      "name": "multi-debug",
+      "configurePreset": "multi",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "multi-release",
+      "configurePreset": "multi",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

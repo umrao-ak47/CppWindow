@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "installed",
+      "displayName": "Installed Package Consumer",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../build-presets/package-consumer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "${sourceDir}/../../install"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "installed",
+      "configurePreset": "installed"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "installed",
+      "configurePreset": "installed",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

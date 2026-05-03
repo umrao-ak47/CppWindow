@@ -9,6 +9,7 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 ## Documentation
 
 - [CppWindow Guide](docs/guide.md): setup, event loop, OpenGL/Vulkan usage, input, events, monitors, window controls, and fullscreen behavior.
+- [Recipes](docs/recipes.md): copyable game loop, tool loop, action context, multi-window, and fullscreen patterns.
 - [API Reference](docs/api.md): generated public API reference from `cppwindow.hpp`.
 - [Release Process](docs/release.md): manual release workflow and artifacts.
 
@@ -52,6 +53,16 @@ add_subdirectory(external/CppWindow)
 target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 ```
 
+For local development with multiple CMake build directories, the presets make
+CMake download GLFW once into `.deps/glfw`. Each build directory still compiles
+GLFW with its own flags.
+
+```bash
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+```
+
 ## 🚀 Quick Start
 
 ### Window Creation
@@ -61,13 +72,13 @@ target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 
 int main()
 {
-    auto& ctx = cwin::WindowContext::Get();
+    auto& ctx = cwin::WindowContext::get();
 
     cwin::Window window =
         cwin::WindowBuilder{}
             .title("Basic Example")
             .size(1280, 720)
-            .noAPI()
+            .noGraphicsApi()
             .build();
 
     cwin::EventDispatcher dispatcher;
@@ -93,7 +104,7 @@ CppWindow supports two creation paths:
 ```cpp
 auto window =
     cwin::WindowBuilder{}
-        .noAPI()
+        .noGraphicsApi()
         .build();
 ```
 
@@ -111,7 +122,7 @@ CppWindow creates the context, but you must load OpenGL functions.
 Example using GLAD:
 
 ```cpp
-auto& ctx = cwin::WindowContext::Get();
+auto& ctx = cwin::WindowContext::get();
 
 auto window =
     cwin::WindowBuilder{}
@@ -127,7 +138,7 @@ Render loop:
 ```cpp
 while (!window.shouldClose())
 {
-    cwin::WindowContext::Get().pollEvents();
+    cwin::WindowContext::get().pollEvents();
 
     glClearColor(0.f,0.f,0.f,1.f);
     glClear(GL_COLOR_BUFFER_BIT);

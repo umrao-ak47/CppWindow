@@ -8,7 +8,7 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("OpenGL Example")
@@ -41,7 +41,7 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
         glClearColor(0.5f, 0.1f, 0.9f, 1.f);

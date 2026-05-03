@@ -14,6 +14,9 @@ include(GNUInstallDirs)
 option(CPPWINDOW_INSTALL "Create install target" OFF)
 option(CPPWINDOW_BUILD_DOCS "Build cppwindow API documentation with Doxygen" OFF)
 option(CPPWINDOW_ENABLE_SANITIZERS "Build with address and undefined behavior sanitizers" OFF)
+set(CPPWINDOW_GLFW_SOURCE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/glfw"
+    CACHE PATH "GLFW source directory used by FetchContent")
 # Enable examples and tests automatically if this is the root project
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(CPPWINDOW_BUILD_EXAMPLES "Build cppwindow examples" ON)
@@ -25,15 +28,55 @@ endif()
 
 set(CPPWINDOW_REQUIRED_GLFW_VERSION 3.4)
 
+function(cppwindow_add_docs_target)
+    find_package(Doxygen REQUIRED)
+
+    configure_file(
+        docs/Doxyfile.in
+        "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+        @ONLY
+    )
+
+    add_custom_target(cppwindow_docs
+        COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating CppWindow API documentation"
+        VERBATIM
+    )
+endfunction()
+
+get_filename_component(
+    CPPWINDOW_GLFW_SOURCE_DIR_ABS
+    "${CPPWINDOW_GLFW_SOURCE_DIR}"
+    ABSOLUTE
+    BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR
+   AND CPPWINDOW_BUILD_DOCS
+   AND NOT CPPWINDOW_BUILD_EXAMPLES
+   AND NOT CPPWINDOW_BUILD_TESTS
+   AND NOT CPPWINDOW_INSTALL)
+    cppwindow_add_docs_target()
+    return()
+endif()
+
 # ------------------------------------------------------------------------------
 # Fetch GLFW
 # ------------------------------------------------------------------------------
 if(NOT TARGET glfw)
-    message(STATUS "cppwindow: Fetching GLFW v${CPPWINDOW_REQUIRED_GLFW_VERSION}...")
+    if(EXISTS "${CPPWINDOW_GLFW_SOURCE_DIR_ABS}/CMakeLists.txt")
+        message(STATUS "cppwindow: Configuring GLFW from ${CPPWINDOW_GLFW_SOURCE_DIR_ABS}")
+    else()
+        message(STATUS
+            "cppwindow: Fetching GLFW v${CPPWINDOW_REQUIRED_GLFW_VERSION} "
+            "to ${CPPWINDOW_GLFW_SOURCE_DIR_ABS}")
+    endif()
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
         GIT_TAG        ${CPPWINDOW_REQUIRED_GLFW_VERSION}
+        SOURCE_DIR     "${CPPWINDOW_GLFW_SOURCE_DIR_ABS}"
     )
     # Quiet the GLFW internal build
     set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "")
@@ -54,7 +97,8 @@ endif()
 # ------------------------------------------------------------------------------
 if(CPPWINDOW_ENABLE_SANITIZERS)
     if(MSVC)
-        message(FATAL_ERROR "CPPWINDOW_ENABLE_SANITIZERS is only supported with GCC/Clang-like compilers")
+        message(FATAL_ERROR
+            "CPPWINDOW_ENABLE_SANITIZERS is only supported with GCC/Clang-like compilers")
     endif()
 
     set(CPPWINDOW_SANITIZER_FLAGS -fsanitize=address,undefined)
@@ -161,18 +205,5 @@ endif()
 # Documentation
 # -----------------------------
 if(CPPWINDOW_BUILD_DOCS)
-    find_package(Doxygen REQUIRED)
-
-    configure_file(
-        docs/Doxyfile.in
-        "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
-        @ONLY
-    )
-
-    add_custom_target(cppwindow_docs
-        COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "Generating CppWindow API documentation"
-        VERBATIM
-    )
+    cppwindow_add_docs_target()
 endif()

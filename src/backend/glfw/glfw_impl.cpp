@@ -1038,7 +1038,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
             return;
         }
         self->handleEvent(
-            Event::FrameBufferResized{
+            Event::FramebufferResized{
                 .width = width,
                 .height = height,
             });
@@ -1280,7 +1280,8 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     if (desc.windowMode != WindowMode::Windowed) {
         setWindowMode(desc.windowMode, desc.monitorId, desc.videoMode);
     }
-    if (desc.visible && (desc.position || desc.opacity || desc.windowMode != WindowMode::Windowed)) {
+    if (desc.visible &&
+        (desc.position || desc.opacity || desc.windowMode != WindowMode::Windowed)) {
         glfwShowWindow(handle_.get());
         if (desc.focused) {
             glfwFocusWindow(handle_.get());
@@ -1786,7 +1787,7 @@ std::pair<int, int> GLFWNativeWindow::getPosition() const noexcept
     };
 }
 
-std::pair<uint32_t, uint32_t> GLFWNativeWindow::getFrameBufferSize() const noexcept
+std::pair<uint32_t, uint32_t> GLFWNativeWindow::getFramebufferSize() const noexcept
 {
     int width, height;
     glfwGetFramebufferSize(handle_.get(), &width, &height);

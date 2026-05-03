@@ -37,7 +37,7 @@ void printVulkanInfo(const WindowContext& ctx)
 {
     std::cout << "vulkan supported: " << ctx.isVulkanSupported() << "\n";
 
-    const auto extensions = ctx.getRequiredGlfwVulkanExtensions();
+    const auto extensions = ctx.getRequiredVulkanInstanceExtensions();
     std::cout << "required GLFW Vulkan extensions: " << extensions.size() << "\n";
     for (const auto& extension : extensions) {
         std::cout << "  " << extension << "\n";
@@ -48,9 +48,9 @@ void printVulkanInfo(const WindowContext& ctx)
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
     auto window =
-        WindowBuilder{}.title("Native Handles").size(760, 360).noAPI().resizable().build();
+        WindowBuilder{}.title("Native Handles").size(760, 360).noGraphicsApi().resizable().build();
 
     std::cout << "Controls:\n"
               << "  H: print native handles\n"

@@ -5,6 +5,8 @@ build/
 build-*/
 cmake-build-*/
 out/
+.deps/
+install/
 
 # ==============================================================================
 # CMake generated files

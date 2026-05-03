@@ -47,8 +47,13 @@ void printMonitors(const WindowContext& ctx)
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
-    auto window = WindowBuilder{}.title("Monitor Info").size(820, 420).noAPI().resizable().build();
+    auto& ctx = WindowContext::get();
+    auto window = WindowBuilder{}
+                      .title("Monitor Info")
+                      .size(820, 420)
+                      .noGraphicsApi()
+                      .resizable()
+                      .build();
 
     std::cout << "Controls:\n"
               << "  M: print monitor info again\n"
@@ -74,7 +79,7 @@ int main()
         dispatcher.dispatch(window.events());
 
         auto [width, height] = window.getSize();
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         const DpiScale dpi = window.getDpiScale();
         auto [scaledWidth, scaledHeight] = dpi.windowSizeToFramebuffer(width, height);
 

@@ -437,7 +437,7 @@ ActionMap& ActionMap::bindKey(std::string action, Key key, Modifiers modifiers, 
     return *this;
 }
 
-ActionMap& ActionMap::bindKeyChord(std::string action, Key key, std::vector<Key> requiredKeys)
+ActionMap& ActionMap::bindKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys)
 {
     appendUnique(
         getOrCreateEntry(std::move(action)).binding.keys,
@@ -464,7 +464,7 @@ ActionMap& ActionMap::bindGamepadAxis(
     std::string action,
     GamepadAxis axis,
     float deadzone,
-    ActionAxisDirection direction)
+    AxisDirection direction)
 {
     appendUnique(
         getOrCreateEntry(std::move(action)).binding.gamepadAxes,
@@ -492,7 +492,7 @@ ActionMap::replaceKey(std::string action, Key key, Modifiers modifiers, bool exa
     return *this;
 }
 
-ActionMap& ActionMap::replaceKeyChord(std::string action, Key key, std::vector<Key> requiredKeys)
+ActionMap& ActionMap::replaceKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys)
 {
     Entry& entry = getOrCreateEntry(std::move(action));
     entry.binding.keys.clear();
@@ -528,7 +528,7 @@ ActionMap& ActionMap::replaceGamepadAxis(
     std::string action,
     GamepadAxis axis,
     float deadzone,
-    ActionAxisDirection direction)
+    AxisDirection direction)
 {
     Entry& entry = getOrCreateEntry(std::move(action));
     entry.binding.gamepadAxes.clear();
@@ -567,7 +567,7 @@ void ActionMap::clear(const std::string& action)
 void ActionMap::clearAll()
 {
     entries_.clear();
-    groups_.clear();
+    contexts_.clear();
 }
 
 void ActionMap::resetState() noexcept
@@ -577,45 +577,45 @@ void ActionMap::resetState() noexcept
     }
 }
 
-ActionMap& ActionMap::setGroup(std::string action, std::string group)
+ActionMap& ActionMap::setContext(std::string action, std::string context)
 {
     Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.group = std::move(group);
+    entry.binding.context = std::move(context);
     resetEntryState(entry);
     return *this;
 }
 
-void ActionMap::setGroupEnabled(std::string group, bool enabled)
+void ActionMap::setContextEnabled(std::string context, bool enabled)
 {
-    if (group.empty()) {
+    if (context.empty()) {
         return;
     }
 
-    if (GroupState* state = findGroup(group)) {
+    if (ContextState* state = findContext(context)) {
         state->enabled = enabled;
         return;
     }
 
-    groups_.push_back(
-        GroupState{
-            .group = std::move(group),
+    contexts_.push_back(
+        ContextState{
+            .context = std::move(context),
             .enabled = enabled,
         });
 }
 
-bool ActionMap::isGroupEnabled(const std::string& group) const noexcept
+bool ActionMap::isContextEnabled(const std::string& context) const noexcept
 {
-    if (group.empty()) {
+    if (context.empty()) {
         return true;
     }
 
-    const GroupState* state = findGroup(group);
+    const ContextState* state = findContext(context);
     return !state || state->enabled;
 }
 
-void ActionMap::clearGroupStates()
+void ActionMap::clearContextStates()
 {
-    groups_.clear();
+    contexts_.clear();
 }
 
 bool ActionMap::isDown(const std::string& action) const
@@ -670,10 +670,10 @@ const ActionMap::Entry* ActionMap::findEntry(const std::string& action) const no
     return nullptr;
 }
 
-ActionMap::GroupState* ActionMap::findGroup(const std::string& group) noexcept
+ActionMap::ContextState* ActionMap::findContext(const std::string& context) noexcept
 {
-    for (auto& state : groups_) {
-        if (state.group == group) {
+    for (auto& state : contexts_) {
+        if (state.context == context) {
             return &state;
         }
     }
@@ -681,10 +681,10 @@ ActionMap::GroupState* ActionMap::findGroup(const std::string& group) noexcept
     return nullptr;
 }
 
-const ActionMap::GroupState* ActionMap::findGroup(const std::string& group) const noexcept
+const ActionMap::ContextState* ActionMap::findContext(const std::string& context) const noexcept
 {
-    for (const auto& state : groups_) {
-        if (state.group == group) {
+    for (const auto& state : contexts_) {
+        if (state.context == context) {
             return &state;
         }
     }
@@ -919,9 +919,9 @@ std::pair<int, int> Window::getPosition() const noexcept
     return window_->getPosition();
 }
 
-std::pair<uint32_t, uint32_t> Window::getFrameBufferSize() const noexcept
+std::pair<uint32_t, uint32_t> Window::getFramebufferSize() const noexcept
 {
-    return window_->getFrameBufferSize();
+    return window_->getFramebufferSize();
 }
 
 std::pair<float, float> Window::getContentScale() const noexcept
@@ -1023,7 +1023,7 @@ WindowBuilder& WindowBuilder::openGL(OpenGLConfig cfg)
     return *this;
 }
 
-WindowBuilder& WindowBuilder::noAPI()
+WindowBuilder& WindowBuilder::noGraphicsApi()
 {
     data_->mode = NoneGraphicsModeTag{};
     return *this;
@@ -1147,7 +1147,7 @@ Window WindowBuilder::build()
 //----------------------------------------------------------------------------
 //  Window Context Implemenation
 //----------------------------------------------------------------------------
-WindowContext& WindowContext::Get()
+WindowContext& WindowContext::get()
 {
     // init context
     static WindowContext instance;
@@ -1192,7 +1192,7 @@ bool WindowContext::isVulkanSupported() const
     return context_->isVulkanSupported();
 }
 
-std::vector<std::string> WindowContext::getRequiredGlfwVulkanExtensions() const
+std::vector<std::string> WindowContext::getRequiredVulkanInstanceExtensions() const
 {
     return context_->getRequiredVulkanExtensions();
 }

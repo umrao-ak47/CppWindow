@@ -711,7 +711,7 @@ class Event
 {
 public:
     /// Framebuffer pixel size changed.
-    struct FrameBufferResized
+    struct FramebufferResized
     {
         /// New framebuffer width in pixels.
         uint32_t width;
@@ -965,7 +965,7 @@ public:
 
     /// Variant containing every event payload type.
     using Data = std::variant<
-        FrameBufferResized,
+        FramebufferResized,
         Closed,
         Resized,
         Moved,
@@ -1363,7 +1363,7 @@ struct KeyBinding
 };
 
 /// Direction filter for gamepad axis bindings.
-enum class ActionAxisDirection : int8_t
+enum class AxisDirection : int8_t
 {
     /// Match either positive or negative axis movement.
     Any,
@@ -1381,7 +1381,7 @@ struct GamepadAxisBinding
     /// Absolute value below which the axis is ignored.
     float deadzone = 0.15f;
     /// Direction that activates the binding.
-    ActionAxisDirection direction = ActionAxisDirection::Any;
+    AxisDirection direction = AxisDirection::Any;
 
     /// Compares two axis bindings.
     [[nodiscard]] bool operator==(const GamepadAxisBinding&) const noexcept = default;
@@ -1390,8 +1390,8 @@ struct GamepadAxisBinding
 /// Input sources that can trigger one named action.
 struct ActionBinding
 {
-    /// Optional group/context name. Empty means always enabled.
-    std::string group;
+    /// Optional input context name. Empty means always enabled.
+    std::string context;
     /// Keyboard keys that trigger the action, with optional modifiers.
     std::vector<KeyBinding> keys;
     /// Mouse buttons that trigger the action.
@@ -1410,7 +1410,7 @@ public:
     ActionMap&
     bindKey(std::string action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
     /// Binds a key plus additional required held keys to an action name.
-    ActionMap& bindKeyChord(std::string action, Key key, std::vector<Key> requiredKeys);
+    ActionMap& bindKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys);
     /// Binds a mouse button to an action name.
     ActionMap& bindMouseButton(std::string action, MouseButton button);
     /// Binds a standard gamepad button to an action name.
@@ -1420,12 +1420,12 @@ public:
         std::string action,
         GamepadAxis axis,
         float deadzone = 0.15f,
-        ActionAxisDirection direction = ActionAxisDirection::Any);
+        AxisDirection direction = AxisDirection::Any);
     /// Replaces key bindings for an action.
     ActionMap&
     replaceKey(std::string action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
     /// Replaces key bindings with a key plus additional required held keys.
-    ActionMap& replaceKeyChord(std::string action, Key key, std::vector<Key> requiredKeys);
+    ActionMap& replaceKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys);
     /// Replaces mouse button bindings for an action.
     ActionMap& replaceMouseButton(std::string action, MouseButton button);
     /// Replaces gamepad button bindings for an action.
@@ -1435,8 +1435,8 @@ public:
         std::string action,
         GamepadAxis axis,
         float deadzone = 0.15f,
-        ActionAxisDirection direction = ActionAxisDirection::Any);
-    /// Removes all input bindings for an action while preserving group and state.
+        AxisDirection direction = AxisDirection::Any);
+    /// Removes all input bindings for an action while preserving context and state.
     void clearBindings(const std::string& action);
     /// Removes all bindings and state for one action.
     void clear(const std::string& action);
@@ -1444,14 +1444,14 @@ public:
     void clearAll();
     /// Clears action transition state but keeps bindings.
     void resetState() noexcept;
-    /// Assigns an action to a group/context. Empty group means always enabled.
-    ActionMap& setGroup(std::string action, std::string group);
-    /// Enables or disables a group/context.
-    void setGroupEnabled(std::string group, bool enabled);
-    /// Returns whether a group/context is enabled. Unknown groups are enabled.
-    [[nodiscard]] bool isGroupEnabled(const std::string& group) const noexcept;
-    /// Clears all explicit group enable/disable state.
-    void clearGroupStates();
+    /// Assigns an action to an input context. Empty context means always enabled.
+    ActionMap& setContext(std::string action, std::string context);
+    /// Enables or disables an input context.
+    void setContextEnabled(std::string context, bool enabled);
+    /// Returns whether an input context is enabled. Unknown contexts are enabled.
+    [[nodiscard]] bool isContextEnabled(const std::string& context) const noexcept;
+    /// Clears all explicit context enable/disable state.
+    void clearContextStates();
 
     /// Updates action states from input and an optional gamepad snapshot.
     template <typename Input>
@@ -1460,7 +1460,7 @@ public:
         for (auto& entry : entries_) {
             entry.previousDown = entry.down;
 
-            if (!isGroupEnabled(entry.binding.group)) {
+            if (!isContextEnabled(entry.binding.context)) {
                 entry.down = false;
                 entry.axisValue = 0.0f;
                 continue;
@@ -1484,9 +1484,9 @@ public:
     [[nodiscard]] const ActionBinding* getBinding(const std::string& action) const noexcept;
 
 private:
-    struct GroupState
+    struct ContextState
     {
-        std::string group;
+        std::string context;
         bool enabled = true;
     };
 
@@ -1501,8 +1501,8 @@ private:
 
     [[nodiscard]] Entry* findEntry(const std::string& action) noexcept;
     [[nodiscard]] const Entry* findEntry(const std::string& action) const noexcept;
-    [[nodiscard]] GroupState* findGroup(const std::string& group) noexcept;
-    [[nodiscard]] const GroupState* findGroup(const std::string& group) const noexcept;
+    [[nodiscard]] ContextState* findContext(const std::string& context) noexcept;
+    [[nodiscard]] const ContextState* findContext(const std::string& context) const noexcept;
     [[nodiscard]] Entry& getOrCreateEntry(std::string action);
     static void resetEntryState(Entry& entry) noexcept;
 
@@ -1607,11 +1607,11 @@ private:
         }
 
         switch (binding.direction) {
-            case ActionAxisDirection::Any:
+            case AxisDirection::Any:
                 return value;
-            case ActionAxisDirection::Positive:
+            case AxisDirection::Positive:
                 return value > binding.deadzone ? value : 0.0f;
-            case ActionAxisDirection::Negative:
+            case AxisDirection::Negative:
                 return value < -binding.deadzone ? value : 0.0f;
         }
 
@@ -1619,7 +1619,7 @@ private:
     }
 
     std::vector<Entry> entries_;
-    std::vector<GroupState> groups_;
+    std::vector<ContextState> contexts_;
 };
 
 //----------------------------------------------------------------------------
@@ -1731,7 +1731,7 @@ public:
     /// Returns the window position in virtual desktop coordinates.
     std::pair<int, int> getPosition() const noexcept;
     /// Returns framebuffer pixel size.
-    std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept;
+    std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept;
     /// Returns content scale for the window.
     std::pair<float, float> getContentScale() const noexcept;
     /// Returns DPI/content scale conversion helper for this window.
@@ -1777,7 +1777,7 @@ public:
     /// Requests an OpenGL context with the given configuration.
     WindowBuilder& openGL(OpenGLConfig cfg = {});
     /// Requests no graphics API for this window.
-    WindowBuilder& noAPI();
+    WindowBuilder& noGraphicsApi();
     /// Sets whether the window is initially visible.
     WindowBuilder& visible(bool visible = true);
     /// Creates the window hidden and unfocused.
@@ -1828,7 +1828,7 @@ class WindowContext final
 {
 public:
     /// Returns the process-wide context singleton.
-    static WindowContext& Get();
+    static WindowContext& get();
 
     /// Destroys the windowing context after owned windows are gone.
     ~WindowContext();
@@ -1850,8 +1850,8 @@ public:
     ProcLoader getProcLoader() const;
     /// Returns whether Vulkan presentation support is available.
     bool isVulkanSupported() const;
-    /// Returns Vulkan instance extensions required by GLFW surface creation.
-    std::vector<std::string> getRequiredGlfwVulkanExtensions() const;
+    /// Returns Vulkan instance extensions required by the active window backend.
+    std::vector<std::string> getRequiredVulkanInstanceExtensions() const;
     /// Returns metadata for all connected monitors.
     std::vector<MonitorInfo> getMonitors() const;
     /// Returns the primary monitor, if one is available.

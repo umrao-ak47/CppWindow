@@ -26,7 +26,7 @@ std::string makeStatus(double deltaX, double deltaY, bool inside, bool captured)
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("Mouse Capture")
@@ -81,7 +81,7 @@ int main()
         displayDeltaX += deltaX;
         displayDeltaY += deltaY;
 
-        auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+        auto [fbWidth, fbHeight] = window.getFramebufferSize();
         const std::string status =
             makeStatus(displayDeltaX, displayDeltaY, window.getInput().isMouseInside(), captured);
         example::drawStatusBar(fbWidth, fbHeight, status);

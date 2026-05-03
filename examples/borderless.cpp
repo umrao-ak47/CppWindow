@@ -6,7 +6,7 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
 
     auto window = WindowBuilder{}
                       .title("Borderless Example")

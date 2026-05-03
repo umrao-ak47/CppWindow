@@ -35,9 +35,9 @@ void simulate(Simulation& simulation, double dt)
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
+    auto& ctx = WindowContext::get();
     auto window =
-        WindowBuilder{}.title("Fixed Step Loop").size(860, 360).noAPI().resizable().build();
+        WindowBuilder{}.title("Fixed Step Loop").size(860, 360).noGraphicsApi().resizable().build();
 
     std::cout << "Fixed update runs at 60Hz. Rendering/presentation remains caller-controlled.\n"
               << "Controls:\n"

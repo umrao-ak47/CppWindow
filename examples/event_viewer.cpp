@@ -13,8 +13,8 @@ namespace {
 template <typename T>
 constexpr const char* eventName()
 {
-    if constexpr (std::is_same_v<T, Event::FrameBufferResized>) {
-        return "FrameBufferResized";
+    if constexpr (std::is_same_v<T, Event::FramebufferResized>) {
+        return "FramebufferResized";
     } else if constexpr (std::is_same_v<T, Event::Closed>) {
         return "Closed";
     } else if constexpr (std::is_same_v<T, Event::Resized>) {
@@ -99,7 +99,7 @@ void logEvent(const Event& event)
 
         std::cout << eventName<T>();
 
-        if constexpr (std::is_same_v<T, Event::FrameBufferResized>) {
+        if constexpr (std::is_same_v<T, Event::FramebufferResized>) {
             std::cout << " width=" << payload.width << " height=" << payload.height;
         } else if constexpr (std::is_same_v<T, Event::Resized>) {
             std::cout << " width=" << payload.width << " height=" << payload.height;
@@ -164,8 +164,13 @@ void logEvent(const Event& event)
 
 int main()
 {
-    auto& ctx = WindowContext::Get();
-    auto window = WindowBuilder{}.title("Event Viewer").size(900, 520).noAPI().resizable().build();
+    auto& ctx = WindowContext::get();
+    auto window = WindowBuilder{}
+                      .title("Event Viewer")
+                      .size(900, 520)
+                      .noGraphicsApi()
+                      .resizable()
+                      .build();
 
     std::cout << "Controls:\n"
               << "  Move window: log move events\n"

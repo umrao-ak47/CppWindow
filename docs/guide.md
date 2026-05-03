@@ -8,7 +8,8 @@ native surface/context hooks.
 CppWindow does not own the application loop and does not provide a renderer.
 Your application decides when to poll, update, render, and present.
 
-For a complete symbol-by-symbol reference, see the [API Reference](api.md).
+For copyable application shapes, see the [Recipes](recipes.md). For a
+complete symbol-by-symbol reference, see the [API Reference](api.md).
 
 ## Requirements
 
@@ -39,9 +40,42 @@ CppWindow currently builds a static library target named
 Configure and build:
 
 ```bash
-cmake -S . -B build -DCPPWINDOW_BUILD_EXAMPLES=ON -DCPPWINDOW_BUILD_TESTS=ON
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+```
+
+By default, CMake `FetchContent` stores dependencies under each build
+directory. This repository changes that default to `.deps/glfw`, so CMake
+downloads the GLFW source once and reuses it for `dev`, `sanitizers`,
+`install`, and `multi`. Each build directory still compiles GLFW with its own
+flags.
+
+```bash
+cmake --preset sanitizers
+cmake --build --preset sanitizers
+ctest --preset sanitizers
+
+cmake --preset docs
+cmake --build --preset docs
+
+cmake --preset install
+cmake --build --preset install
+
+cd tests/package_consumer
+cmake --preset installed
+cmake --build --preset installed
+ctest --preset installed
+```
+
+Use the `multi` preset when you want Debug and Release from one build tree:
+
+```bash
+cmake --preset multi
+cmake --build --preset multi-debug
+cmake --build --preset multi-release
+ctest --preset multi-debug
+ctest --preset multi-release
 ```
 
 Useful example targets:
@@ -72,7 +106,7 @@ cmake --build build-docs --target cppwindow_docs
 
 ## Minimal Window
 
-Use `WindowBuilder` to create a window. Use `WindowContext::Get()` to poll
+Use `WindowBuilder` to create a window. Use `WindowContext::get()` to poll
 platform events.
 
 ```cpp
@@ -80,12 +114,12 @@ platform events.
 
 int main()
 {
-    auto& ctx = cwin::WindowContext::Get();
+    auto& ctx = cwin::WindowContext::get();
 
     auto window = cwin::WindowBuilder{}
                       .title("CppWindow App")
                       .size(1280, 720)
-                      .noAPI()
+                      .noGraphicsApi()
                       .resizable()
                       .build();
 
@@ -118,7 +152,7 @@ auto window = cwin::WindowBuilder{}
                   .title("Configured App")
                   .size(1280, 720)
                   .position(120, 80)
-                  .noAPI()
+                  .noGraphicsApi()
                   .resizable()
                   .decorated()
                   .floating(false)
@@ -139,7 +173,7 @@ CppWindow can create an OpenGL context. You still need an OpenGL loader such
 as GLAD.
 
 ```cpp
-auto& ctx = cwin::WindowContext::Get();
+auto& ctx = cwin::WindowContext::get();
 
 auto window = cwin::WindowBuilder{}
                   .title("OpenGL App")
@@ -155,7 +189,7 @@ window.setVSync(true);
 while (!window.shouldClose()) {
     ctx.pollEvents();
 
-    auto [fbWidth, fbHeight] = window.getFrameBufferSize();
+    auto [fbWidth, fbHeight] = window.getFramebufferSize();
     glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
     glClearColor(0.05f, 0.08f, 0.10f, 1.0f);
@@ -189,13 +223,13 @@ offers `getDpiScale(monitorId)` for monitor-level conversions.
 
 ## Vulkan Windows
 
-For Vulkan, create a window with `.noAPI()`.
+For Vulkan, create a window with `.noGraphicsApi()`.
 
 ```cpp
 auto window = cwin::WindowBuilder{}
                   .title("Vulkan App")
                   .size(1280, 720)
-                  .noAPI()
+                  .noGraphicsApi()
                   .resizable()
                   .build();
 ```
@@ -203,7 +237,7 @@ auto window = cwin::WindowBuilder{}
 Query required instance extensions from the context:
 
 ```cpp
-auto extensions = cwin::WindowContext::Get().getRequiredGlfwVulkanExtensions();
+auto extensions = cwin::WindowContext::get().getRequiredVulkanInstanceExtensions();
 ```
 
 After creating the Vulkan instance, create the window surface:
@@ -249,7 +283,7 @@ Mouse control helpers live on `Window`:
 ```cpp
 window.setMousePosition(640.0, 360.0);
 
-if (cwin::WindowContext::Get().isRawMouseMotionSupported()) {
+if (cwin::WindowContext::get().isRawMouseMotionSupported()) {
     window.setCursorMode(cwin::CursorMode::Captured);
     window.setRawMouseMotion(true);
 }
@@ -264,13 +298,13 @@ For named commands, use `ActionMap`:
 cwin::ActionMap actions;
 actions.bindKey("jump", cwin::Key::Space)
        .bindKey("save", cwin::Key::S, cwin::Modifiers{ .control = true })
-       .bindKeyChord("left_dash", cwin::Key::A, { cwin::Key::LShift })
+       .bindKeyCombo("left_dash", cwin::Key::A, { cwin::Key::LShift })
        .bindMouseButton("fire", cwin::MouseButton::Left)
        .bindGamepadButton("jump", cwin::GamepadButton::A)
        .bindGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.20f)
-       .setGroup("jump", "gameplay")
-       .setGroup("fire", "gameplay")
-       .setGroup("move_x", "gameplay");
+       .setContext("jump", "gameplay")
+       .setContext("fire", "gameplay")
+       .setContext("move_x", "gameplay");
 
 while (!window.shouldClose()) {
     ctx.pollEvents();
@@ -288,10 +322,10 @@ while (!window.shouldClose()) {
 }
 ```
 
-Use groups as simple input contexts:
+Use input contexts:
 
 ```cpp
-actions.setGroupEnabled("gameplay", !menuOpen);
+actions.setContextEnabled("gameplay", !menuOpen);
 ```
 
 For rebinding screens, replace one binding category without rebuilding the
@@ -299,7 +333,7 @@ whole map:
 
 ```cpp
 actions.replaceKey("jump", cwin::Key::J);
-actions.replaceKeyChord("left_dash", cwin::Key::A, { cwin::Key::LShift });
+actions.replaceKeyCombo("left_dash", cwin::Key::A, { cwin::Key::LShift });
 actions.replaceGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.25f);
 ```
 
@@ -310,7 +344,7 @@ Events are value objects stored by each window for the current frame. Use
 
 ```cpp
 for (const auto& event : window.events()) {
-    if (const auto* resized = event.getIf<cwin::Event::FrameBufferResized>()) {
+    if (const auto* resized = event.getIf<cwin::Event::FramebufferResized>()) {
         resizeRenderTargets(resized->width, resized->height);
     }
 
@@ -370,7 +404,7 @@ Common event types:
 
 - `Closed`
 - `Resized`
-- `FrameBufferResized`
+- `FramebufferResized`
 - `Moved`
 - `Minimized`, `Restored`, `Maximized`
 - `ContentScaleChanged`
@@ -409,7 +443,7 @@ CppWindow exposes standard-mapped gamepads through GLFW's gamepad mapping
 layer. This gives stable button and axis names across common controllers.
 
 ```cpp
-auto& ctx = cwin::WindowContext::Get();
+auto& ctx = cwin::WindowContext::get();
 
 for (const auto& gamepad : ctx.getGamepads()) {
     std::cout << gamepad.id << ": " << gamepad.name << "\n";
@@ -441,7 +475,7 @@ Use `Joystick*` events when you need backend button/axis indices, and use
 Clipboard text is available on `WindowContext`:
 
 ```cpp
-auto& ctx = cwin::WindowContext::Get();
+auto& ctx = cwin::WindowContext::get();
 
 if (!ctx.setClipboardText("Copied from my app")) {
     // Clipboard write was rejected by the platform/backend.
@@ -583,7 +617,7 @@ window.setWindowMode(cwin::WindowMode::Windowed);
 For exclusive fullscreen on macOS/Retina displays, cursor size and content
 scaling can appear to change because the system may change the active display
 mode and framebuffer scale. Treat this as platform behavior. Render using
-`getFrameBufferSize()`, handle `FrameBufferResized`, and listen for
+`getFramebufferSize()`, handle `FramebufferResized`, and listen for
 `ContentScaleChanged`.
 
 If you want smooth app switching and stable desktop scaling, use
@@ -594,7 +628,7 @@ If you want smooth app switching and stable desktop scaling, use
 Use `WindowContext` to inspect monitors and video modes:
 
 ```cpp
-auto& ctx = cwin::WindowContext::Get();
+auto& ctx = cwin::WindowContext::get();
 
 for (const auto& monitor : ctx.getMonitors()) {
     std::cout << monitor.id << ": " << monitor.name << "\n";
@@ -704,8 +738,8 @@ surface creation failure.
 
 ```cpp
 try {
-    auto& ctx = cwin::WindowContext::Get();
-    auto window = cwin::WindowBuilder{}.title("App").noAPI().build();
+    auto& ctx = cwin::WindowContext::get();
+    auto window = cwin::WindowBuilder{}.title("App").noGraphicsApi().build();
 } catch (const cwin::Error& error) {
     std::cerr << error.what() << "\n";
 }
@@ -734,3 +768,6 @@ GLFW error code and description, are included in `what()` when available.
 - `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation,
   FPS sampling, and frame limiting.
 - `examples/particles.cpp`: richer OpenGL rendering example.
+
+For short, copyable patterns that combine these APIs, see
+the [Recipes](recipes.md).

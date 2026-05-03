@@ -258,8 +258,8 @@ void testActionMapModifiers()
     actions.bindKey("save", cwin::Key::S, cwin::Modifiers{ .control = true })
         .bindKey("exact_save", cwin::Key::S, cwin::Modifiers{ .control = true }, true)
         .bindKey("shift_jump", cwin::Key::Space, cwin::Modifiers{ .shift = true })
-        .bindKeyChord("left_shift_a", cwin::Key::A, { cwin::Key::LShift })
-        .bindKeyChord("right_shift_a", cwin::Key::A, { cwin::Key::RShift });
+        .bindKeyCombo("left_shift_a", cwin::Key::A, { cwin::Key::LShift })
+        .bindKeyCombo("right_shift_a", cwin::Key::A, { cwin::Key::RShift });
 
     const cwin::ActionBinding* save = actions.getBinding("save");
     assert(save);
@@ -299,7 +299,7 @@ void testActionMapModifiers()
     assert(!actions.isDown("left_shift_a"));
     assert(actions.isDown("right_shift_a"));
 
-    actions.replaceKeyChord("left_shift_a", cwin::Key::B, { cwin::Key::LShift });
+    actions.replaceKeyCombo("left_shift_a", cwin::Key::B, { cwin::Key::LShift });
     const cwin::ActionBinding* chord = actions.getBinding("left_shift_a");
     assert(chord);
     assert(chord->keys.size() == 1);
@@ -321,7 +321,7 @@ void testActionMapModifiers()
     assert(actions.isDown("save"));
 }
 
-void testActionMapAxesGroupsAndRebinding()
+void testActionMapAxesContextsAndRebinding()
 {
     FakeInput input;
     cwin::GamepadState gamepad;
@@ -333,15 +333,15 @@ void testActionMapAxesGroupsAndRebinding()
             "move_left",
             cwin::GamepadAxis::LeftX,
             0.25f,
-            cwin::ActionAxisDirection::Negative)
-        .setGroup("jump", "gameplay")
-        .setGroup("fire", "gameplay")
-        .setGroup("move_x", "gameplay")
-        .setGroup("move_left", "gameplay");
+            cwin::AxisDirection::Negative)
+        .setContext("jump", "gameplay")
+        .setContext("fire", "gameplay")
+        .setContext("move_x", "gameplay")
+        .setContext("move_left", "gameplay");
 
     const cwin::ActionBinding* move = actions.getBinding("move_x");
     assert(move);
-    assert(move->group == "gameplay");
+    assert(move->context == "gameplay");
     assert(move->gamepadAxes.size() == 1);
     assert(closeTo(move->gamepadAxes.front().deadzone, 0.25f));
 
@@ -368,15 +368,15 @@ void testActionMapAxesGroupsAndRebinding()
     actions.update(input, gamepad);
     assert(actions.isDown("jump"));
 
-    actions.setGroupEnabled("gameplay", false);
-    assert(!actions.isGroupEnabled("gameplay"));
+    actions.setContextEnabled("gameplay", false);
+    assert(!actions.isContextEnabled("gameplay"));
     actions.update(input, gamepad);
     assert(!actions.isDown("jump"));
     assert(actions.isReleased("jump"));
     assert(!actions.isDown("move_x"));
     assert(closeTo(actions.getAxis("move_x"), 0.0f));
 
-    actions.setGroupEnabled("gameplay", true);
+    actions.setContextEnabled("gameplay", true);
     actions.update(input, gamepad);
     assert(actions.isDown("jump"));
     assert(actions.isPressed("jump"));
@@ -384,7 +384,7 @@ void testActionMapAxesGroupsAndRebinding()
     actions.replaceMouseButton("fire", cwin::MouseButton::Right);
     const cwin::ActionBinding* fire = actions.getBinding("fire");
     assert(fire);
-    assert(fire->group == "gameplay");
+    assert(fire->context == "gameplay");
     assert(fire->mouseButtons.size() == 1);
     assert(fire->mouseButtons.front() == cwin::MouseButton::Right);
 
@@ -397,11 +397,11 @@ void testActionMapAxesGroupsAndRebinding()
     actions.clearBindings("move_x");
     move = actions.getBinding("move_x");
     assert(move);
-    assert(move->group == "gameplay");
+    assert(move->context == "gameplay");
     assert(move->gamepadAxes.empty());
 
-    actions.clearGroupStates();
-    assert(actions.isGroupEnabled("gameplay"));
+    actions.clearContextStates();
+    assert(actions.isContextEnabled("gameplay"));
 }
 
 }  // namespace
@@ -412,5 +412,5 @@ int main()
     testMouseState();
     testActionMapTransitions();
     testActionMapModifiers();
-    testActionMapAxesGroupsAndRebinding();
+    testActionMapAxesContextsAndRebinding();
 }

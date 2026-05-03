@@ -1,6 +1,7 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <concepts>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <string>
@@ -66,6 +67,7 @@ concept CanSubscribeEach = requires(cwin::EventDispatcher dispatcher, Handler ha
 }  // namespace
 
 static_assert(cwin::EventSubtypeOf<cwin::Event::Closed, cwin::Event>);
+static_assert(cwin::EventSubtypeOf<cwin::Event::FramebufferResized, cwin::Event>);
 static_assert(cwin::EventSubtypeOf<cwin::Event::KeyPressed, cwin::Event>);
 static_assert(!cwin::EventSubtypeOf<int, cwin::Event>);
 
@@ -102,16 +104,20 @@ static_assert(std::is_same_v<
                   std::declval<RawEventHandler>())),
               cwin::EventDispatcher&>);
 
-static_assert(std::is_same_v<decltype(cwin::WindowContext::Get()), cwin::WindowContext&>);
+static_assert(std::is_same_v<decltype(cwin::WindowContext::get()), cwin::WindowContext&>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().getMonitors()),
               std::vector<cwin::MonitorInfo>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>()
+                           .getRequiredVulkanInstanceExtensions()),
+              std::vector<std::string>>);
 
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().bindKey("jump", cwin::Key::Space)),
               cwin::ActionMap&>);
 static_assert(std::is_same_v<
-              decltype(std::declval<cwin::ActionMap&>().bindKeyChord(
+              decltype(std::declval<cwin::ActionMap&>().bindKeyCombo(
                   "dash",
                   cwin::Key::A,
                   std::declval<std::vector<cwin::Key>>())),
@@ -121,7 +127,7 @@ static_assert(std::is_same_v<
                   "look",
                   cwin::GamepadAxis::RightX,
                   0.2f,
-                  cwin::ActionAxisDirection::Positive)),
+                  cwin::AxisDirection::Positive)),
               cwin::ActionMap&>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::ActionMap&>().getBinding(
@@ -136,7 +142,10 @@ static_assert(requires(
 });
 
 static_assert(std::is_same_v<
-              decltype(std::declval<cwin::WindowBuilder&>().size(640, 480).title("app").noAPI()),
+              decltype(std::declval<cwin::WindowBuilder&>()
+                           .size(640, 480)
+                           .title("app")
+                           .noGraphicsApi()),
               cwin::WindowBuilder&>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::WindowBuilder&>().windowMode(
@@ -148,6 +157,9 @@ static_assert(std::is_same_v<
               decltype(std::declval<cwin::Window&>().setIcons(
                   std::declval<std::span<const cwin::ImageRgba>>())),
               bool>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Window&>().getFramebufferSize()),
+              std::pair<uint32_t, uint32_t>>);
 
 int main()
 {

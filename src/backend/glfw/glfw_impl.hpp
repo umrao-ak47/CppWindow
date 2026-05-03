@@ -205,7 +205,7 @@ public:
     void setVisible(bool visible) const noexcept override;
     std::pair<int, int> getSize() const noexcept override;
     std::pair<int, int> getPosition() const noexcept override;
-    std::pair<uint32_t, uint32_t> getFrameBufferSize() const noexcept override;
+    std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept override;
     std::pair<float, float> getContentScale() const noexcept override;
     float getOpacity() const noexcept override;
     CursorMode getCursorMode() const noexcept override;
