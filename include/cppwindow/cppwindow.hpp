@@ -1694,8 +1694,6 @@ private:
 //----------------------------------------------------------------------------
 //  Window
 //----------------------------------------------------------------------------
-/// Backend-owned window implementation.
-class NativeWindow;
 /// Fluent builder for `Window`.
 class WindowBuilder;
 
@@ -1829,10 +1827,12 @@ public:
     bool isVisible() const noexcept;
 
 private:
-    explicit Window(std::unique_ptr<NativeWindow> window);
+    struct Impl;
+
+    explicit Window(std::unique_ptr<Impl> impl);
 
     InputState inputState_;
-    std::unique_ptr<NativeWindow> window_;
+    std::unique_ptr<Impl> impl_;
 };
 
 //----------------------------------------------------------------------------
@@ -1899,9 +1899,6 @@ private:
 //----------------------------------------------------------------------------
 //  Window Context
 //----------------------------------------------------------------------------
-/// Backend-owned global windowing context.
-class NativeWindowContext;
-
 /// Process-wide windowing context and platform service entry point.
 class WindowContext final
 {
@@ -1957,9 +1954,11 @@ public:
     [[nodiscard]] std::optional<std::string> tryGetClipboardText() const;
 
 private:
+    struct Impl;
+
     WindowContext();
 
-    std::unique_ptr<NativeWindowContext> context_{};
+    std::unique_ptr<Impl> impl_{};
 };
 
 }  // namespace cwin

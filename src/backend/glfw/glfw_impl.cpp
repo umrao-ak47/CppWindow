@@ -2022,20 +2022,4 @@ std::optional<std::string> GLFWWindowContext::tryGetClipboardText() const
                                                  : std::nullopt;
 }
 
-//----------------------------------------------------------------------------
-//  GLFW Factory Implementation
-//----------------------------------------------------------------------------
-namespace factory {
-
-std::unique_ptr<NativeWindowContext> createNativeContext()
-{
-    return std::make_unique<GLFWWindowContext>();
-}
-
-std::unique_ptr<NativeWindow> createNativeWindow(WindowDesc desc)
-{
-    return std::make_unique<GLFWNativeWindow>(std::move(desc));
-}
-
-}  // namespace factory
 }  // namespace cwin

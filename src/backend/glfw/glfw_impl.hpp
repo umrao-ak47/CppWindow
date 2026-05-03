@@ -145,7 +145,7 @@ public:
     }
 };
 
-class GLFWNativeWindow : public NativeWindow
+class GLFWNativeWindow
 {
 public:
     explicit GLFWNativeWindow(WindowDesc desc);
@@ -155,60 +155,59 @@ public:
     void handleMonitorChanged(uint32_t monitorId);
     void registerCallbacks();
 
-    NativeHandles getNativeHandles() const override;
-    VulkanHandle createVulkanSurface(void* instance) const override;
-    void makeContextCurrent() override;
-    void swapBuffers() override;
+    NativeHandles getNativeHandles() const;
+    VulkanHandle createVulkanSurface(void* instance) const;
+    void makeContextCurrent();
+    void swapBuffers();
 
-    bool shouldClose() const noexcept override;
-    void requestClose() noexcept override;
+    bool shouldClose() const noexcept;
+    void requestClose() noexcept;
 
-    std::span<const Event> events() const noexcept override;
-    const InputStateData* getInputData() const noexcept override;
+    std::span<const Event> events() const noexcept;
+    const InputStateData* getInputData() const noexcept;
 
-    void setTitle(const std::string& title) override;
-    void setSize(int width, int height) override;
-    void setPosition(int x, int y) override;
-    void setSizeLimits(const SizeLimits& limits) override;
-    void clearSizeLimits() override;
-    void setAspectRatio(AspectRatio ratio) override;
-    void clearAspectRatio() override;
-    void setResizable(bool resizable) override;
-    void setDecorated(bool decorated) override;
-    void setFloating(bool floating) override;
-    void setOpacity(float opacity) override;
-    void setVSync(bool enabled) override;
-    void setCursorMode(CursorMode mode) override;
-    bool setCursorShape(CursorShape shape) override;
-    bool setCursorImage(const ImageRgba& image, int hotX, int hotY) override;
-    void clearCursor() override;
-    void setMousePosition(double x, double y) override;
-    bool setRawMouseMotion(bool enabled) override;
-    void minimize() override;
-    void maximize() override;
-    void restore() override;
-    void setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
-        override;
-    bool setIcon(std::span<const ImageRgba> images) override;
-    void clearIcon() override;
-    void requestAttention() override;
-    void setFocus(bool focus) const noexcept override;
-    void setVisible(bool visible) const noexcept override;
-    std::pair<int, int> getSize() const noexcept override;
-    std::pair<int, int> getPosition() const noexcept override;
-    std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept override;
-    std::pair<float, float> getContentScale() const noexcept override;
-    float getOpacity() const noexcept override;
-    CursorMode getCursorMode() const noexcept override;
-    bool isRawMouseMotionEnabled() const noexcept override;
-    WindowMode getWindowMode() const noexcept override;
-    bool isResizable() const noexcept override;
-    bool isDecorated() const noexcept override;
-    bool isFloating() const noexcept override;
-    bool isMinimized() const noexcept override;
-    bool isMaximized() const noexcept override;
-    bool isFocused() const noexcept override;
-    bool isVisible() const noexcept override;
+    void setTitle(const std::string& title);
+    void setSize(int width, int height);
+    void setPosition(int x, int y);
+    void setSizeLimits(const SizeLimits& limits);
+    void clearSizeLimits();
+    void setAspectRatio(AspectRatio ratio);
+    void clearAspectRatio();
+    void setResizable(bool resizable);
+    void setDecorated(bool decorated);
+    void setFloating(bool floating);
+    void setOpacity(float opacity);
+    void setVSync(bool enabled);
+    void setCursorMode(CursorMode mode);
+    bool setCursorShape(CursorShape shape);
+    bool setCursorImage(const ImageRgba& image, int hotX, int hotY);
+    void clearCursor();
+    void setMousePosition(double x, double y);
+    bool setRawMouseMotion(bool enabled);
+    void minimize();
+    void maximize();
+    void restore();
+    void setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode);
+    bool setIcon(std::span<const ImageRgba> images);
+    void clearIcon();
+    void requestAttention();
+    void setFocus(bool focus) const noexcept;
+    void setVisible(bool visible) const noexcept;
+    std::pair<int, int> getSize() const noexcept;
+    std::pair<int, int> getPosition() const noexcept;
+    std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept;
+    std::pair<float, float> getContentScale() const noexcept;
+    float getOpacity() const noexcept;
+    CursorMode getCursorMode() const noexcept;
+    bool isRawMouseMotionEnabled() const noexcept;
+    WindowMode getWindowMode() const noexcept;
+    bool isResizable() const noexcept;
+    bool isDecorated() const noexcept;
+    bool isFloating() const noexcept;
+    bool isMinimized() const noexcept;
+    bool isMaximized() const noexcept;
+    bool isFocused() const noexcept;
+    bool isVisible() const noexcept;
 
 private:
     void captureWindowedBounds();
@@ -233,30 +232,30 @@ private:
 //----------------------------------------------------------------------------
 //  GLFW Context
 //----------------------------------------------------------------------------
-class GLFWWindowContext : public NativeWindowContext
+class GLFWWindowContext
 {
 public:
     GLFWWindowContext();
     ~GLFWWindowContext();
 
-    void pollEvents() noexcept override;
-    void waitEvents() noexcept override;
-    void waitEventsTimeout(double timeoutSeconds) noexcept override;
-    void postEmptyEvent() noexcept override;
+    void pollEvents() noexcept;
+    void waitEvents() noexcept;
+    void waitEventsTimeout(double timeoutSeconds) noexcept;
+    void postEmptyEvent() noexcept;
 
-    ProcLoader getProcLoader() const override;
-    bool isVulkanSupported() const override;
-    std::vector<std::string> getRequiredVulkanExtensions() const override;
-    std::vector<MonitorInfo> getMonitors() const override;
-    std::optional<MonitorInfo> getPrimaryMonitor() const override;
-    std::vector<VideoMode> getVideoModes(uint32_t monitorId) const override;
-    std::pair<float, float> getContentScale(uint32_t monitorId) const override;
-    std::vector<GamepadInfo> getGamepads() const override;
-    std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const override;
-    bool isRawMouseMotionSupported() const override;
-    bool setClipboardText(const std::string& text) const override;
-    std::string getClipboardText() const override;
-    std::optional<std::string> tryGetClipboardText() const override;
+    ProcLoader getProcLoader() const;
+    bool isVulkanSupported() const;
+    std::vector<std::string> getRequiredVulkanExtensions() const;
+    std::vector<MonitorInfo> getMonitors() const;
+    std::optional<MonitorInfo> getPrimaryMonitor() const;
+    std::vector<VideoMode> getVideoModes(uint32_t monitorId) const;
+    std::pair<float, float> getContentScale(uint32_t monitorId) const;
+    std::vector<GamepadInfo> getGamepads() const;
+    std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const;
+    bool isRawMouseMotionSupported() const;
+    bool setClipboardText(const std::string& text) const;
+    std::string getClipboardText() const;
+    std::optional<std::string> tryGetClipboardText() const;
 
 private:
     GLFWerrorfun previousErrorCallback_ = nullptr;

@@ -9,7 +9,7 @@
 #include <cmath>
 #include <thread>
 
-#include "backend/native_impl.hpp"
+#include "backend/active_backend.hpp"
 
 namespace cwin {
 
@@ -831,15 +831,25 @@ void ActionMap::resetEntryState(Entry& entry) noexcept
 //----------------------------------------------------------------------------
 //  Window Implementation
 //----------------------------------------------------------------------------
-Window::Window(std::unique_ptr<NativeWindow> window)
-    : inputState_(window->getInputData()),
-      window_(std::move(window))
+struct Window::Impl
+{
+    explicit Impl(WindowDesc desc)
+        : window(std::move(desc))
+    {
+    }
+
+    backend::Window window;
+};
+
+Window::Window(std::unique_ptr<Impl> impl)
+    : inputState_(impl->window.getInputData()),
+      impl_(std::move(impl))
 {
 }
 
 Window::Window(Window&& other) noexcept
     : inputState_(std::move(other.inputState_)),
-      window_(std::move(other.window_))
+      impl_(std::move(other.impl_))
 {
 }
 
@@ -847,37 +857,37 @@ Window::~Window() = default;
 
 NativeHandles Window::getNativeHandles() const
 {
-    return window_->getNativeHandles();
+    return impl_->window.getNativeHandles();
 }
 
 VulkanHandle Window::createVulkanSurface(void* instance) const
 {
-    return window_->createVulkanSurface(instance);
+    return impl_->window.createVulkanSurface(instance);
 }
 
 void Window::makeContextCurrent()
 {
-    window_->makeContextCurrent();
+    impl_->window.makeContextCurrent();
 }
 
 void Window::swapBuffers()
 {
-    window_->swapBuffers();
+    impl_->window.swapBuffers();
 }
 
 bool Window::shouldClose() const noexcept
 {
-    return window_->shouldClose();
+    return impl_->window.shouldClose();
 }
 
 void Window::requestClose() noexcept
 {
-    window_->requestClose();
+    impl_->window.requestClose();
 }
 
 std::span<const Event> Window::events() const noexcept
 {
-    return window_->events();
+    return impl_->window.events();
 }
 
 const InputState& Window::getInput() const noexcept
@@ -887,162 +897,162 @@ const InputState& Window::getInput() const noexcept
 
 void Window::setTitle(const std::string& title)
 {
-    window_->setTitle(title);
+    impl_->window.setTitle(title);
 }
 
 void Window::setSize(int width, int height)
 {
-    window_->setSize(width, height);
+    impl_->window.setSize(width, height);
 }
 
 void Window::setPosition(int x, int y)
 {
-    window_->setPosition(x, y);
+    impl_->window.setPosition(x, y);
 }
 
 void Window::setSizeLimits(const SizeLimits& limits)
 {
-    window_->setSizeLimits(limits);
+    impl_->window.setSizeLimits(limits);
 }
 
 void Window::clearSizeLimits()
 {
-    window_->clearSizeLimits();
+    impl_->window.clearSizeLimits();
 }
 
 void Window::setAspectRatio(AspectRatio ratio)
 {
-    window_->setAspectRatio(ratio);
+    impl_->window.setAspectRatio(ratio);
 }
 
 void Window::clearAspectRatio()
 {
-    window_->clearAspectRatio();
+    impl_->window.clearAspectRatio();
 }
 
 void Window::setResizable(bool resizable)
 {
-    window_->setResizable(resizable);
+    impl_->window.setResizable(resizable);
 }
 
 void Window::setDecorated(bool decorated)
 {
-    window_->setDecorated(decorated);
+    impl_->window.setDecorated(decorated);
 }
 
 void Window::setFloating(bool floating)
 {
-    window_->setFloating(floating);
+    impl_->window.setFloating(floating);
 }
 
 void Window::setOpacity(float opacity)
 {
-    window_->setOpacity(opacity);
+    impl_->window.setOpacity(opacity);
 }
 
 void Window::setVSync(bool enabled)
 {
-    window_->setVSync(enabled);
+    impl_->window.setVSync(enabled);
 }
 
 void Window::setCursorMode(CursorMode mode)
 {
-    window_->setCursorMode(mode);
+    impl_->window.setCursorMode(mode);
 }
 
 bool Window::setCursorShape(CursorShape shape)
 {
-    return window_->setCursorShape(shape);
+    return impl_->window.setCursorShape(shape);
 }
 
 bool Window::setCursorImage(const ImageRgba& image, int hotX, int hotY)
 {
-    return window_->setCursorImage(image, hotX, hotY);
+    return impl_->window.setCursorImage(image, hotX, hotY);
 }
 
 void Window::clearCursor()
 {
-    window_->clearCursor();
+    impl_->window.clearCursor();
 }
 
 void Window::setMousePosition(double x, double y)
 {
-    window_->setMousePosition(x, y);
+    impl_->window.setMousePosition(x, y);
 }
 
 bool Window::setRawMouseMotion(bool enabled)
 {
-    return window_->setRawMouseMotion(enabled);
+    return impl_->window.setRawMouseMotion(enabled);
 }
 
 void Window::minimize()
 {
-    window_->minimize();
+    impl_->window.minimize();
 }
 
 void Window::maximize()
 {
-    window_->maximize();
+    impl_->window.maximize();
 }
 
 void Window::restore()
 {
-    window_->restore();
+    impl_->window.restore();
 }
 
 void Window::setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
 {
-    window_->setWindowMode(mode, monitorId, videoMode);
+    impl_->window.setWindowMode(mode, monitorId, videoMode);
 }
 
 bool Window::setIcon(const ImageRgba& image)
 {
-    return window_->setIcon(std::span<const ImageRgba>{ &image, 1 });
+    return impl_->window.setIcon(std::span<const ImageRgba>{ &image, 1 });
 }
 
 bool Window::setIcons(std::span<const ImageRgba> images)
 {
-    return window_->setIcon(images);
+    return impl_->window.setIcon(images);
 }
 
 void Window::clearIcon()
 {
-    window_->clearIcon();
+    impl_->window.clearIcon();
 }
 
 void Window::requestAttention()
 {
-    window_->requestAttention();
+    impl_->window.requestAttention();
 }
 
 void Window::setFocus(bool focus) const noexcept
 {
-    window_->setFocus(focus);
+    impl_->window.setFocus(focus);
 }
 
 void Window::setVisible(bool visible) const noexcept
 {
-    window_->setVisible(visible);
+    impl_->window.setVisible(visible);
 }
 
 std::pair<int, int> Window::getSize() const noexcept
 {
-    return window_->getSize();
+    return impl_->window.getSize();
 }
 
 std::pair<int, int> Window::getPosition() const noexcept
 {
-    return window_->getPosition();
+    return impl_->window.getPosition();
 }
 
 std::pair<uint32_t, uint32_t> Window::getFramebufferSize() const noexcept
 {
-    return window_->getFramebufferSize();
+    return impl_->window.getFramebufferSize();
 }
 
 std::pair<float, float> Window::getContentScale() const noexcept
 {
-    return window_->getContentScale();
+    return impl_->window.getContentScale();
 }
 
 DpiScale Window::getDpiScale() const noexcept
@@ -1053,57 +1063,57 @@ DpiScale Window::getDpiScale() const noexcept
 
 float Window::getOpacity() const noexcept
 {
-    return window_->getOpacity();
+    return impl_->window.getOpacity();
 }
 
 CursorMode Window::getCursorMode() const noexcept
 {
-    return window_->getCursorMode();
+    return impl_->window.getCursorMode();
 }
 
 bool Window::isRawMouseMotionEnabled() const noexcept
 {
-    return window_->isRawMouseMotionEnabled();
+    return impl_->window.isRawMouseMotionEnabled();
 }
 
 WindowMode Window::getWindowMode() const noexcept
 {
-    return window_->getWindowMode();
+    return impl_->window.getWindowMode();
 }
 
 bool Window::isResizable() const noexcept
 {
-    return window_->isResizable();
+    return impl_->window.isResizable();
 }
 
 bool Window::isDecorated() const noexcept
 {
-    return window_->isDecorated();
+    return impl_->window.isDecorated();
 }
 
 bool Window::isFloating() const noexcept
 {
-    return window_->isFloating();
+    return impl_->window.isFloating();
 }
 
 bool Window::isMinimized() const noexcept
 {
-    return window_->isMinimized();
+    return impl_->window.isMinimized();
 }
 
 bool Window::isMaximized() const noexcept
 {
-    return window_->isMaximized();
+    return impl_->window.isMaximized();
 }
 
 bool Window::isFocused() const noexcept
 {
-    return window_->isFocused();
+    return impl_->window.isFocused();
 }
 
 bool Window::isVisible() const noexcept
 {
-    return window_->isVisible();
+    return impl_->window.isVisible();
 }
 
 //----------------------------------------------------------------------------
@@ -1281,13 +1291,18 @@ Window WindowBuilder::build()
         .monitorId = data_->monitorId,
         .videoMode = data_->videoMode,
     };
-    auto native = factory::createNativeWindow(std::move(desc));
-    return Window(std::move(native));
+    auto impl = std::make_unique<Window::Impl>(std::move(desc));
+    return Window(std::move(impl));
 }
 
 //----------------------------------------------------------------------------
 //  Window Context Implemenation
 //----------------------------------------------------------------------------
+struct WindowContext::Impl
+{
+    backend::WindowContext context;
+};
+
 WindowContext& WindowContext::get()
 {
     // init context
@@ -1296,66 +1311,64 @@ WindowContext& WindowContext::get()
 }
 
 WindowContext::WindowContext()
-{
-    context_.reset();
-    context_ = factory::createNativeContext();
-}
+    : impl_(std::make_unique<Impl>())
+{}
 
 WindowContext::~WindowContext() = default;
 
 void WindowContext::pollEvents() const noexcept
 {
-    context_->pollEvents();
+    impl_->context.pollEvents();
 }
 
 void WindowContext::waitEvents() const noexcept
 {
-    context_->waitEvents();
+    impl_->context.waitEvents();
 }
 
 void WindowContext::waitEventsTimeout(double timeoutSeconds) const noexcept
 {
-    context_->waitEventsTimeout(timeoutSeconds);
+    impl_->context.waitEventsTimeout(timeoutSeconds);
 }
 
 void WindowContext::postEmptyEvent() const noexcept
 {
-    context_->postEmptyEvent();
+    impl_->context.postEmptyEvent();
 }
 
 ProcLoader WindowContext::getProcLoader() const
 {
-    return context_->getProcLoader();
+    return impl_->context.getProcLoader();
 }
 
 bool WindowContext::isVulkanSupported() const
 {
-    return context_->isVulkanSupported();
+    return impl_->context.isVulkanSupported();
 }
 
 std::vector<std::string> WindowContext::getRequiredVulkanInstanceExtensions() const
 {
-    return context_->getRequiredVulkanExtensions();
+    return impl_->context.getRequiredVulkanExtensions();
 }
 
 std::vector<MonitorInfo> WindowContext::getMonitors() const
 {
-    return context_->getMonitors();
+    return impl_->context.getMonitors();
 }
 
 std::optional<MonitorInfo> WindowContext::getPrimaryMonitor() const
 {
-    return context_->getPrimaryMonitor();
+    return impl_->context.getPrimaryMonitor();
 }
 
 std::vector<VideoMode> WindowContext::getVideoModes(uint32_t monitorId) const
 {
-    return context_->getVideoModes(monitorId);
+    return impl_->context.getVideoModes(monitorId);
 }
 
 std::pair<float, float> WindowContext::getContentScale(uint32_t monitorId) const
 {
-    return context_->getContentScale(monitorId);
+    return impl_->context.getContentScale(monitorId);
 }
 
 DpiScale WindowContext::getDpiScale(uint32_t monitorId) const
@@ -1366,22 +1379,22 @@ DpiScale WindowContext::getDpiScale(uint32_t monitorId) const
 
 std::vector<GamepadInfo> WindowContext::getGamepads() const
 {
-    return context_->getGamepads();
+    return impl_->context.getGamepads();
 }
 
 std::optional<GamepadState> WindowContext::getGamepadState(uint32_t gamepadId) const
 {
-    return context_->getGamepadState(gamepadId);
+    return impl_->context.getGamepadState(gamepadId);
 }
 
 bool WindowContext::isRawMouseMotionSupported() const
 {
-    return context_->isRawMouseMotionSupported();
+    return impl_->context.isRawMouseMotionSupported();
 }
 
 bool WindowContext::setClipboardText(const std::string& text) const
 {
-    return context_->setClipboardText(text);
+    return impl_->context.setClipboardText(text);
 }
 
 bool WindowContext::hasClipboardText() const
@@ -1392,12 +1405,12 @@ bool WindowContext::hasClipboardText() const
 
 std::string WindowContext::getClipboardText() const
 {
-    return context_->getClipboardText();
+    return impl_->context.getClipboardText();
 }
 
 std::optional<std::string> WindowContext::tryGetClipboardText() const
 {
-    return context_->tryGetClipboardText();
+    return impl_->context.tryGetClipboardText();
 }
 
 }  // namespace cwin
