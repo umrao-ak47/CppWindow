@@ -1307,8 +1307,8 @@ private:
 //----------------------------------------------------------------------------
 /// Main window type.
 class Window;
-/// Backend-owned input storage.
-class NativeInputState;
+/// Backend-owned input snapshot storage.
+struct InputStateData;
 
 /// Snapshot-style input query interface for a window.
 class InputState final
@@ -1339,9 +1339,9 @@ public:
     bool isMouseInside() const;
 
 private:
-    explicit InputState(const NativeInputState* state);
+    explicit InputState(const InputStateData* state);
 
-    const NativeInputState* state_;
+    const InputStateData* state_;
 };
 
 //----------------------------------------------------------------------------

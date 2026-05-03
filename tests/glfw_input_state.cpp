@@ -1,12 +1,10 @@
 #include <cassert>
-#include <memory>
 
 #include "backend/glfw/glfw_impl.hpp"
 
 int main()
 {
-    auto state = std::make_unique<cwin::GLFWInputState>();
-    cwin::NativeInputState& input = *state;
+    cwin::GLFWInputState input;
 
     input.handleEvent(
         cwin::Event::KeyPressed{

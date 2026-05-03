@@ -8,6 +8,7 @@
 
 #include <cppwindow/cppwindow.hpp>
 
+#include <bitset>
 #include <memory>
 #include <span>
 #include <string>
@@ -49,31 +50,79 @@ struct WindowDesc
 };
 
 //----------------------------------------------------------------------------
-//  Native InputState
+//  Native Input State
 //----------------------------------------------------------------------------
-class NativeInputState
+struct InputStateData
 {
-public:
-    NativeInputState() = default;
-    virtual ~NativeInputState() = default;
+    [[nodiscard]] bool isKeyDown(Key key) const noexcept
+    {
+        const auto index = static_cast<size_t>(key);
+        return index > static_cast<size_t>(Key::Unknown) && index < KeyCount &&
+               keyStates.test(index);
+    }
 
-    virtual void handleEvent(const Event& event) = 0;
-    virtual void reset() = 0;
+    [[nodiscard]] bool isKeyPressed(Key key) const noexcept
+    {
+        const auto index = static_cast<size_t>(key);
+        return index > static_cast<size_t>(Key::Unknown) && index < KeyCount &&
+               keyStates.test(index) && !previousKeyStates.test(index);
+    }
 
-    // keyboard
-    virtual bool isKeyDown(Key key) const = 0;
-    virtual bool isKeyPressed(Key key) const = 0;
-    virtual bool isKeyReleased(Key key) const = 0;
+    [[nodiscard]] bool isKeyReleased(Key key) const noexcept
+    {
+        const auto index = static_cast<size_t>(key);
+        return index > static_cast<size_t>(Key::Unknown) && index < KeyCount &&
+               !keyStates.test(index) && previousKeyStates.test(index);
+    }
 
-    // mouse
-    virtual bool isMouseButtonDown(MouseButton button) const = 0;
-    virtual bool isMouseButtonPressed(MouseButton button) const = 0;
-    virtual bool isMouseButtonReleased(MouseButton button) const = 0;
-    virtual std::pair<double, double> getMousePosition() const = 0;
-    virtual void setMousePosition(double x, double y) = 0;
-    virtual std::pair<double, double> getMouseDelta() const = 0;
-    virtual std::pair<double, double> getScrollDelta() const = 0;
-    virtual bool isMouseInside() const = 0;
+    [[nodiscard]] bool isMouseButtonDown(MouseButton button) const noexcept
+    {
+        const auto index = static_cast<size_t>(button);
+        return index > static_cast<size_t>(MouseButton::Unknown) && index < MouseButtonCount &&
+               mouseButtonStates.test(index);
+    }
+
+    [[nodiscard]] bool isMouseButtonPressed(MouseButton button) const noexcept
+    {
+        const auto index = static_cast<size_t>(button);
+        return index > static_cast<size_t>(MouseButton::Unknown) && index < MouseButtonCount &&
+               mouseButtonStates.test(index) && !previousMouseButtonStates.test(index);
+    }
+
+    [[nodiscard]] bool isMouseButtonReleased(MouseButton button) const noexcept
+    {
+        const auto index = static_cast<size_t>(button);
+        return index > static_cast<size_t>(MouseButton::Unknown) && index < MouseButtonCount &&
+               !mouseButtonStates.test(index) && previousMouseButtonStates.test(index);
+    }
+
+    [[nodiscard]] std::pair<double, double> getMousePosition() const noexcept
+    {
+        return { mousePositionX, mousePositionY };
+    }
+
+    [[nodiscard]] std::pair<double, double> getMouseDelta() const noexcept
+    {
+        return { mouseDeltaX, mouseDeltaY };
+    }
+
+    [[nodiscard]] std::pair<double, double> getScrollDelta() const noexcept
+    {
+        return { scrollDeltaX, scrollDeltaY };
+    }
+
+    std::bitset<KeyCount> keyStates{};
+    std::bitset<KeyCount> previousKeyStates{};
+    std::bitset<MouseButtonCount> mouseButtonStates{};
+    std::bitset<MouseButtonCount> previousMouseButtonStates{};
+    double mousePositionX = 0.0;
+    double mousePositionY = 0.0;
+    double mouseDeltaX = 0.0;
+    double mouseDeltaY = 0.0;
+    double scrollDeltaX = 0.0;
+    double scrollDeltaY = 0.0;
+    bool hasMousePosition = false;
+    bool mouseInside = false;
 };
 
 //----------------------------------------------------------------------------
@@ -93,7 +142,7 @@ public:
     virtual void requestClose() noexcept = 0;
 
     virtual std::span<const Event> events() const noexcept = 0;
-    virtual const NativeInputState* getInput() const noexcept = 0;
+    virtual const InputStateData* getInputData() const noexcept = 0;
 
     virtual void setTitle(const std::string& title) = 0;
     virtual void setSize(int width, int height) = 0;

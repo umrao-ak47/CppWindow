@@ -13,7 +13,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <array>
-#include <bitset>
 #include <optional>
 #include <string>
 #include <utility>
@@ -68,45 +67,37 @@ MouseButton toMouseButton(int b);
 //----------------------------------------------------------------------------
 //  GLFW Input State
 //----------------------------------------------------------------------------
-class GLFWInputState : public NativeInputState
+class GLFWInputState
 {
 public:
     GLFWInputState() = default;
     explicit GLFWInputState(GLFWwindow* window);
 
-    void handleEvent(const Event& event) override;
-    void reset() override;
+    void handleEvent(const Event& event);
+    void reset();
 
     // keyboard
-    bool isKeyDown(Key key) const override;
-    bool isKeyPressed(Key key) const override;
-    bool isKeyReleased(Key key) const override;
+    bool isKeyDown(Key key) const;
+    bool isKeyPressed(Key key) const;
+    bool isKeyReleased(Key key) const;
 
     // mouse
-    bool isMouseButtonDown(MouseButton button) const override;
-    bool isMouseButtonPressed(MouseButton button) const override;
-    bool isMouseButtonReleased(MouseButton button) const override;
-    std::pair<double, double> getMousePosition() const override;
-    void setMousePosition(double x, double y) override;
-    std::pair<double, double> getMouseDelta() const override;
-    std::pair<double, double> getScrollDelta() const override;
-    bool isMouseInside() const override;
+    bool isMouseButtonDown(MouseButton button) const;
+    bool isMouseButtonPressed(MouseButton button) const;
+    bool isMouseButtonReleased(MouseButton button) const;
+    std::pair<double, double> getMousePosition() const;
+    void setMousePosition(double x, double y);
+    std::pair<double, double> getMouseDelta() const;
+    std::pair<double, double> getScrollDelta() const;
+    bool isMouseInside() const;
+
+    [[nodiscard]] const InputStateData& data() const noexcept;
 
 private:
     bool queryMouseInside() const;
 
     GLFWwindow* window_ = nullptr;
-    std::bitset<KeyCount> keyStates_{};
-    std::bitset<KeyCount> prevKeyStates_{};
-
-    std::bitset<MouseButtonCount> mouseStates_{};
-    std::bitset<MouseButtonCount> prevMouseStates_{};
-
-    double mousePosX_{}, mousePosY_{};
-    double mouseDeltaX_{}, mouseDeltaY_{};
-    double scrollDeltaX_{}, scrollDeltaY_{};
-    bool hasMousePosition_ = false;
-    bool mouseInside_ = false;
+    InputStateData data_{};
 };
 
 //----------------------------------------------------------------------------
@@ -139,18 +130,18 @@ using UniqueGLFWcursor = std::unique_ptr<GLFWcursor, GLFWcursorDeleter>;
 class WindowStorage
 {
 public:
-    explicit WindowStorage(std::unique_ptr<NativeInputState> inputState)
-        : inputState(std::move(inputState))
+    explicit WindowStorage(GLFWwindow* window)
+        : inputState(window)
     {
     }
 
     std::vector<Event> eventQueue;
-    std::unique_ptr<NativeInputState> inputState;
+    GLFWInputState inputState;
 
     void reset()
     {
         eventQueue.clear();
-        inputState->reset();
+        inputState.reset();
     }
 };
 
@@ -173,7 +164,7 @@ public:
     void requestClose() noexcept override;
 
     std::span<const Event> events() const noexcept override;
-    const NativeInputState* getInput() const noexcept override;
+    const InputStateData* getInputData() const noexcept override;
 
     void setTitle(const std::string& title) override;
     void setSize(int width, int height) override;

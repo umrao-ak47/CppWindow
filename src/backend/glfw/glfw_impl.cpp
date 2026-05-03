@@ -315,15 +315,15 @@ GLFWInputState::GLFWInputState(GLFWwindow* window)
         return;
     }
 
-    glfwGetCursorPos(window, &mousePosX_, &mousePosY_);
-    hasMousePosition_ = true;
-    mouseInside_ = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
+    glfwGetCursorPos(window, &data_.mousePositionX, &data_.mousePositionY);
+    data_.hasMousePosition = true;
+    data_.mouseInside = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
 }
 
 bool GLFWInputState::queryMouseInside() const
 {
     if (!window_) {
-        return mouseInside_;
+        return data_.mouseInside;
     }
 
     if (glfwGetInputMode(window_, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
@@ -339,120 +339,92 @@ void GLFWInputState::handleEvent(const Event& event)
         using T = std::decay_t<decltype(event)>;
         if constexpr (std::is_same_v<T, Event::KeyPressed>) {
             if (isValidKey(event.key)) {
-                keyStates_.set(static_cast<size_t>(event.key));
+                data_.keyStates.set(static_cast<size_t>(event.key));
             }
         } else if constexpr (std::is_same_v<T, Event::KeyReleased>) {
             if (isValidKey(event.key)) {
-                keyStates_.reset(static_cast<size_t>(event.key));
+                data_.keyStates.reset(static_cast<size_t>(event.key));
             }
         } else if constexpr (std::is_same_v<T, Event::MouseButtonPressed>) {
             if (isValidMouseButton(event.button)) {
-                mouseStates_.set(static_cast<size_t>(event.button));
+                data_.mouseButtonStates.set(static_cast<size_t>(event.button));
             }
         } else if constexpr (std::is_same_v<T, Event::MouseButtonReleased>) {
             if (isValidMouseButton(event.button)) {
-                mouseStates_.reset(static_cast<size_t>(event.button));
+                data_.mouseButtonStates.reset(static_cast<size_t>(event.button));
             }
         } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
-            scrollDeltaX_ += event.deltaX;
-            scrollDeltaY_ += event.deltaY;
+            data_.scrollDeltaX += event.deltaX;
+            data_.scrollDeltaY += event.deltaY;
         } else if constexpr (std::is_same_v<T, Event::MouseMoved>) {
-            if (hasMousePosition_) {
-                mouseDeltaX_ += event.posX - mousePosX_;
-                mouseDeltaY_ += event.posY - mousePosY_;
+            if (data_.hasMousePosition) {
+                data_.mouseDeltaX += event.posX - data_.mousePositionX;
+                data_.mouseDeltaY += event.posY - data_.mousePositionY;
             }
-            mousePosX_ = event.posX;
-            mousePosY_ = event.posY;
-            hasMousePosition_ = true;
+            data_.mousePositionX = event.posX;
+            data_.mousePositionY = event.posY;
+            data_.hasMousePosition = true;
         } else if constexpr (std::is_same_v<T, Event::MouseEntered>) {
-            mouseInside_ = true;
+            data_.mouseInside = true;
         } else if constexpr (std::is_same_v<T, Event::MouseLeft>) {
-            mouseInside_ = false;
+            data_.mouseInside = false;
         } else if constexpr (std::is_same_v<T, Event::FocusLost>) {
-            keyStates_.reset();
-            mouseStates_.reset();
+            data_.keyStates.reset();
+            data_.mouseButtonStates.reset();
         }
     });
 }
 
 bool GLFWInputState::isKeyDown(Key key) const
 {
-    if (!isValidKey(key)) {
-        return false;
-    }
-
-    return keyStates_.test(static_cast<size_t>(key));
+    return data_.isKeyDown(key);
 }
 
 bool GLFWInputState::isKeyPressed(Key key) const
 {
-    if (!isValidKey(key)) {
-        return false;
-    }
-
-    size_t idx = static_cast<size_t>(key);
-    return keyStates_.test(idx) && !prevKeyStates_.test(idx);
+    return data_.isKeyPressed(key);
 }
 
 bool GLFWInputState::isKeyReleased(Key key) const
 {
-    if (!isValidKey(key)) {
-        return false;
-    }
-
-    size_t idx = static_cast<size_t>(key);
-    return !keyStates_.test(idx) && prevKeyStates_.test(idx);
+    return data_.isKeyReleased(key);
 }
 
 bool GLFWInputState::isMouseButtonDown(MouseButton button) const
 {
-    if (!isValidMouseButton(button)) {
-        return false;
-    }
-
-    return mouseStates_.test(static_cast<size_t>(button));
+    return data_.isMouseButtonDown(button);
 }
 
 bool GLFWInputState::isMouseButtonPressed(MouseButton button) const
 {
-    if (!isValidMouseButton(button)) {
-        return false;
-    }
-
-    size_t idx = static_cast<size_t>(button);
-    return mouseStates_.test(idx) && !prevMouseStates_.test(idx);
+    return data_.isMouseButtonPressed(button);
 }
 
 bool GLFWInputState::isMouseButtonReleased(MouseButton button) const
 {
-    if (!isValidMouseButton(button)) {
-        return false;
-    }
-
-    size_t idx = static_cast<size_t>(button);
-    return !mouseStates_.test(idx) && prevMouseStates_.test(idx);
+    return data_.isMouseButtonReleased(button);
 }
 
 std::pair<double, double> GLFWInputState::getMousePosition() const
 {
-    return { mousePosX_, mousePosY_ };
+    return data_.getMousePosition();
 }
 
 void GLFWInputState::setMousePosition(double x, double y)
 {
-    mousePosX_ = x;
-    mousePosY_ = y;
-    hasMousePosition_ = true;
+    data_.mousePositionX = x;
+    data_.mousePositionY = y;
+    data_.hasMousePosition = true;
 }
 
 std::pair<double, double> GLFWInputState::getMouseDelta() const
 {
-    return { mouseDeltaX_, mouseDeltaY_ };
+    return data_.getMouseDelta();
 }
 
 std::pair<double, double> GLFWInputState::getScrollDelta() const
 {
-    return { scrollDeltaX_, scrollDeltaY_ };
+    return data_.getScrollDelta();
 }
 
 bool GLFWInputState::isMouseInside() const
@@ -462,13 +434,18 @@ bool GLFWInputState::isMouseInside() const
 
 void GLFWInputState::reset()
 {
-    prevKeyStates_ = keyStates_;
-    prevMouseStates_ = mouseStates_;
-    mouseDeltaX_ = 0;
-    mouseDeltaY_ = 0;
-    scrollDeltaX_ = 0;
-    scrollDeltaY_ = 0;
-    mouseInside_ = queryMouseInside();
+    data_.previousKeyStates = data_.keyStates;
+    data_.previousMouseButtonStates = data_.mouseButtonStates;
+    data_.mouseDeltaX = 0;
+    data_.mouseDeltaY = 0;
+    data_.scrollDeltaX = 0;
+    data_.scrollDeltaY = 0;
+    data_.mouseInside = queryMouseInside();
+}
+
+const InputStateData& GLFWInputState::data() const noexcept
+{
+    return data_;
 }
 
 //----------------------------------------------------------------------------
@@ -853,7 +830,7 @@ std::optional<JoystickSnapshot> readJoystickSnapshot(uint32_t joystickId)
 void dispatchEventToAllWindows(const Event& event)
 {
     g_WindowRegistry.forEach([&](WindowStorage& storage) {
-        storage.inputState->handleEvent(event);
+        storage.inputState.handleEvent(event);
         storage.eventQueue.push_back(event);
     });
 }
@@ -1251,7 +1228,7 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
         glfwSetWindowPos(handle_.get(), desc.position->first, desc.position->second);
     }
 
-    storage_ = std::make_shared<WindowStorage>(std::make_unique<GLFWInputState>(handle_.get()));
+    storage_ = std::make_shared<WindowStorage>(handle_.get());
     captureWindowedBounds();
     currentMonitorId_ = getWindowMonitorId(handle_.get());
 
@@ -1306,7 +1283,7 @@ void GLFWNativeWindow::captureWindowedBounds()
 
 void GLFWNativeWindow::handleEvent(Event&& event)
 {
-    storage_->inputState->handleEvent(event);
+    storage_->inputState.handleEvent(event);
     storage_->eventQueue.push_back(std::move(event));
 }
 
@@ -1397,9 +1374,9 @@ std::span<const Event> GLFWNativeWindow::events() const noexcept
     return std::span<const Event>{ storage_->eventQueue.data(), storage_->eventQueue.size() };
 }
 
-const NativeInputState* GLFWNativeWindow::getInput() const noexcept
+const InputStateData* GLFWNativeWindow::getInputData() const noexcept
 {
-    return storage_->inputState.get();
+    return &storage_->inputState.data();
 }
 
 void GLFWNativeWindow::setTitle(const std::string& title)
@@ -1542,7 +1519,7 @@ void GLFWNativeWindow::clearCursor()
 void GLFWNativeWindow::setMousePosition(double x, double y)
 {
     glfwSetCursorPos(handle_.get(), x, y);
-    storage_->inputState->setMousePosition(x, y);
+    storage_->inputState.setMousePosition(x, y);
 }
 
 bool GLFWNativeWindow::setRawMouseMotion(bool enabled)

@@ -343,7 +343,7 @@ float GamepadState::getAxis(GamepadAxis axis) const noexcept
 //----------------------------------------------------------------------------
 //  Input State Implemenation
 //----------------------------------------------------------------------------
-InputState::InputState(const NativeInputState* state)
+InputState::InputState(const InputStateData* state)
     : state_(state)
 {
 }
@@ -395,7 +395,7 @@ std::pair<double, double> InputState::getScrollDelta() const
 
 bool InputState::isMouseInside() const
 {
-    return state_->isMouseInside();
+    return state_->mouseInside;
 }
 
 //----------------------------------------------------------------------------
@@ -832,7 +832,7 @@ void ActionMap::resetEntryState(Entry& entry) noexcept
 //  Window Implementation
 //----------------------------------------------------------------------------
 Window::Window(std::unique_ptr<NativeWindow> window)
-    : inputState_(window->getInput()),
+    : inputState_(window->getInputData()),
       window_(std::move(window))
 {
 }
