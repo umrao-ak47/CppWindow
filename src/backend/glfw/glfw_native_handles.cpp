@@ -7,6 +7,12 @@
 #include "glfw_impl.hpp"
 
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(CPPWINDOW_PLATFORM_MACOS)
 #define GLFW_EXPOSE_NATIVE_COCOA
