@@ -165,6 +165,8 @@ jobs:
 
       - name: Test sanitizer configuration
         if: runner.os == 'Linux'
+        env:
+          LSAN_OPTIONS: suppressions=${{ github.workspace }}/cmake/sanitizers/linux-lsan.supp:print_suppressions=1
         run: xvfb-run -a ctest --preset sanitizers
 
   package:

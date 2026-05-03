@@ -1,0 +1,4 @@
+# GLX/X11 can retain extension-query memory while GLFW initializes an OpenGL
+# window under xvfb. Keep Ubuntu LeakSanitizer enabled, but ignore this external
+# driver/X11 path so cppwindow-owned leaks still fail the sanitizer job.
+leak:extensionSupportedGLX

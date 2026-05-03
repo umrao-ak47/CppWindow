@@ -14,6 +14,11 @@ Delete items as they are completed and remove this file once the list is empty.
   semantics.
 - [ ] Revisit fullscreen transition behavior after the macOS-specific issues are
   understood. Keep current `Fullscreen` as decorated maximized window for now.
+- [ ] Track Ubuntu sanitizer GLX/X11 leak suppression. The current LSan
+  suppression targets `extensionSupportedGLX`, which appears to be retained
+  Mesa/GLX/X11 memory triggered by GLFW OpenGL context initialization under
+  `xvfb`, not cppwindow-owned memory. Revisit if CI images or GLFW behavior
+  change.
 
 ## Future Work
 
