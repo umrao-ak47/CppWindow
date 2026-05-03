@@ -14,3 +14,10 @@ Delete items as they are completed and remove this file once the list is empty.
   semantics.
 - [ ] Revisit fullscreen transition behavior after the macOS-specific issues are
   understood. Keep current `Fullscreen` as decorated maximized window for now.
+
+## Future Work
+
+- [ ] Add optional Vulkan examples behind `CPPWINDOW_BUILD_VULKAN_EXAMPLES`.
+  Use `find_package(Vulkan)` and skip with a clear CMake status message when
+  Vulkan headers/libs are unavailable. Keep Vulkan out of default builds,
+  package tests, and normal CI unless explicitly enabled.

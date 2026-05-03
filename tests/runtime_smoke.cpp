@@ -22,11 +22,6 @@ int skip(const std::exception& error)
 
 int main()
 {
-#if defined(__APPLE__)
-    std::cout << "Skipping runtime smoke test on macOS; hidden GLFW teardown can hang in "
-                 "non-interactive runners\n";
-    return SkipTest;
-#else
     try {
         auto& context = cwin::WindowContext::get();
 
@@ -86,5 +81,4 @@ int main()
     }
 
     return 0;
-#endif
 }
