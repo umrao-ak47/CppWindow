@@ -14,6 +14,14 @@ function(cppwindow_add_test TARGET)
     add_test(NAME ${TARGET} COMMAND ${TARGET})
 endfunction()
 
+function(cppwindow_add_private_backend_test_definitions TARGET)
+    target_compile_definitions(${TARGET}
+        PRIVATE
+            $<$<PLATFORM_ID:Windows>:NOMINMAX>
+            $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
+    )
+endfunction()
+
 cppwindow_add_test(test_static_lookup static_lookup.cpp)
 cppwindow_add_test(test_api_compile api_compile.cpp)
 cppwindow_add_test(test_window_controls_api window_controls_api.cpp)
@@ -32,6 +40,7 @@ target_link_libraries(test_input_helpers
     PRIVATE
         glfw
 )
+cppwindow_add_private_backend_test_definitions(test_input_helpers)
 target_include_directories(test_input_helpers
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src
@@ -42,6 +51,7 @@ target_link_libraries(test_glfw_input_state
     PRIVATE
         glfw
 )
+cppwindow_add_private_backend_test_definitions(test_glfw_input_state)
 target_include_directories(test_glfw_input_state
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src

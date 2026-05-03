@@ -141,8 +141,12 @@ target_compile_features(cppwindow
 
 target_compile_definitions(cppwindow PRIVATE
     $<$<PLATFORM_ID:Windows>:CPPWINDOW_PLATFORM_WINDOWS>
+    $<$<PLATFORM_ID:Windows>:NOMINMAX>
+    $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
     $<$<PLATFORM_ID:Darwin>:CPPWINDOW_PLATFORM_MACOS>
     $<$<PLATFORM_ID:Linux>:CPPWINDOW_PLATFORM_LINUX>
+    $<$<AND:$<PLATFORM_ID:Linux>,$<BOOL:${GLFW_BUILD_X11}>>:CPPWINDOW_GLFW_HAS_X11>
+    $<$<AND:$<PLATFORM_ID:Linux>,$<BOOL:${GLFW_BUILD_WAYLAND}>>:CPPWINDOW_GLFW_HAS_WAYLAND>
 )
 
 # ------------------------------------------------------------------------------

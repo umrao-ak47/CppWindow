@@ -13,16 +13,17 @@
 
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
 #define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
 #elif defined(CPPWINDOW_PLATFORM_MACOS)
 #define GLFW_EXPOSE_NATIVE_COCOA
-#define GLFW_EXPOSE_NATIVE_NSGL
 #elif defined(CPPWINDOW_PLATFORM_LINUX)
+#if defined(CPPWINDOW_GLFW_HAS_X11)
 #define GLFW_EXPOSE_NATIVE_X11
+#endif
+#if defined(CPPWINDOW_GLFW_HAS_WAYLAND)
 #define GLFW_EXPOSE_NATIVE_WAYLAND
-#define GLFW_EXPOSE_NATIVE_GLX
+#endif
 #else
-#error "Unknow Platform"
+#error "Unknown platform"
 #endif
 #include <GLFW/glfw3native.h>
 
@@ -1312,16 +1313,23 @@ NativeHandles GLFWNativeWindow::getNativeHandles() const
     handles.system = NativeHandles::System::Cocoa;
     handles.window = glfwGetCocoaWindow(handle_.get());
 #elif defined(CPPWINDOW_PLATFORM_LINUX)
+#if defined(CPPWINDOW_GLFW_HAS_X11) || defined(CPPWINDOW_GLFW_HAS_WAYLAND)
     int platform = glfwGetPlatform();
+#endif
+#if defined(CPPWINDOW_GLFW_HAS_X11)
     if (platform == GLFW_PLATFORM_X11) {
         handles.system = NativeHandles::System::X11;
         handles.window = reinterpret_cast<void*>(glfwGetX11Window(handle_.get()));
         handles.display = glfwGetX11Display();
-    } else if (platform == GLFW_PLATFORM_WAYLAND) {
+    }
+#endif
+#if defined(CPPWINDOW_GLFW_HAS_WAYLAND)
+    if (platform == GLFW_PLATFORM_WAYLAND) {
         handles.system = NativeHandles::System::Wayland;
         handles.window = glfwGetWaylandWindow(handle_.get());
         handles.display = glfwGetWaylandDisplay();
     }
+#endif
 #endif
 
     return handles;
