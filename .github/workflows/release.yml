@@ -63,33 +63,46 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y doxygen pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+          sudo apt-get install -y doxygen ninja-build pkg-config xorg-dev libgl1-mesa-dev libglu1-mesa-dev
 
-      - name: Configure
+      - name: Configure release preset
         run: >
-          cmake -S . -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DCPPWINDOW_BUILD_EXAMPLES=ON
-          -DCPPWINDOW_BUILD_TESTS=ON
-          -DCPPWINDOW_BUILD_DOCS=OFF
+          cmake --preset multi
           -DGLFW_BUILD_X11=ON
           -DGLFW_BUILD_WAYLAND=OFF
 
-      - name: Build
-        run: cmake --build build --config Release --parallel
+      - name: Build release preset
+        run: cmake --build --preset multi-release --parallel
 
-      - name: Test
-        run: ctest --test-dir build --build-config Release --output-on-failure
+      - name: Test release preset
+        run: ctest --preset multi-release
 
-      - name: Configure docs
+      - name: Configure docs preset
+        run: cmake --preset docs
+
+      - name: Build docs preset
+        run: cmake --build --preset docs --parallel
+
+      - name: Configure install preset
         run: >
-          cmake -S . -B build-docs
-          -DCPPWINDOW_BUILD_DOCS=ON
-          -DCPPWINDOW_BUILD_EXAMPLES=OFF
-          -DCPPWINDOW_BUILD_TESTS=OFF
+          cmake --preset install
+          -DGLFW_BUILD_X11=ON
+          -DGLFW_BUILD_WAYLAND=OFF
 
-      - name: Build docs
-        run: cmake --build build-docs --target cppwindow_docs
+      - name: Build install preset
+        run: cmake --build --preset install --parallel
+
+      - name: Configure package consumer preset
+        working-directory: tests/package_consumer
+        run: cmake --preset installed
+
+      - name: Build package consumer preset
+        working-directory: tests/package_consumer
+        run: cmake --build --preset installed --parallel
+
+      - name: Test package consumer preset
+        working-directory: tests/package_consumer
+        run: ctest --preset installed
 
       - name: Create release artifacts
         shell: bash
@@ -107,7 +120,7 @@ jobs:
             --prefix="CppWindow-${version}/" \
             -o "dist/CppWindow-${version}.zip" \
             HEAD
-          tar -czf "dist/CppWindow-${version}-docs-html.tar.gz" -C build-docs/docs/html .
+          tar -czf "dist/CppWindow-${version}-docs-html.tar.gz" -C build-presets/docs/docs/html .
           sha256sum dist/* > "dist/CppWindow-${version}-SHA256SUMS.txt"
 
       - name: Upload workflow artifacts

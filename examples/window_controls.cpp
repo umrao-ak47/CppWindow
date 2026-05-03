@@ -137,9 +137,6 @@ int main()
               << "  S: clear aspect ratio\n"
               << "  Esc: close\n";
 
-    bool resizable = true;
-    bool decorated = true;
-    bool floating = false;
     float opacity = 1.0f;
     CursorMode cursorMode = CursorMode::Normal;
     EventDispatcher dispatcher;
@@ -151,17 +148,14 @@ int main()
             if (key.key == Key::Escape) {
                 window.requestClose();
             } else if (key.key == Key::R) {
-                resizable = !resizable;
-                window.setResizable(resizable);
-                std::cout << "resizable: " << resizable << "\n";
+                window.setResizable(!window.isResizable());
+                std::cout << "resizable: " << window.isResizable() << "\n";
             } else if (key.key == Key::D) {
-                decorated = !decorated;
-                window.setDecorated(decorated);
-                std::cout << "decorated: " << decorated << "\n";
+                window.setDecorated(!window.isDecorated());
+                std::cout << "decorated: " << window.isDecorated() << "\n";
             } else if (key.key == Key::T) {
-                floating = !floating;
-                window.setFloating(floating);
-                std::cout << "floating: " << floating << "\n";
+                window.setFloating(!window.isFloating());
+                std::cout << "floating: " << window.isFloating() << "\n";
             } else if (key.key == Key::C) {
                 cursorMode = cursorMode == CursorMode::Normal   ? CursorMode::Hidden
                              : cursorMode == CursorMode::Hidden ? CursorMode::Captured
@@ -232,6 +226,8 @@ int main()
         auto [fbWidth, fbHeight] = window.getFramebufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
+        const bool decorated = window.isDecorated();
+        const bool floating = window.isFloating();
         const float decorationTint = decorated ? 0.10f : 0.42f;
         const float floatingTint = floating ? 0.18f : 0.08f;
         glClearColor(decorated ? 0.04f : 0.12f, decorationTint, floatingTint, 1.0f);

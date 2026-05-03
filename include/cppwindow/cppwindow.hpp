@@ -24,6 +24,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -1402,54 +1403,116 @@ struct ActionBinding
     std::vector<GamepadAxisBinding> gamepadAxes;
 };
 
+/// Stable handle for an action stored in an `ActionMap`.
+struct ActionId
+{
+    /// Internal id. Zero means no action.
+    uint32_t value = 0;
+
+    /// Returns whether this handle refers to a possible action.
+    [[nodiscard]] explicit operator bool() const noexcept
+    {
+        return value != 0;
+    }
+
+    /// Compares two action ids.
+    [[nodiscard]] friend bool operator==(ActionId, ActionId) = default;
+};
+
+/// Optional action metadata for rebinding menus and debug UI.
+struct ActionMetadata
+{
+    /// Human-readable label.
+    std::string displayName;
+    /// Longer UI/help description.
+    std::string description;
+};
+
+/// Snapshot of one action and its current state.
+struct ActionInfo
+{
+    /// Lightweight action id.
+    ActionId id;
+    /// Stable action name.
+    std::string name;
+    /// Optional UI metadata.
+    ActionMetadata metadata;
+    /// Current binding data.
+    ActionBinding binding;
+    /// Whether the action is currently down.
+    bool down = false;
+    /// Whether the action transitioned down on the last update.
+    bool pressed = false;
+    /// Whether the action transitioned up on the last update.
+    bool released = false;
+    /// Current axis value.
+    float axisValue = 0.0f;
+};
+
 /// Small action binding map for game/app commands.
 class ActionMap final
 {
 public:
-    /// Binds a key plus optional required modifiers to an action name.
+    /// Returns an existing action id or creates one.
+    [[nodiscard]] ActionId getOrCreateActionId(std::string action);
+    /// Returns an action id by name, or an empty id when missing.
+    [[nodiscard]] ActionId getActionId(std::string_view action) const noexcept;
+    /// Returns whether an action exists.
+    [[nodiscard]] bool hasAction(std::string_view action) const noexcept;
+    /// Returns whether an action exists.
+    [[nodiscard]] bool hasAction(ActionId action) const noexcept;
+    /// Returns a snapshot of every action, suitable for debug UI or rebinding screens.
+    [[nodiscard]] std::vector<ActionInfo> getActions() const;
+
+    /// Sets metadata for an existing action id.
+    ActionMap& setMetadata(ActionId action, ActionMetadata metadata);
+    /// Returns metadata for an action id, or null when missing.
+    [[nodiscard]] const ActionMetadata* getMetadata(ActionId action) const noexcept;
+
+    /// Binds a key plus optional required modifiers to an action id.
     ActionMap&
-    bindKey(std::string action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
-    /// Binds a key plus additional required held keys to an action name.
-    ActionMap& bindKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys);
-    /// Binds a mouse button to an action name.
-    ActionMap& bindMouseButton(std::string action, MouseButton button);
-    /// Binds a standard gamepad button to an action name.
-    ActionMap& bindGamepadButton(std::string action, GamepadButton button);
-    /// Binds a standard gamepad axis to an action name.
+    bindKey(ActionId action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
+    /// Binds a key plus additional required held keys to an action id.
+    ActionMap& bindKeyCombo(ActionId action, Key key, std::vector<Key> requiredKeys);
+    /// Binds a mouse button to an action id.
+    ActionMap& bindMouseButton(ActionId action, MouseButton button);
+    /// Binds a standard gamepad button to an action id.
+    ActionMap& bindGamepadButton(ActionId action, GamepadButton button);
+    /// Binds a standard gamepad axis to an action id.
     ActionMap& bindGamepadAxis(
-        std::string action,
+        ActionId action,
         GamepadAxis axis,
         float deadzone = 0.15f,
         AxisDirection direction = AxisDirection::Any);
-    /// Replaces key bindings for an action.
+    /// Replaces key bindings for an action id.
     ActionMap&
-    replaceKey(std::string action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
-    /// Replaces key bindings with a key plus additional required held keys.
-    ActionMap& replaceKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys);
-    /// Replaces mouse button bindings for an action.
-    ActionMap& replaceMouseButton(std::string action, MouseButton button);
-    /// Replaces gamepad button bindings for an action.
-    ActionMap& replaceGamepadButton(std::string action, GamepadButton button);
-    /// Replaces gamepad axis bindings for an action.
+    replaceKey(ActionId action, Key key, Modifiers modifiers = {}, bool exactModifiers = false);
+    /// Replaces key bindings with a key plus additional required held keys for an action id.
+    ActionMap& replaceKeyCombo(ActionId action, Key key, std::vector<Key> requiredKeys);
+    /// Replaces mouse button bindings for an action id.
+    ActionMap& replaceMouseButton(ActionId action, MouseButton button);
+    /// Replaces gamepad button bindings for an action id.
+    ActionMap& replaceGamepadButton(ActionId action, GamepadButton button);
+    /// Replaces gamepad axis bindings for an action id.
     ActionMap& replaceGamepadAxis(
-        std::string action,
+        ActionId action,
         GamepadAxis axis,
         float deadzone = 0.15f,
         AxisDirection direction = AxisDirection::Any);
-    /// Removes all input bindings for an action while preserving context and state.
-    void clearBindings(const std::string& action);
-    /// Removes all bindings and state for one action.
-    void clear(const std::string& action);
+    /// Removes all input bindings for an action id while preserving context and state.
+    void clearBindings(ActionId action);
+    /// Removes all bindings and state for one action id.
+    void clear(ActionId action);
     /// Removes every binding and action state.
     void clearAll();
     /// Clears action transition state but keeps bindings.
     void resetState() noexcept;
-    /// Assigns an action to an input context. Empty context means always enabled.
-    ActionMap& setContext(std::string action, std::string context);
+    /// Assigns an action id to an input context. Empty context means always enabled.
+    ActionMap& setContext(ActionId action, std::string context);
     /// Enables or disables an input context.
     void setContextEnabled(std::string context, bool enabled);
     /// Returns whether an input context is enabled. Unknown contexts are enabled.
-    [[nodiscard]] bool isContextEnabled(const std::string& context) const noexcept;
+    [[nodiscard]] bool isContextEnabled(std::string_view context) const noexcept;
     /// Clears all explicit context enable/disable state.
     void clearContextStates();
 
@@ -1473,15 +1536,15 @@ public:
     }
 
     /// Returns whether an action is currently down.
-    [[nodiscard]] bool isDown(const std::string& action) const;
-    /// Returns whether an action transitioned from up to down on the last update.
-    [[nodiscard]] bool isPressed(const std::string& action) const;
-    /// Returns whether an action transitioned from down to up on the last update.
-    [[nodiscard]] bool isReleased(const std::string& action) const;
-    /// Returns the current axis value for an action, or zero when inactive.
-    [[nodiscard]] float getAxis(const std::string& action) const;
-    /// Returns the binding for an action, or null if it does not exist.
-    [[nodiscard]] const ActionBinding* getBinding(const std::string& action) const noexcept;
+    [[nodiscard]] bool isDown(ActionId action) const;
+    /// Returns whether an action id transitioned from up to down on the last update.
+    [[nodiscard]] bool isPressed(ActionId action) const;
+    /// Returns whether an action id transitioned from down to up on the last update.
+    [[nodiscard]] bool isReleased(ActionId action) const;
+    /// Returns the current axis value for an action id, or zero when inactive.
+    [[nodiscard]] float getAxis(ActionId action) const;
+    /// Returns the binding for an action id, or null if it does not exist.
+    [[nodiscard]] const ActionBinding* getBinding(ActionId action) const noexcept;
 
 private:
     struct ContextState
@@ -1492,18 +1555,23 @@ private:
 
     struct Entry
     {
+        ActionId id;
         std::string action;
+        ActionMetadata metadata;
         ActionBinding binding;
         bool down = false;
         bool previousDown = false;
         float axisValue = 0.0f;
     };
 
-    [[nodiscard]] Entry* findEntry(const std::string& action) noexcept;
-    [[nodiscard]] const Entry* findEntry(const std::string& action) const noexcept;
-    [[nodiscard]] ContextState* findContext(const std::string& context) noexcept;
-    [[nodiscard]] const ContextState* findContext(const std::string& context) const noexcept;
+    [[nodiscard]] Entry* findEntry(std::string_view action) noexcept;
+    [[nodiscard]] const Entry* findEntry(std::string_view action) const noexcept;
+    [[nodiscard]] Entry* findEntry(ActionId action) noexcept;
+    [[nodiscard]] const Entry* findEntry(ActionId action) const noexcept;
+    [[nodiscard]] ContextState* findContext(std::string_view context) noexcept;
+    [[nodiscard]] const ContextState* findContext(std::string_view context) const noexcept;
     [[nodiscard]] Entry& getOrCreateEntry(std::string action);
+    [[nodiscard]] ActionId nextActionId() noexcept;
     static void resetEntryState(Entry& entry) noexcept;
 
     template <typename Input>
@@ -1620,6 +1688,7 @@ private:
 
     std::vector<Entry> entries_;
     std::vector<ContextState> contexts_;
+    uint32_t nextActionId_ = 1;
 };
 
 //----------------------------------------------------------------------------
@@ -1744,6 +1813,16 @@ public:
     bool isRawMouseMotionEnabled() const noexcept;
     /// Returns current presentation mode.
     WindowMode getWindowMode() const noexcept;
+    /// Returns whether user resizing is enabled.
+    bool isResizable() const noexcept;
+    /// Returns whether platform decorations are enabled.
+    bool isDecorated() const noexcept;
+    /// Returns whether always-on-top behavior is enabled.
+    bool isFloating() const noexcept;
+    /// Returns whether the window is minimized/iconified.
+    bool isMinimized() const noexcept;
+    /// Returns whether the window is maximized.
+    bool isMaximized() const noexcept;
     /// Returns whether the window has input focus.
     bool isFocused() const noexcept;
     /// Returns whether the window is visible.

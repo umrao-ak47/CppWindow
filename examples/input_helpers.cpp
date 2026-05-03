@@ -71,20 +71,34 @@ int main()
     frameLimiter.setVSyncEnabled(useVSync);
 
     ActionMap actions;
-    actions.bindKey("quit", Key::Escape)
-        .bindKey("jump", Key::Space)
-        .bindGamepadButton("jump", GamepadButton::A)
-        .bindGamepadAxis("move_x", GamepadAxis::LeftX, 0.20f)
-        .bindMouseButton("fire", MouseButton::Left)
-        .bindKey("save", Key::S, Modifiers{ .control = true })
-        .bindKeyCombo("left_shift_a", Key::A, { Key::LShift })
-        .bindKeyCombo("right_shift_a", Key::A, { Key::RShift })
-        .bindKey("toggle_gameplay", Key::G)
-        .bindKey("capture", Key::C)
-        .bindKey("center_mouse", Key::R)
-        .setContext("jump", "gameplay")
-        .setContext("fire", "gameplay")
-        .setContext("move_x", "gameplay");
+    const ActionId quit = actions.getOrCreateActionId("quit");
+    const ActionId jump = actions.getOrCreateActionId("jump");
+    const ActionId moveX = actions.getOrCreateActionId("move_x");
+    const ActionId fire = actions.getOrCreateActionId("fire");
+    const ActionId save = actions.getOrCreateActionId("save");
+    const ActionId leftShiftA = actions.getOrCreateActionId("left_shift_a");
+    const ActionId rightShiftA = actions.getOrCreateActionId("right_shift_a");
+    const ActionId toggleGameplay = actions.getOrCreateActionId("toggle_gameplay");
+    const ActionId capture = actions.getOrCreateActionId("capture");
+    const ActionId centerMouse = actions.getOrCreateActionId("center_mouse");
+
+    actions.setMetadata(jump, { "Jump", "Keyboard Space or gamepad A" })
+        .setMetadata(moveX, { "Move X", "Gamepad left stick horizontal axis" })
+        .setMetadata(fire, { "Fire", "Left mouse button" })
+        .bindKey(quit, Key::Escape)
+        .bindKey(jump, Key::Space)
+        .bindGamepadButton(jump, GamepadButton::A)
+        .bindGamepadAxis(moveX, GamepadAxis::LeftX, 0.20f)
+        .bindMouseButton(fire, MouseButton::Left)
+        .bindKey(save, Key::S, Modifiers{ .control = true })
+        .bindKeyCombo(leftShiftA, Key::A, { Key::LShift })
+        .bindKeyCombo(rightShiftA, Key::A, { Key::RShift })
+        .bindKey(toggleGameplay, Key::G)
+        .bindKey(capture, Key::C)
+        .bindKey(centerMouse, Key::R)
+        .setContext(jump, "gameplay")
+        .setContext(fire, "gameplay")
+        .setContext(moveX, "gameplay");
 
     bool captured = false;
     bool rawMouse = false;
@@ -120,20 +134,20 @@ int main()
 
         actions.update(window.getInput(), ctx.getGamepadState(0));
 
-        if (actions.isPressed("quit")) {
+        if (actions.isPressed(quit)) {
             window.requestClose();
         }
 
-        if (actions.isPressed("save")) {
+        if (actions.isPressed(save)) {
             ++saveCount;
         }
 
-        if (actions.isPressed("toggle_gameplay")) {
+        if (actions.isPressed(toggleGameplay)) {
             gameplayEnabled = !gameplayEnabled;
             actions.setContextEnabled("gameplay", gameplayEnabled);
         }
 
-        if (actions.isPressed("capture")) {
+        if (actions.isPressed(capture)) {
             captured = !captured;
             window.setCursorMode(captured ? CursorMode::Captured : CursorMode::Normal);
             rawMouse = captured && ctx.isRawMouseMotionSupported();
@@ -142,7 +156,7 @@ int main()
             }
         }
 
-        if (actions.isPressed("center_mouse")) {
+        if (actions.isPressed(centerMouse)) {
             auto [width, height] = window.getSize();
             window.setMousePosition(width * 0.5, height * 0.5);
         }
@@ -153,15 +167,15 @@ int main()
         auto [fbMouseX, fbMouseY] = dpi.windowToFramebuffer(x, y);
 
         std::ostringstream state;
-        state << "JUMP:" << (actions.isDown("jump") ? "ON" : "OFF")
-              << " FIRE:" << (actions.isDown("fire") ? "ON" : "OFF")
-              << " LS+A:" << (actions.isDown("left_shift_a") ? "ON" : "OFF")
-              << " RS+A:" << (actions.isDown("right_shift_a") ? "ON" : "OFF")
+        state << "JUMP:" << (actions.isDown(jump) ? "ON" : "OFF")
+              << " FIRE:" << (actions.isDown(fire) ? "ON" : "OFF")
+              << " LS+A:" << (actions.isDown(leftShiftA) ? "ON" : "OFF")
+              << " RS+A:" << (actions.isDown(rightShiftA) ? "ON" : "OFF")
               << " GAME:" << (gameplayEnabled ? "ON" : "OFF") << " SAVE:" << saveCount
               << " CAP:" << (captured ? "ON" : "OFF") << " RAW:" << (rawMouse ? "ON" : "OFF");
 
         std::ostringstream mouse;
-        mouse << std::fixed << std::setprecision(2) << "MOVE:" << actions.getAxis("move_x")
+        mouse << std::fixed << std::setprecision(2) << "MOVE:" << actions.getAxis(moveX)
               << " MOUSE:" << static_cast<int>(x) << "," << static_cast<int>(y)
               << " FB:" << static_cast<int>(fbMouseX) << "," << static_cast<int>(fbMouseY)
               << " DELTA:" << static_cast<int>(dx) << "," << static_cast<int>(dy);

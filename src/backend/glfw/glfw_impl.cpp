@@ -1828,6 +1828,31 @@ WindowMode GLFWNativeWindow::getWindowMode() const noexcept
     return windowMode_;
 }
 
+bool GLFWNativeWindow::isResizable() const noexcept
+{
+    return glfwGetWindowAttrib(handle_.get(), GLFW_RESIZABLE) == GLFW_TRUE;
+}
+
+bool GLFWNativeWindow::isDecorated() const noexcept
+{
+    return glfwGetWindowAttrib(handle_.get(), GLFW_DECORATED) == GLFW_TRUE;
+}
+
+bool GLFWNativeWindow::isFloating() const noexcept
+{
+    return glfwGetWindowAttrib(handle_.get(), GLFW_FLOATING) == GLFW_TRUE;
+}
+
+bool GLFWNativeWindow::isMinimized() const noexcept
+{
+    return glfwGetWindowAttrib(handle_.get(), GLFW_ICONIFIED) == GLFW_TRUE;
+}
+
+bool GLFWNativeWindow::isMaximized() const noexcept
+{
+    return glfwGetWindowAttrib(handle_.get(), GLFW_MAXIMIZED) == GLFW_TRUE;
+}
+
 bool GLFWNativeWindow::isFocused() const noexcept
 {
     return glfwGetWindowAttrib(handle_.get(), GLFW_FOCUSED) == GLFW_TRUE;

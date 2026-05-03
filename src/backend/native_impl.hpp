@@ -131,6 +131,11 @@ public:
     virtual CursorMode getCursorMode() const noexcept = 0;
     virtual bool isRawMouseMotionEnabled() const noexcept = 0;
     virtual WindowMode getWindowMode() const noexcept = 0;
+    virtual bool isResizable() const noexcept = 0;
+    virtual bool isDecorated() const noexcept = 0;
+    virtual bool isFloating() const noexcept = 0;
+    virtual bool isMinimized() const noexcept = 0;
+    virtual bool isMaximized() const noexcept = 0;
     virtual bool isFocused() const noexcept = 0;
     virtual bool isVisible() const noexcept = 0;
 };

@@ -7,6 +7,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "backend/glfw/glfw_impl.hpp"
 
@@ -172,96 +173,222 @@ void testActionMapTransitions()
     cwin::GamepadState gamepad;
 
     cwin::ActionMap actions;
-    actions.bindKey("jump", cwin::Key::Space)
-        .bindKey("jump", cwin::Key::Space)
-        .bindMouseButton("jump", cwin::MouseButton::Left)
-        .bindMouseButton("jump", cwin::MouseButton::Left)
-        .bindGamepadButton("jump", cwin::GamepadButton::A)
-        .bindGamepadButton("jump", cwin::GamepadButton::A)
-        .bindMouseButton("fire", cwin::MouseButton::Right);
+    const cwin::ActionId jumpId = actions.getOrCreateActionId("jump");
+    const cwin::ActionId fireId = actions.getOrCreateActionId("fire");
+    const cwin::ActionId missingId{};
+    actions.bindKey(jumpId, cwin::Key::Space)
+        .bindKey(jumpId, cwin::Key::Space)
+        .bindMouseButton(jumpId, cwin::MouseButton::Left)
+        .bindMouseButton(jumpId, cwin::MouseButton::Left)
+        .bindGamepadButton(jumpId, cwin::GamepadButton::A)
+        .bindGamepadButton(jumpId, cwin::GamepadButton::A)
+        .bindMouseButton(fireId, cwin::MouseButton::Right);
 
-    const cwin::ActionBinding* jump = actions.getBinding("jump");
+    const cwin::ActionBinding* jump = actions.getBinding(jumpId);
     assert(jump);
     assert(jump->keys.size() == 1);
     assert(jump->keys.front().key == cwin::Key::Space);
     assert(jump->mouseButtons.size() == 1);
     assert(jump->gamepadButtons.size() == 1);
-    assert(!actions.getBinding("missing"));
+    assert(!actions.getBinding(missingId));
 
     actions.update(input);
-    assert(!actions.isDown("jump"));
-    assert(!actions.isPressed("jump"));
-    assert(!actions.isReleased("jump"));
-    assert(!actions.isDown("missing"));
+    assert(!actions.isDown(jumpId));
+    assert(!actions.isPressed(jumpId));
+    assert(!actions.isReleased(jumpId));
+    assert(!actions.isDown(missingId));
 
     input.setKey(cwin::Key::Space, true);
     actions.update(input);
-    assert(actions.isDown("jump"));
-    assert(actions.isPressed("jump"));
-    assert(!actions.isReleased("jump"));
+    assert(actions.isDown(jumpId));
+    assert(actions.isPressed(jumpId));
+    assert(!actions.isReleased(jumpId));
 
     actions.update(input);
-    assert(actions.isDown("jump"));
-    assert(!actions.isPressed("jump"));
-    assert(!actions.isReleased("jump"));
+    assert(actions.isDown(jumpId));
+    assert(!actions.isPressed(jumpId));
+    assert(!actions.isReleased(jumpId));
 
     input.setMouseButton(cwin::MouseButton::Left, true);
     actions.update(input);
-    assert(actions.isDown("jump"));
-    assert(!actions.isPressed("jump"));
+    assert(actions.isDown(jumpId));
+    assert(!actions.isPressed(jumpId));
 
     input.setKey(cwin::Key::Space, false);
     actions.update(input);
-    assert(actions.isDown("jump"));
-    assert(!actions.isReleased("jump"));
+    assert(actions.isDown(jumpId));
+    assert(!actions.isReleased(jumpId));
 
     input.setMouseButton(cwin::MouseButton::Left, false);
     actions.update(input);
-    assert(!actions.isDown("jump"));
-    assert(!actions.isPressed("jump"));
-    assert(actions.isReleased("jump"));
+    assert(!actions.isDown(jumpId));
+    assert(!actions.isPressed(jumpId));
+    assert(actions.isReleased(jumpId));
 
     gamepad.buttons[static_cast<std::size_t>(cwin::GamepadButton::A)] = true;
     actions.update(input, gamepad);
-    assert(actions.isDown("jump"));
-    assert(actions.isPressed("jump"));
+    assert(actions.isDown(jumpId));
+    assert(actions.isPressed(jumpId));
 
     actions.resetState();
-    assert(!actions.isDown("jump"));
-    assert(!actions.isPressed("jump"));
-    assert(!actions.isReleased("jump"));
+    assert(!actions.isDown(jumpId));
+    assert(!actions.isPressed(jumpId));
+    assert(!actions.isReleased(jumpId));
 
     actions.update(input, gamepad);
-    assert(actions.isPressed("jump"));
+    assert(actions.isPressed(jumpId));
 
     input.setMouseButton(cwin::MouseButton::Right, true);
     actions.update(input, gamepad);
-    assert(actions.isDown("fire"));
-    assert(actions.isPressed("fire"));
-    assert(actions.isDown("jump"));
-    assert(!actions.isPressed("jump"));
+    assert(actions.isDown(fireId));
+    assert(actions.isPressed(fireId));
+    assert(actions.isDown(jumpId));
+    assert(!actions.isPressed(jumpId));
 
-    actions.clear("jump");
-    assert(!actions.getBinding("jump"));
-    assert(!actions.isDown("jump"));
-    assert(actions.getBinding("fire"));
+    actions.clear(jumpId);
+    assert(!actions.getBinding(jumpId));
+    assert(!actions.isDown(jumpId));
+    assert(actions.getBinding(fireId));
 
     actions.clearAll();
-    assert(!actions.getBinding("fire"));
-    assert(!actions.isDown("fire"));
+    assert(!actions.getBinding(fireId));
+    assert(!actions.isDown(fireId));
+}
+
+void testActionMapIdsMetadataAndSnapshots()
+{
+    FakeInput input;
+    cwin::GamepadState gamepad;
+    cwin::ActionMap actions;
+
+    const cwin::ActionId missing = actions.getActionId("missing");
+    assert(!missing);
+    assert(!actions.hasAction(missing));
+    assert(!actions.hasAction("jump"));
+
+    const cwin::ActionId jump = actions.getOrCreateActionId("jump");
+    assert(jump);
+    assert(actions.getOrCreateActionId("jump") == jump);
+    assert(actions.getActionId("jump") == jump);
+    assert(actions.hasAction("jump"));
+    assert(actions.hasAction(jump));
+
+    actions.setMetadata(
+        jump,
+        cwin::ActionMetadata{
+            .displayName = "Jump",
+            .description = "Leave the ground",
+        });
+    assert(actions.getMetadata(jump));
+    assert(actions.getMetadata(jump)->displayName == "Jump");
+
+    actions.bindKey(jump, cwin::Key::Space)
+        .bindMouseButton(jump, cwin::MouseButton::Left)
+        .bindGamepadButton(jump, cwin::GamepadButton::A)
+        .bindGamepadAxis(jump, cwin::GamepadAxis::LeftX, 0.2f)
+        .setContext(jump, "gameplay");
+
+    const cwin::ActionBinding* binding = actions.getBinding(jump);
+    assert(binding);
+    assert(binding->context == "gameplay");
+    assert(binding->keys.size() == 1);
+    assert(binding->mouseButtons.size() == 1);
+    assert(binding->gamepadButtons.size() == 1);
+    assert(binding->gamepadAxes.size() == 1);
+
+    input.setKey(cwin::Key::Space, true);
+    actions.update(input, gamepad);
+    assert(actions.isDown(jump));
+    assert(actions.isPressed(jump));
+    assert(!actions.isReleased(jump));
+
+    std::vector<cwin::ActionInfo> infos = actions.getActions();
+    assert(infos.size() == 1);
+    assert(infos.front().id == jump);
+    assert(infos.front().name == "jump");
+    assert(infos.front().metadata.description == "Leave the ground");
+    assert(infos.front().pressed);
+    assert(infos.front().down);
+
+    input.setKey(cwin::Key::Space, false);
+    gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = 0.7f;
+    actions.update(input, gamepad);
+    assert(actions.isDown(jump));
+    assert(closeTo(actions.getAxis(jump), 0.7f));
+
+    actions.replaceKey(jump, cwin::Key::F5)
+        .replaceKeyCombo(jump, cwin::Key::A, { cwin::Key::LShift })
+        .replaceMouseButton(jump, cwin::MouseButton::Right)
+        .replaceGamepadButton(jump, cwin::GamepadButton::B)
+        .replaceGamepadAxis(jump, cwin::GamepadAxis::RightY, -1.0f);
+
+    binding = actions.getBinding(jump);
+    assert(binding);
+    assert(binding->keys.size() == 1);
+    assert(binding->keys.front().key == cwin::Key::A);
+    assert(binding->keys.front().requiredKeys.size() == 1);
+    assert(binding->mouseButtons.front() == cwin::MouseButton::Right);
+    assert(binding->gamepadButtons.front() == cwin::GamepadButton::B);
+    assert(binding->gamepadAxes.front().axis == cwin::GamepadAxis::RightY);
+    assert(closeTo(binding->gamepadAxes.front().deadzone, 0.0f));
+    assert(!actions.isDown(jump));
+
+    actions.clearBindings(jump);
+    binding = actions.getBinding(jump);
+    assert(binding);
+    assert(binding->context == "gameplay");
+    assert(binding->keys.empty());
+    assert(binding->mouseButtons.empty());
+    assert(binding->gamepadButtons.empty());
+    assert(binding->gamepadAxes.empty());
+
+    actions.setContextEnabled("gameplay", false);
+    assert(!actions.isContextEnabled("gameplay"));
+    actions.clearContextStates();
+    assert(actions.isContextEnabled("gameplay"));
+
+    const cwin::ActionId pause = actions.getOrCreateActionId("pause");
+    actions.setMetadata(
+        pause,
+        cwin::ActionMetadata{
+            .displayName = "Pause",
+            .description = "Open pause menu",
+        });
+    assert(pause);
+    assert(pause != jump);
+    assert(actions.getMetadata(pause)->displayName == "Pause");
+
+    actions.clear(jump);
+    assert(!actions.hasAction(jump));
+    assert(actions.hasAction(pause));
+
+    actions.clear(pause);
+    assert(actions.getActions().empty());
+
+    actions.bindKey(cwin::ActionId{ 999 }, cwin::Key::Q)
+        .replaceKey(cwin::ActionId{ 999 }, cwin::Key::W)
+        .setMetadata(cwin::ActionId{ 999 }, cwin::ActionMetadata{});
+    actions.clearBindings(cwin::ActionId{ 999 });
+    actions.clear(cwin::ActionId{ 999 });
+    assert(actions.getActions().empty());
 }
 
 void testActionMapModifiers()
 {
     FakeInput input;
     cwin::ActionMap actions;
-    actions.bindKey("save", cwin::Key::S, cwin::Modifiers{ .control = true })
-        .bindKey("exact_save", cwin::Key::S, cwin::Modifiers{ .control = true }, true)
-        .bindKey("shift_jump", cwin::Key::Space, cwin::Modifiers{ .shift = true })
-        .bindKeyCombo("left_shift_a", cwin::Key::A, { cwin::Key::LShift })
-        .bindKeyCombo("right_shift_a", cwin::Key::A, { cwin::Key::RShift });
+    const cwin::ActionId saveId = actions.getOrCreateActionId("save");
+    const cwin::ActionId exactSaveId = actions.getOrCreateActionId("exact_save");
+    const cwin::ActionId shiftJumpId = actions.getOrCreateActionId("shift_jump");
+    const cwin::ActionId leftShiftAId = actions.getOrCreateActionId("left_shift_a");
+    const cwin::ActionId rightShiftAId = actions.getOrCreateActionId("right_shift_a");
+    actions.bindKey(saveId, cwin::Key::S, cwin::Modifiers{ .control = true })
+        .bindKey(exactSaveId, cwin::Key::S, cwin::Modifiers{ .control = true }, true)
+        .bindKey(shiftJumpId, cwin::Key::Space, cwin::Modifiers{ .shift = true })
+        .bindKeyCombo(leftShiftAId, cwin::Key::A, { cwin::Key::LShift })
+        .bindKeyCombo(rightShiftAId, cwin::Key::A, { cwin::Key::RShift });
 
-    const cwin::ActionBinding* save = actions.getBinding("save");
+    const cwin::ActionBinding* save = actions.getBinding(saveId);
     assert(save);
     assert(save->keys.size() == 1);
     assert(save->keys.front().modifiers.control);
@@ -269,56 +396,56 @@ void testActionMapModifiers()
 
     input.setKey(cwin::Key::S, true);
     actions.update(input);
-    assert(!actions.isDown("save"));
+    assert(!actions.isDown(saveId));
 
     input.setKey(cwin::Key::LControl, true);
     actions.update(input);
-    assert(actions.isDown("save"));
-    assert(actions.isPressed("save"));
-    assert(actions.isDown("exact_save"));
+    assert(actions.isDown(saveId));
+    assert(actions.isPressed(saveId));
+    assert(actions.isDown(exactSaveId));
 
     input.setKey(cwin::Key::LShift, true);
     actions.update(input);
-    assert(actions.isDown("save"));
-    assert(!actions.isDown("exact_save"));
+    assert(actions.isDown(saveId));
+    assert(!actions.isDown(exactSaveId));
 
     input.setKey(cwin::Key::Space, true);
     actions.update(input);
-    assert(actions.isDown("shift_jump"));
-    assert(!actions.isDown("left_shift_a"));
-    assert(!actions.isDown("right_shift_a"));
+    assert(actions.isDown(shiftJumpId));
+    assert(!actions.isDown(leftShiftAId));
+    assert(!actions.isDown(rightShiftAId));
 
     input.setKey(cwin::Key::A, true);
     actions.update(input);
-    assert(actions.isDown("left_shift_a"));
-    assert(!actions.isDown("right_shift_a"));
+    assert(actions.isDown(leftShiftAId));
+    assert(!actions.isDown(rightShiftAId));
 
     input.setKey(cwin::Key::LShift, false);
     input.setKey(cwin::Key::RShift, true);
     actions.update(input);
-    assert(!actions.isDown("left_shift_a"));
-    assert(actions.isDown("right_shift_a"));
+    assert(!actions.isDown(leftShiftAId));
+    assert(actions.isDown(rightShiftAId));
 
-    actions.replaceKeyCombo("left_shift_a", cwin::Key::B, { cwin::Key::LShift });
-    const cwin::ActionBinding* chord = actions.getBinding("left_shift_a");
+    actions.replaceKeyCombo(leftShiftAId, cwin::Key::B, { cwin::Key::LShift });
+    const cwin::ActionBinding* chord = actions.getBinding(leftShiftAId);
     assert(chord);
     assert(chord->keys.size() == 1);
     assert(chord->keys.front().key == cwin::Key::B);
     assert(chord->keys.front().requiredKeys.size() == 1);
     assert(chord->keys.front().requiredKeys.front() == cwin::Key::LShift);
 
-    actions.replaceKey("save", cwin::Key::F5);
-    save = actions.getBinding("save");
+    actions.replaceKey(saveId, cwin::Key::F5);
+    save = actions.getBinding(saveId);
     assert(save);
     assert(save->keys.size() == 1);
     assert(save->keys.front().key == cwin::Key::F5);
     assert(!save->keys.front().modifiers.any());
 
     actions.update(input);
-    assert(!actions.isDown("save"));
+    assert(!actions.isDown(saveId));
     input.setKey(cwin::Key::F5, true);
     actions.update(input);
-    assert(actions.isDown("save"));
+    assert(actions.isDown(saveId));
 }
 
 void testActionMapAxesContextsAndRebinding()
@@ -326,20 +453,24 @@ void testActionMapAxesContextsAndRebinding()
     FakeInput input;
     cwin::GamepadState gamepad;
     cwin::ActionMap actions;
-    actions.bindKey("jump", cwin::Key::Space)
-        .bindMouseButton("fire", cwin::MouseButton::Left)
-        .bindGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.25f)
+    const cwin::ActionId jumpId = actions.getOrCreateActionId("jump");
+    const cwin::ActionId fireId = actions.getOrCreateActionId("fire");
+    const cwin::ActionId moveXId = actions.getOrCreateActionId("move_x");
+    const cwin::ActionId moveLeftId = actions.getOrCreateActionId("move_left");
+    actions.bindKey(jumpId, cwin::Key::Space)
+        .bindMouseButton(fireId, cwin::MouseButton::Left)
+        .bindGamepadAxis(moveXId, cwin::GamepadAxis::LeftX, 0.25f)
         .bindGamepadAxis(
-            "move_left",
+            moveLeftId,
             cwin::GamepadAxis::LeftX,
             0.25f,
             cwin::AxisDirection::Negative)
-        .setContext("jump", "gameplay")
-        .setContext("fire", "gameplay")
-        .setContext("move_x", "gameplay")
-        .setContext("move_left", "gameplay");
+        .setContext(jumpId, "gameplay")
+        .setContext(fireId, "gameplay")
+        .setContext(moveXId, "gameplay")
+        .setContext(moveLeftId, "gameplay");
 
-    const cwin::ActionBinding* move = actions.getBinding("move_x");
+    const cwin::ActionBinding* move = actions.getBinding(moveXId);
     assert(move);
     assert(move->context == "gameplay");
     assert(move->gamepadAxes.size() == 1);
@@ -347,55 +478,55 @@ void testActionMapAxesContextsAndRebinding()
 
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = 0.2f;
     actions.update(input, gamepad);
-    assert(!actions.isDown("move_x"));
-    assert(closeTo(actions.getAxis("move_x"), 0.0f));
+    assert(!actions.isDown(moveXId));
+    assert(closeTo(actions.getAxis(moveXId), 0.0f));
 
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = 0.6f;
     actions.update(input, gamepad);
-    assert(actions.isDown("move_x"));
-    assert(actions.isPressed("move_x"));
-    assert(closeTo(actions.getAxis("move_x"), 0.6f));
-    assert(!actions.isDown("move_left"));
+    assert(actions.isDown(moveXId));
+    assert(actions.isPressed(moveXId));
+    assert(closeTo(actions.getAxis(moveXId), 0.6f));
+    assert(!actions.isDown(moveLeftId));
 
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = -0.7f;
     actions.update(input, gamepad);
-    assert(actions.isDown("move_x"));
-    assert(closeTo(actions.getAxis("move_x"), -0.7f));
-    assert(actions.isDown("move_left"));
-    assert(closeTo(actions.getAxis("move_left"), -0.7f));
+    assert(actions.isDown(moveXId));
+    assert(closeTo(actions.getAxis(moveXId), -0.7f));
+    assert(actions.isDown(moveLeftId));
+    assert(closeTo(actions.getAxis(moveLeftId), -0.7f));
 
     input.setKey(cwin::Key::Space, true);
     actions.update(input, gamepad);
-    assert(actions.isDown("jump"));
+    assert(actions.isDown(jumpId));
 
     actions.setContextEnabled("gameplay", false);
     assert(!actions.isContextEnabled("gameplay"));
     actions.update(input, gamepad);
-    assert(!actions.isDown("jump"));
-    assert(actions.isReleased("jump"));
-    assert(!actions.isDown("move_x"));
-    assert(closeTo(actions.getAxis("move_x"), 0.0f));
+    assert(!actions.isDown(jumpId));
+    assert(actions.isReleased(jumpId));
+    assert(!actions.isDown(moveXId));
+    assert(closeTo(actions.getAxis(moveXId), 0.0f));
 
     actions.setContextEnabled("gameplay", true);
     actions.update(input, gamepad);
-    assert(actions.isDown("jump"));
-    assert(actions.isPressed("jump"));
+    assert(actions.isDown(jumpId));
+    assert(actions.isPressed(jumpId));
 
-    actions.replaceMouseButton("fire", cwin::MouseButton::Right);
-    const cwin::ActionBinding* fire = actions.getBinding("fire");
+    actions.replaceMouseButton(fireId, cwin::MouseButton::Right);
+    const cwin::ActionBinding* fire = actions.getBinding(fireId);
     assert(fire);
     assert(fire->context == "gameplay");
     assert(fire->mouseButtons.size() == 1);
     assert(fire->mouseButtons.front() == cwin::MouseButton::Right);
 
-    actions.replaceGamepadAxis("move_x", cwin::GamepadAxis::RightX, 2.0f);
-    move = actions.getBinding("move_x");
+    actions.replaceGamepadAxis(moveXId, cwin::GamepadAxis::RightX, 2.0f);
+    move = actions.getBinding(moveXId);
     assert(move);
     assert(move->gamepadAxes.size() == 1);
     assert(closeTo(move->gamepadAxes.front().deadzone, 1.0f));
 
-    actions.clearBindings("move_x");
-    move = actions.getBinding("move_x");
+    actions.clearBindings(moveXId);
+    move = actions.getBinding(moveXId);
     assert(move);
     assert(move->context == "gameplay");
     assert(move->gamepadAxes.empty());
@@ -411,6 +542,7 @@ int main()
     testInputStateTransitions();
     testMouseState();
     testActionMapTransitions();
+    testActionMapIdsMetadataAndSnapshots();
     testActionMapModifiers();
     testActionMapAxesContextsAndRebinding();
 }

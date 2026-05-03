@@ -66,6 +66,11 @@ static_assert(
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().tryGetClipboardText()),
               std::optional<std::string>>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isResizable()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isDecorated()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isFloating()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isMinimized()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isMaximized()), bool>);
 
 int main()
 {

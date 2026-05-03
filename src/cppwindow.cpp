@@ -425,125 +425,196 @@ float sanitizeDeadzone(float deadzone) noexcept
 
 }  // namespace
 
-ActionMap& ActionMap::bindKey(std::string action, Key key, Modifiers modifiers, bool exactModifiers)
+ActionId ActionMap::getOrCreateActionId(std::string action)
 {
-    appendUnique(
-        getOrCreateEntry(std::move(action)).binding.keys,
-        KeyBinding{
-            .key = key,
-            .modifiers = modifiers,
-            .exactModifiers = exactModifiers,
+    return getOrCreateEntry(std::move(action)).id;
+}
+
+ActionId ActionMap::getActionId(std::string_view action) const noexcept
+{
+    const Entry* entry = findEntry(action);
+    return entry ? entry->id : ActionId{};
+}
+
+bool ActionMap::hasAction(std::string_view action) const noexcept
+{
+    return findEntry(action) != nullptr;
+}
+
+bool ActionMap::hasAction(ActionId action) const noexcept
+{
+    return findEntry(action) != nullptr;
+}
+
+std::vector<ActionInfo> ActionMap::getActions() const
+{
+    std::vector<ActionInfo> actions;
+    actions.reserve(entries_.size());
+
+    for (const Entry& entry : entries_) {
+        actions.push_back(ActionInfo{
+            .id = entry.id,
+            .name = entry.action,
+            .metadata = entry.metadata,
+            .binding = entry.binding,
+            .down = entry.down,
+            .pressed = entry.down && !entry.previousDown,
+            .released = !entry.down && entry.previousDown,
+            .axisValue = entry.axisValue,
         });
+    }
+
+    return actions;
+}
+
+ActionMap& ActionMap::setMetadata(ActionId action, ActionMetadata metadata)
+{
+    if (Entry* entry = findEntry(action)) {
+        entry->metadata = std::move(metadata);
+    }
     return *this;
 }
 
-ActionMap& ActionMap::bindKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys)
+const ActionMetadata* ActionMap::getMetadata(ActionId action) const noexcept
 {
-    appendUnique(
-        getOrCreateEntry(std::move(action)).binding.keys,
-        KeyBinding{
-            .key = key,
-            .requiredKeys = std::move(requiredKeys),
-        });
+    const Entry* entry = findEntry(action);
+    return entry ? &entry->metadata : nullptr;
+}
+
+ActionMap& ActionMap::bindKey(ActionId action, Key key, Modifiers modifiers, bool exactModifiers)
+{
+    if (Entry* entry = findEntry(action)) {
+        appendUnique(
+            entry->binding.keys,
+            KeyBinding{
+                .key = key,
+                .modifiers = modifiers,
+                .exactModifiers = exactModifiers,
+            });
+    }
     return *this;
 }
 
-ActionMap& ActionMap::bindMouseButton(std::string action, MouseButton button)
+ActionMap& ActionMap::bindKeyCombo(ActionId action, Key key, std::vector<Key> requiredKeys)
 {
-    appendUnique(getOrCreateEntry(std::move(action)).binding.mouseButtons, button);
+    if (Entry* entry = findEntry(action)) {
+        appendUnique(
+            entry->binding.keys,
+            KeyBinding{
+                .key = key,
+                .requiredKeys = std::move(requiredKeys),
+            });
+    }
     return *this;
 }
 
-ActionMap& ActionMap::bindGamepadButton(std::string action, GamepadButton button)
+ActionMap& ActionMap::bindMouseButton(ActionId action, MouseButton button)
 {
-    appendUnique(getOrCreateEntry(std::move(action)).binding.gamepadButtons, button);
+    if (Entry* entry = findEntry(action)) {
+        appendUnique(entry->binding.mouseButtons, button);
+    }
+    return *this;
+}
+
+ActionMap& ActionMap::bindGamepadButton(ActionId action, GamepadButton button)
+{
+    if (Entry* entry = findEntry(action)) {
+        appendUnique(entry->binding.gamepadButtons, button);
+    }
     return *this;
 }
 
 ActionMap& ActionMap::bindGamepadAxis(
-    std::string action,
+    ActionId action,
     GamepadAxis axis,
     float deadzone,
     AxisDirection direction)
 {
-    appendUnique(
-        getOrCreateEntry(std::move(action)).binding.gamepadAxes,
-        GamepadAxisBinding{
-            .axis = axis,
-            .deadzone = sanitizeDeadzone(deadzone),
-            .direction = direction,
-        });
+    if (Entry* entry = findEntry(action)) {
+        appendUnique(
+            entry->binding.gamepadAxes,
+            GamepadAxisBinding{
+                .axis = axis,
+                .deadzone = sanitizeDeadzone(deadzone),
+                .direction = direction,
+            });
+    }
     return *this;
 }
 
 ActionMap&
-ActionMap::replaceKey(std::string action, Key key, Modifiers modifiers, bool exactModifiers)
+ActionMap::replaceKey(ActionId action, Key key, Modifiers modifiers, bool exactModifiers)
 {
-    Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.keys.clear();
-    appendUnique(
-        entry.binding.keys,
-        KeyBinding{
-            .key = key,
-            .modifiers = modifiers,
-            .exactModifiers = exactModifiers,
-        });
-    resetEntryState(entry);
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.keys.clear();
+        appendUnique(
+            entry->binding.keys,
+            KeyBinding{
+                .key = key,
+                .modifiers = modifiers,
+                .exactModifiers = exactModifiers,
+            });
+        resetEntryState(*entry);
+    }
     return *this;
 }
 
-ActionMap& ActionMap::replaceKeyCombo(std::string action, Key key, std::vector<Key> requiredKeys)
+ActionMap& ActionMap::replaceKeyCombo(ActionId action, Key key, std::vector<Key> requiredKeys)
 {
-    Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.keys.clear();
-    appendUnique(
-        entry.binding.keys,
-        KeyBinding{
-            .key = key,
-            .requiredKeys = std::move(requiredKeys),
-        });
-    resetEntryState(entry);
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.keys.clear();
+        appendUnique(
+            entry->binding.keys,
+            KeyBinding{
+                .key = key,
+                .requiredKeys = std::move(requiredKeys),
+            });
+        resetEntryState(*entry);
+    }
     return *this;
 }
 
-ActionMap& ActionMap::replaceMouseButton(std::string action, MouseButton button)
+ActionMap& ActionMap::replaceMouseButton(ActionId action, MouseButton button)
 {
-    Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.mouseButtons.clear();
-    appendUnique(entry.binding.mouseButtons, button);
-    resetEntryState(entry);
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.mouseButtons.clear();
+        appendUnique(entry->binding.mouseButtons, button);
+        resetEntryState(*entry);
+    }
     return *this;
 }
 
-ActionMap& ActionMap::replaceGamepadButton(std::string action, GamepadButton button)
+ActionMap& ActionMap::replaceGamepadButton(ActionId action, GamepadButton button)
 {
-    Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.gamepadButtons.clear();
-    appendUnique(entry.binding.gamepadButtons, button);
-    resetEntryState(entry);
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.gamepadButtons.clear();
+        appendUnique(entry->binding.gamepadButtons, button);
+        resetEntryState(*entry);
+    }
     return *this;
 }
 
 ActionMap& ActionMap::replaceGamepadAxis(
-    std::string action,
+    ActionId action,
     GamepadAxis axis,
     float deadzone,
     AxisDirection direction)
 {
-    Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.gamepadAxes.clear();
-    appendUnique(
-        entry.binding.gamepadAxes,
-        GamepadAxisBinding{
-            .axis = axis,
-            .deadzone = sanitizeDeadzone(deadzone),
-            .direction = direction,
-        });
-    resetEntryState(entry);
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.gamepadAxes.clear();
+        appendUnique(
+            entry->binding.gamepadAxes,
+            GamepadAxisBinding{
+                .axis = axis,
+                .deadzone = sanitizeDeadzone(deadzone),
+                .direction = direction,
+            });
+        resetEntryState(*entry);
+    }
     return *this;
 }
 
-void ActionMap::clearBindings(const std::string& action)
+void ActionMap::clearBindings(ActionId action)
 {
     if (Entry* entry = findEntry(action)) {
         entry->binding.keys.clear();
@@ -554,10 +625,14 @@ void ActionMap::clearBindings(const std::string& action)
     }
 }
 
-void ActionMap::clear(const std::string& action)
+void ActionMap::clear(ActionId action)
 {
+    if (!action) {
+        return;
+    }
+
     for (auto it = entries_.begin(); it != entries_.end(); ++it) {
-        if (it->action == action) {
+        if (it->id == action) {
             entries_.erase(it);
             return;
         }
@@ -577,11 +652,12 @@ void ActionMap::resetState() noexcept
     }
 }
 
-ActionMap& ActionMap::setContext(std::string action, std::string context)
+ActionMap& ActionMap::setContext(ActionId action, std::string context)
 {
-    Entry& entry = getOrCreateEntry(std::move(action));
-    entry.binding.context = std::move(context);
-    resetEntryState(entry);
+    if (Entry* entry = findEntry(action)) {
+        entry->binding.context = std::move(context);
+        resetEntryState(*entry);
+    }
     return *this;
 }
 
@@ -603,7 +679,7 @@ void ActionMap::setContextEnabled(std::string context, bool enabled)
         });
 }
 
-bool ActionMap::isContextEnabled(const std::string& context) const noexcept
+bool ActionMap::isContextEnabled(std::string_view context) const noexcept
 {
     if (context.empty()) {
         return true;
@@ -618,40 +694,40 @@ void ActionMap::clearContextStates()
     contexts_.clear();
 }
 
-bool ActionMap::isDown(const std::string& action) const
+bool ActionMap::isDown(ActionId action) const
 {
     const Entry* entry = findEntry(action);
     return entry && entry->down;
 }
 
-bool ActionMap::isPressed(const std::string& action) const
+bool ActionMap::isPressed(ActionId action) const
 {
     const Entry* entry = findEntry(action);
     return entry && entry->down && !entry->previousDown;
 }
 
-bool ActionMap::isReleased(const std::string& action) const
+bool ActionMap::isReleased(ActionId action) const
 {
     const Entry* entry = findEntry(action);
     return entry && !entry->down && entry->previousDown;
 }
 
-float ActionMap::getAxis(const std::string& action) const
+float ActionMap::getAxis(ActionId action) const
 {
     const Entry* entry = findEntry(action);
     return entry ? entry->axisValue : 0.0f;
 }
 
-const ActionBinding* ActionMap::getBinding(const std::string& action) const noexcept
+const ActionBinding* ActionMap::getBinding(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry ? &entry->binding : nullptr;
 }
 
-ActionMap::Entry* ActionMap::findEntry(const std::string& action) noexcept
+ActionMap::Entry* ActionMap::findEntry(std::string_view action) noexcept
 {
     for (auto& entry : entries_) {
-        if (entry.action == action) {
+        if (std::string_view{ entry.action } == action) {
             return &entry;
         }
     }
@@ -659,10 +735,10 @@ ActionMap::Entry* ActionMap::findEntry(const std::string& action) noexcept
     return nullptr;
 }
 
-const ActionMap::Entry* ActionMap::findEntry(const std::string& action) const noexcept
+const ActionMap::Entry* ActionMap::findEntry(std::string_view action) const noexcept
 {
     for (const auto& entry : entries_) {
-        if (entry.action == action) {
+        if (std::string_view{ entry.action } == action) {
             return &entry;
         }
     }
@@ -670,10 +746,40 @@ const ActionMap::Entry* ActionMap::findEntry(const std::string& action) const no
     return nullptr;
 }
 
-ActionMap::ContextState* ActionMap::findContext(const std::string& context) noexcept
+ActionMap::Entry* ActionMap::findEntry(ActionId action) noexcept
+{
+    if (!action) {
+        return nullptr;
+    }
+
+    for (auto& entry : entries_) {
+        if (entry.id == action) {
+            return &entry;
+        }
+    }
+
+    return nullptr;
+}
+
+const ActionMap::Entry* ActionMap::findEntry(ActionId action) const noexcept
+{
+    if (!action) {
+        return nullptr;
+    }
+
+    for (const auto& entry : entries_) {
+        if (entry.id == action) {
+            return &entry;
+        }
+    }
+
+    return nullptr;
+}
+
+ActionMap::ContextState* ActionMap::findContext(std::string_view context) noexcept
 {
     for (auto& state : contexts_) {
-        if (state.context == context) {
+        if (std::string_view{ state.context } == context) {
             return &state;
         }
     }
@@ -681,10 +787,10 @@ ActionMap::ContextState* ActionMap::findContext(const std::string& context) noex
     return nullptr;
 }
 
-const ActionMap::ContextState* ActionMap::findContext(const std::string& context) const noexcept
+const ActionMap::ContextState* ActionMap::findContext(std::string_view context) const noexcept
 {
     for (const auto& state : contexts_) {
-        if (state.context == context) {
+        if (std::string_view{ state.context } == context) {
             return &state;
         }
     }
@@ -700,9 +806,19 @@ ActionMap::Entry& ActionMap::getOrCreateEntry(std::string action)
 
     entries_.push_back(
         Entry{
+            .id = nextActionId(),
             .action = std::move(action),
         });
     return entries_.back();
+}
+
+ActionId ActionMap::nextActionId() noexcept
+{
+    if (nextActionId_ == 0) {
+        nextActionId_ = 1;
+    }
+
+    return ActionId{ nextActionId_++ };
 }
 
 void ActionMap::resetEntryState(Entry& entry) noexcept
@@ -953,6 +1069,31 @@ bool Window::isRawMouseMotionEnabled() const noexcept
 WindowMode Window::getWindowMode() const noexcept
 {
     return window_->getWindowMode();
+}
+
+bool Window::isResizable() const noexcept
+{
+    return window_->isResizable();
+}
+
+bool Window::isDecorated() const noexcept
+{
+    return window_->isDecorated();
+}
+
+bool Window::isFloating() const noexcept
+{
+    return window_->isFloating();
+}
+
+bool Window::isMinimized() const noexcept
+{
+    return window_->isMinimized();
+}
+
+bool Window::isMaximized() const noexcept
+{
+    return window_->isMaximized();
 }
 
 bool Window::isFocused() const noexcept

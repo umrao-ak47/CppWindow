@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -114,25 +115,50 @@ static_assert(std::is_same_v<
               std::vector<std::string>>);
 
 static_assert(std::is_same_v<
-              decltype(std::declval<cwin::ActionMap&>().bindKey("jump", cwin::Key::Space)),
+              decltype(std::declval<cwin::ActionMap&>().getOrCreateActionId("jump")),
+              cwin::ActionId>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::ActionMap&>().getActionId(std::string_view{})),
+              cwin::ActionId>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::ActionMap&>().getActions()),
+              std::vector<cwin::ActionInfo>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::ActionMap&>().setMetadata(
+                  cwin::ActionId{ 1 },
+                  cwin::ActionMetadata{})),
+              cwin::ActionMap&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::ActionMap&>().bindKey(
+                  cwin::ActionId{ 1 },
+                  cwin::Key::Space)),
               cwin::ActionMap&>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().bindKeyCombo(
-                  "dash",
+                  cwin::ActionId{ 1 },
                   cwin::Key::A,
                   std::declval<std::vector<cwin::Key>>())),
               cwin::ActionMap&>);
 static_assert(std::is_same_v<
+              decltype(std::declval<cwin::ActionMap&>().replaceGamepadAxis(
+                  cwin::ActionId{ 1 },
+                  cwin::GamepadAxis::RightX,
+                  0.2f,
+                  cwin::AxisDirection::Negative)),
+              cwin::ActionMap&>);
+static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().bindGamepadAxis(
-                  "look",
+                  cwin::ActionId{ 1 },
                   cwin::GamepadAxis::RightX,
                   0.2f,
                   cwin::AxisDirection::Positive)),
               cwin::ActionMap&>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::ActionMap&>().getBinding(
-                  std::declval<const std::string&>())),
+              decltype(std::declval<const cwin::ActionMap&>().getBinding(cwin::ActionId{ 1 })),
               const cwin::ActionBinding*>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::ActionMap&>().isPressed(cwin::ActionId{ 1 })),
+              bool>);
 static_assert(requires(
     cwin::ActionMap actions,
     CompileInput input,
@@ -160,6 +186,11 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Window&>().getFramebufferSize()),
               std::pair<uint32_t, uint32_t>>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isResizable()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isDecorated()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isFloating()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isMinimized()), bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isMaximized()), bool>);
 
 int main()
 {

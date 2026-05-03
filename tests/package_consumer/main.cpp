@@ -10,6 +10,14 @@ int main()
         return 1;
     }
 
+    cwin::ActionMap actions;
+    const cwin::ActionId jump = actions.getOrCreateActionId("jump");
+    actions.setMetadata(jump, { "Jump", "Test installed action API" })
+        .bindKey(jump, cwin::Key::Space);
+    if (!jump || !actions.hasAction(jump) || actions.getBinding(jump) == nullptr) {
+        return 1;
+    }
+
     cwin::EventDispatcher dispatcher;
     int closedCount = 0;
     const auto subscription = dispatcher.subscribe<cwin::Event::Closed>([&] {
@@ -27,4 +35,3 @@ int main()
 
     return 0;
 }
-

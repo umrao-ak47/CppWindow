@@ -204,6 +204,8 @@ window.setCursorMode(cwin::CursorMode::Captured);
 window.setCursorShape(cwin::CursorShape::Hand);
 window.requestAttention();
 window.setWindowMode(cwin::WindowMode::BorderlessFullscreen);
+bool decorated = window.isDecorated();
+bool maximized = window.isMaximized();
 ```
 
 See the [CppWindow Guide](docs/guide.md) for fullscreen mode semantics,

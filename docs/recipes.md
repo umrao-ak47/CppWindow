@@ -119,16 +119,22 @@ menu or text field is focused.
 
 ```cpp
 cwin::ActionMap actions;
-actions.bindKey("jump", cwin::Key::Space)
-       .bindMouseButton("fire", cwin::MouseButton::Left)
-       .bindGamepadButton("jump", cwin::GamepadButton::A)
-       .bindGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.20f)
-       .bindKey("save", cwin::Key::S, cwin::Modifiers{ .control = true })
-       .bindKeyCombo("left_dash", cwin::Key::A, { cwin::Key::LShift })
-       .setContext("jump", "gameplay")
-       .setContext("fire", "gameplay")
-       .setContext("move_x", "gameplay")
-       .setContext("left_dash", "gameplay");
+const cwin::ActionId jump = actions.getOrCreateActionId("jump");
+const cwin::ActionId fire = actions.getOrCreateActionId("fire");
+const cwin::ActionId moveX = actions.getOrCreateActionId("move_x");
+const cwin::ActionId saveAction = actions.getOrCreateActionId("save");
+const cwin::ActionId leftDash = actions.getOrCreateActionId("left_dash");
+
+actions.bindKey(jump, cwin::Key::Space)
+       .bindMouseButton(fire, cwin::MouseButton::Left)
+       .bindGamepadButton(jump, cwin::GamepadButton::A)
+       .bindGamepadAxis(moveX, cwin::GamepadAxis::LeftX, 0.20f)
+       .bindKey(saveAction, cwin::Key::S, cwin::Modifiers{ .control = true })
+       .bindKeyCombo(leftDash, cwin::Key::A, { cwin::Key::LShift })
+       .setContext(jump, "gameplay")
+       .setContext(fire, "gameplay")
+       .setContext(moveX, "gameplay")
+       .setContext(leftDash, "gameplay");
 
 while (!window.shouldClose()) {
     ctx.pollEvents();
@@ -136,15 +142,15 @@ while (!window.shouldClose()) {
     actions.setContextEnabled("gameplay", !menuOpen);
     actions.update(window.getInput(), ctx.getGamepadState(0));
 
-    if (actions.isPressed("save")) {
+    if (actions.isPressed(saveAction)) {
         saveProject();
     }
 
-    if (actions.isPressed("jump")) {
+    if (actions.isPressed(jump)) {
         jump();
     }
 
-    movePlayer(actions.getAxis("move_x"));
+    movePlayer(actions.getAxis(moveX));
 }
 ```
 
@@ -223,4 +229,3 @@ dispatcher
 Renderers should size viewports and swapchains from `getFramebufferSize()` and
 handle `Event::FramebufferResized`. Use `getDpiScale()` when converting between
 window coordinates and framebuffer pixels.
-

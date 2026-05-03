@@ -100,8 +100,8 @@ cmake --build build --target example_particles
 Build the generated API reference:
 
 ```bash
-cmake -S . -B build-docs -DCPPWINDOW_BUILD_DOCS=ON -DCPPWINDOW_BUILD_EXAMPLES=OFF -DCPPWINDOW_BUILD_TESTS=OFF
-cmake --build build-docs --target cppwindow_docs
+cmake --preset docs
+cmake --build --preset docs
 ```
 
 ## Minimal Window
@@ -296,31 +296,42 @@ For named commands, use `ActionMap`:
 
 ```cpp
 cwin::ActionMap actions;
-actions.bindKey("jump", cwin::Key::Space)
-       .bindKey("save", cwin::Key::S, cwin::Modifiers{ .control = true })
-       .bindKeyCombo("left_dash", cwin::Key::A, { cwin::Key::LShift })
-       .bindMouseButton("fire", cwin::MouseButton::Left)
-       .bindGamepadButton("jump", cwin::GamepadButton::A)
-       .bindGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.20f)
-       .setContext("jump", "gameplay")
-       .setContext("fire", "gameplay")
-       .setContext("move_x", "gameplay");
+const cwin::ActionId jump = actions.getOrCreateActionId("jump");
+const cwin::ActionId saveAction = actions.getOrCreateActionId("save");
+const cwin::ActionId leftDash = actions.getOrCreateActionId("left_dash");
+const cwin::ActionId fire = actions.getOrCreateActionId("fire");
+const cwin::ActionId moveX = actions.getOrCreateActionId("move_x");
+
+actions.bindKey(jump, cwin::Key::Space)
+       .bindKey(saveAction, cwin::Key::S, cwin::Modifiers{ .control = true })
+       .bindKeyCombo(leftDash, cwin::Key::A, { cwin::Key::LShift })
+       .bindMouseButton(fire, cwin::MouseButton::Left)
+       .bindGamepadButton(jump, cwin::GamepadButton::A)
+       .bindGamepadAxis(moveX, cwin::GamepadAxis::LeftX, 0.20f)
+       .setContext(jump, "gameplay")
+       .setContext(fire, "gameplay")
+       .setContext(moveX, "gameplay");
 
 while (!window.shouldClose()) {
     ctx.pollEvents();
     actions.update(window.getInput(), ctx.getGamepadState(0));
 
-    if (actions.isPressed("jump")) {
+    if (actions.isPressed(jump)) {
         jump();
     }
 
-    if (actions.isPressed("save")) {
+    if (actions.isPressed(saveAction)) {
         save();
     }
 
-    move(actions.getAxis("move_x"));
+    move(actions.getAxis(moveX));
 }
 ```
+
+Use action names at setup or rebinding-screen boundaries, then keep the
+returned `ActionId` values for per-frame queries. `getActions()` returns
+snapshots with names, metadata, bindings, and current state for debug UI or
+rebinding menus.
 
 Use input contexts:
 
@@ -332,9 +343,9 @@ For rebinding screens, replace one binding category without rebuilding the
 whole map:
 
 ```cpp
-actions.replaceKey("jump", cwin::Key::J);
-actions.replaceKeyCombo("left_dash", cwin::Key::A, { cwin::Key::LShift });
-actions.replaceGamepadAxis("move_x", cwin::GamepadAxis::LeftX, 0.25f);
+actions.replaceKey(jump, cwin::Key::J);
+actions.replaceKeyCombo(leftDash, cwin::Key::A, { cwin::Key::LShift });
+actions.replaceGamepadAxis(moveX, cwin::GamepadAxis::LeftX, 0.25f);
 ```
 
 ## Events
@@ -519,6 +530,10 @@ window.setFloating(false);
 window.setOpacity(0.95f);
 window.setVisible(true);
 window.setFocus(true);
+
+if (window.isResizable() && window.isDecorated()) {
+    // Update app UI state.
+}
 ```
 
 State controls:
@@ -527,6 +542,10 @@ State controls:
 window.minimize();
 window.maximize();
 window.restore();
+
+if (window.isMinimized() || window.isMaximized()) {
+    // Adjust rendering or UI behavior if needed.
+}
 ```
 
 Size constraints:

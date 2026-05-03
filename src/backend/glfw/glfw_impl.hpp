@@ -211,6 +211,11 @@ public:
     CursorMode getCursorMode() const noexcept override;
     bool isRawMouseMotionEnabled() const noexcept override;
     WindowMode getWindowMode() const noexcept override;
+    bool isResizable() const noexcept override;
+    bool isDecorated() const noexcept override;
+    bool isFloating() const noexcept override;
+    bool isMinimized() const noexcept override;
+    bool isMaximized() const noexcept override;
     bool isFocused() const noexcept override;
     bool isVisible() const noexcept override;
 
