@@ -395,14 +395,32 @@ target_link_libraries(app PRIVATE
     cppwindow::imgui)
 ```
 
-Set `CPPWINDOW_IMGUI_SOURCE_DIR` to an existing Dear ImGui checkout when the app
-needs a custom branch or `imconfig.h`. Otherwise CppWindow fetches the pinned
-default source into `.deps/imgui`.
+When `CPPWINDOW_DEAR_IMGUI_TARGET` is empty, CppWindow fetches the pinned Dear
+ImGui version into `.deps/imgui` and builds `cppwindow::dear_imgui`.
 
 ```cmake
 set(CPPWINDOW_BUILD_IMGUI ON)
-set(CPPWINDOW_IMGUI_SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
 add_subdirectory(external/CppWindow)
+```
+
+When the app already owns Dear ImGui, provide a target instead. This is the
+path for custom `imconfig.h`, docking branches, or a shared engine-level ImGui
+build:
+
+```cmake
+add_library(app_imgui STATIC
+    external/imgui/imgui.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
+    external/imgui/imgui_demo.cpp)
+target_include_directories(app_imgui PUBLIC external/imgui)
+
+set(CPPWINDOW_BUILD_IMGUI ON)
+set(CPPWINDOW_DEAR_IMGUI_TARGET app_imgui)
+add_subdirectory(external/CppWindow)
+
+target_link_libraries(app PRIVATE cppwindow::imgui)
 ```
 
 When consuming an installed package:
@@ -411,6 +429,11 @@ When consuming an installed package:
 find_package(cppwindow CONFIG REQUIRED COMPONENTS imgui)
 target_link_libraries(app PRIVATE cppwindow::imgui)
 ```
+
+Package builds use CppWindow's fetched `cppwindow::dear_imgui` target. A
+user-provided `CPPWINDOW_DEAR_IMGUI_TARGET` is intended for `add_subdirectory`
+builds, because CppWindow cannot export an arbitrary app-owned target in its
+installed package config.
 
 Build the included ImGui examples with:
 
@@ -441,8 +464,8 @@ target_link_libraries(app PRIVATE
 ```
 
 Do not compile a second copy of Dear ImGui for extensions. `cppwindow::imgui`
-and every extension should share `cppwindow::dear_imgui` or a custom Dear ImGui
-source directory configured with `CPPWINDOW_IMGUI_SOURCE_DIR`.
+and every extension should share `cppwindow::dear_imgui`. In user-target mode,
+`cppwindow::dear_imgui` forwards to `CPPWINDOW_DEAR_IMGUI_TARGET`.
 
 ### Platform Backend Only
 
@@ -514,42 +537,22 @@ void render(ImDrawData* drawData);
 
 ### OpenGL Adapter Example
 
-The library does not export an OpenGL ImGui renderer target. For OpenGL apps,
-compile Dear ImGui's official OpenGL renderer backend in the app or example and
-wrap it with a tiny adapter:
+The library does not export an OpenGL ImGui renderer target. The included ImGui
+examples provide a local OpenGL renderer adapter in
+`extras/imgui/examples/opengl_imgui_renderer.cpp`. It uploads ImGui texture
+requests, owns the OpenGL shader, buffers, and vertex array, and renders
+`ImDrawData` directly:
 
 ```cpp
-#include <imgui_impl_opengl3.h>
+#include "opengl_imgui_renderer.hpp"
 
-class OpenGLImGuiRenderer {
-public:
-    explicit OpenGLImGuiRenderer(const char* glslVersion)
-    {
-        ImGui_ImplOpenGL3_Init(glslVersion);
-    }
-
-    ~OpenGLImGuiRenderer()
-    {
-        ImGui_ImplOpenGL3_Shutdown();
-    }
-
-    void newFrame()
-    {
-        ImGui_ImplOpenGL3_NewFrame();
-    }
-
-    void render(ImDrawData* drawData)
-    {
-        ImGui_ImplOpenGL3_RenderDrawData(drawData);
-    }
-};
+example::loadOpenGL(ctx);
+cwin::imgui::Layer<example::OpenGLImGuiRenderer> imguiLayer(window, "#version 410");
 ```
 
-Then use the adapter with the layer:
-
-```cpp
-cwin::imgui::Layer<OpenGLImGuiRenderer> imguiLayer(window, "#version 410");
-```
+This adapter is intentionally example-only. Applications can copy that pattern
+for OpenGL, or provide a different renderer adapter for Vulkan, Metal, DirectX,
+or an engine renderer.
 
 ### Input Capture
 

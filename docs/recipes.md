@@ -123,6 +123,22 @@ add_subdirectory(external/CppWindow)
 target_link_libraries(app PRIVATE cppwindow::imgui)
 ```
 
+If the app owns Dear ImGui already, provide that target before adding
+CppWindow:
+
+```cmake
+add_library(app_imgui STATIC
+    external/imgui/imgui.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp)
+target_include_directories(app_imgui PUBLIC external/imgui)
+
+set(CPPWINDOW_BUILD_IMGUI ON)
+set(CPPWINDOW_DEAR_IMGUI_TARGET app_imgui)
+add_subdirectory(external/CppWindow)
+```
+
 ```cpp
 #include <cppwindow/imgui.hpp>
 

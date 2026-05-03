@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "target-provider",
+      "displayName": "ImGui Target Provider",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../build-presets/imgui-target-provider",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "target-provider",
+      "configurePreset": "target-provider"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "target-provider",
+      "configurePreset": "target-provider",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

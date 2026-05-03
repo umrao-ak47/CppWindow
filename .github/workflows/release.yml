@@ -89,6 +89,21 @@ jobs:
       - name: Test ImGui preset
         run: ctest --preset imgui
 
+      - name: Configure ImGui target provider preset
+        working-directory: tests/imgui_target_provider
+        run: >
+          cmake --preset target-provider
+          -DGLFW_BUILD_X11=ON
+          -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build ImGui target provider preset
+        working-directory: tests/imgui_target_provider
+        run: cmake --build --preset target-provider --parallel
+
+      - name: Test ImGui target provider preset
+        working-directory: tests/imgui_target_provider
+        run: ctest --preset target-provider
+
       - name: Configure docs preset
         run: cmake --preset docs
 

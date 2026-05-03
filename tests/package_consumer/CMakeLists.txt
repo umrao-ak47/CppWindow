@@ -16,9 +16,15 @@ endif()
 add_executable(cppwindow_package_consumer main.cpp)
 
 if(CPPWINDOW_PACKAGE_CONSUMER_USE_IMGUI)
+    add_library(cppwindow_package_consumer_imgui_extension INTERFACE)
+    target_link_libraries(cppwindow_package_consumer_imgui_extension
+        INTERFACE
+            cppwindow::dear_imgui
+    )
     target_link_libraries(cppwindow_package_consumer
         PRIVATE
             cppwindow::imgui
+            cppwindow_package_consumer_imgui_extension
     )
     target_compile_definitions(cppwindow_package_consumer
         PRIVATE

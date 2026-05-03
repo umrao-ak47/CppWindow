@@ -5,58 +5,68 @@ if(NOT TARGET cppwindow::cppwindow)
     message(FATAL_ERROR "cppwindow: extras/imgui requires cppwindow::cppwindow")
 endif()
 
-option(CPPWINDOW_FETCH_IMGUI "Fetch Dear ImGui when optional ImGui integration is enabled" ON)
-set(CPPWINDOW_IMGUI_SOURCE_DIR
-    "${PROJECT_SOURCE_DIR}/.deps/imgui"
-    CACHE PATH "Dear ImGui source directory used by FetchContent")
+set(CPPWINDOW_DEAR_IMGUI_TARGET
+    ""
+    CACHE STRING "Existing Dear ImGui target to use instead of CppWindow's fetched target")
 set(CPPWINDOW_REQUIRED_IMGUI_VERSION v1.92.7 CACHE STRING "Dear ImGui git tag")
 
-get_filename_component(
-    CPPWINDOW_IMGUI_SOURCE_DIR_ABS
-    "${CPPWINDOW_IMGUI_SOURCE_DIR}"
-    ABSOLUTE
-    BASE_DIR "${PROJECT_SOURCE_DIR}"
-)
+set(CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR "${PROJECT_SOURCE_DIR}/.deps/imgui")
 
-if(NOT EXISTS "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui.h")
-    if(NOT CPPWINDOW_FETCH_IMGUI)
+if(CPPWINDOW_DEAR_IMGUI_TARGET)
+    if(NOT TARGET "${CPPWINDOW_DEAR_IMGUI_TARGET}")
         message(FATAL_ERROR
-            "cppwindow: CPPWINDOW_BUILD_IMGUI requires Dear ImGui sources at "
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS} when CPPWINDOW_FETCH_IMGUI is OFF")
+            "cppwindow: CPPWINDOW_DEAR_IMGUI_TARGET must name an existing target. "
+            "Define the Dear ImGui target before add_subdirectory(CppWindow).")
+    endif()
+    if(CPPWINDOW_INSTALL)
+        message(FATAL_ERROR
+            "cppwindow: installing the ImGui integration with CPPWINDOW_DEAR_IMGUI_TARGET "
+            "is not supported. Use CppWindow's fetched Dear ImGui target for package builds.")
     endif()
 
-    message(STATUS
-        "cppwindow: Fetching Dear ImGui ${CPPWINDOW_REQUIRED_IMGUI_VERSION} "
-        "to ${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}")
+    message(STATUS "cppwindow: Using Dear ImGui target ${CPPWINDOW_DEAR_IMGUI_TARGET}")
+    add_library(cppwindow_dear_imgui INTERFACE)
+    add_library(cppwindow::dear_imgui ALIAS cppwindow_dear_imgui)
+    target_link_libraries(cppwindow_dear_imgui
+        INTERFACE
+            "${CPPWINDOW_DEAR_IMGUI_TARGET}"
+    )
+else()
+    if(EXISTS "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui.h")
+        message(STATUS
+            "cppwindow: Configuring Dear ImGui from ${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}")
+    else()
+        message(STATUS
+            "cppwindow: Fetching Dear ImGui ${CPPWINDOW_REQUIRED_IMGUI_VERSION} "
+            "to ${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}")
+    endif()
     FetchContent_Declare(
-        imgui
+        cppwindow_dear_imgui_source
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
         GIT_TAG        ${CPPWINDOW_REQUIRED_IMGUI_VERSION}
-        SOURCE_DIR     "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}"
+        SOURCE_DIR     "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}"
     )
-    FetchContent_MakeAvailable(imgui)
-else()
-    message(STATUS "cppwindow: Configuring Dear ImGui from ${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}")
+    FetchContent_MakeAvailable(cppwindow_dear_imgui_source)
+
+    add_library(cppwindow_dear_imgui STATIC)
+    add_library(cppwindow::dear_imgui ALIAS cppwindow_dear_imgui)
+    set_target_properties(cppwindow_dear_imgui PROPERTIES EXPORT_NAME dear_imgui)
+
+    target_sources(cppwindow_dear_imgui
+        PRIVATE
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui.cpp"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui_draw.cpp"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui_tables.cpp"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui_widgets.cpp"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui_demo.cpp"
+    )
+    target_include_directories(cppwindow_dear_imgui
+        PUBLIC
+            $<BUILD_INTERFACE:${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/imgui>
+    )
+    target_compile_features(cppwindow_dear_imgui PUBLIC cxx_std_20)
 endif()
-
-add_library(cppwindow_dear_imgui STATIC)
-add_library(cppwindow::dear_imgui ALIAS cppwindow_dear_imgui)
-set_target_properties(cppwindow_dear_imgui PROPERTIES EXPORT_NAME dear_imgui)
-
-target_sources(cppwindow_dear_imgui
-    PRIVATE
-        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui.cpp"
-        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui_draw.cpp"
-        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui_tables.cpp"
-        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui_widgets.cpp"
-        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui_demo.cpp"
-)
-target_include_directories(cppwindow_dear_imgui
-    PUBLIC
-        $<BUILD_INTERFACE:${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/imgui>
-)
-target_compile_features(cppwindow_dear_imgui PUBLIC cxx_std_20)
 
 add_library(cppwindow_imgui STATIC)
 add_library(cppwindow::imgui ALIAS cppwindow_imgui)
@@ -96,12 +106,12 @@ if(CPPWINDOW_INSTALL)
     )
     install(
         FILES
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imconfig.h"
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui.h"
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imgui_internal.h"
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imstb_rectpack.h"
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imstb_textedit.h"
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/imstb_truetype.h"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imconfig.h"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui.h"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imgui_internal.h"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imstb_rectpack.h"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imstb_textedit.h"
+            "${CPPWINDOW_FETCHED_IMGUI_SOURCE_DIR}/imstb_truetype.h"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/imgui
     )
 endif()

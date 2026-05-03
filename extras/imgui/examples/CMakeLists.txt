@@ -1,16 +1,32 @@
+add_library(_cppwindow_imgui_example_opengl STATIC
+    opengl_imgui_renderer.cpp
+)
+target_include_directories(_cppwindow_imgui_example_opengl
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_link_libraries(_cppwindow_imgui_example_opengl
+    PUBLIC
+        cppwindow::imgui
+    PRIVATE
+        _cppwindow_example_glad
+)
+target_compile_features(_cppwindow_imgui_example_opengl
+    PUBLIC
+        cxx_std_20
+)
+set_target_properties(_cppwindow_imgui_example_opengl
+    PROPERTIES
+        FOLDER "examples"
+)
+
 function(cppwindow_add_imgui_example TARGET)
     add_executable(${TARGET}
         ${ARGN}
-        "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/backends/imgui_impl_opengl3.cpp"
-    )
-    target_include_directories(${TARGET}
-        PRIVATE
-            "${CPPWINDOW_IMGUI_SOURCE_DIR_ABS}/backends"
     )
     target_link_libraries(${TARGET}
         PRIVATE
-            cppwindow::imgui
-            _cppwindow_example_glad
+            _cppwindow_imgui_example_opengl
     )
     target_compile_features(${TARGET}
         PRIVATE
