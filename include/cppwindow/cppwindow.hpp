@@ -82,8 +82,6 @@ struct NativeHandles
         X11,
         /// Wayland surface/display handles.
         Wayland,
-        /// Compatibility alias for Wayland.
-        WayLand = Wayland,
         /// Unknown or unsupported native window system.
         Unknown
     };
