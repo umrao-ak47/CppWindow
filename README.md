@@ -55,9 +55,9 @@ add_subdirectory(external/CppWindow)
 target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 ```
 
-For local development with multiple CMake build directories, the presets make
-CMake download GLFW once into `.deps/glfw`. Each build directory still compiles
-GLFW with its own flags.
+For local development with multiple CMake build directories, CMake
+`FetchContent` manages dependency download locations. Each build directory
+compiles dependencies with its own flags.
 
 ```bash
 cmake --preset dev

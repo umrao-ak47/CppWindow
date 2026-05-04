@@ -46,10 +46,8 @@ ctest --preset dev
 ```
 
 By default, CMake `FetchContent` stores dependencies under each build
-directory. This repository changes that default to `.deps/glfw`, so CMake
-downloads the GLFW source once and reuses it for `dev`, `sanitizers`,
-`install`, and `multi`. Each build directory still compiles GLFW with its own
-flags.
+directory. CppWindow keeps that behavior, so each build directory manages and
+compiles dependencies with its own flags.
 
 ```bash
 cmake --preset sanitizers
@@ -396,7 +394,7 @@ target_link_libraries(app PRIVATE
 ```
 
 When `CPPWINDOW_DEAR_IMGUI_TARGET` is empty, CppWindow fetches the pinned Dear
-ImGui version into `.deps/imgui` and builds `cppwindow::dear_imgui`.
+ImGui version with CMake `FetchContent` and builds `cppwindow::dear_imgui`.
 
 ```cmake
 set(CPPWINDOW_BUILD_IMGUI ON)

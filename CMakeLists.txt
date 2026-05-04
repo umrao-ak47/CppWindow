@@ -15,9 +15,6 @@ option(CPPWINDOW_INSTALL "Create install target" OFF)
 option(CPPWINDOW_BUILD_DOCS "Build cppwindow API documentation with Doxygen" OFF)
 option(CPPWINDOW_ENABLE_SANITIZERS "Build with address and undefined behavior sanitizers" OFF)
 option(CPPWINDOW_BUILD_IMGUI "Build optional Dear ImGui integration targets" OFF)
-set(CPPWINDOW_GLFW_SOURCE_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/glfw"
-    CACHE PATH "GLFW source directory used by FetchContent")
 # Enable examples and tests automatically if this is the root project
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(CPPWINDOW_BUILD_EXAMPLES "Build cppwindow examples" ON)
@@ -46,13 +43,6 @@ function(cppwindow_add_docs_target)
     )
 endfunction()
 
-get_filename_component(
-    CPPWINDOW_GLFW_SOURCE_DIR_ABS
-    "${CPPWINDOW_GLFW_SOURCE_DIR}"
-    ABSOLUTE
-    BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR
    AND CPPWINDOW_BUILD_DOCS
    AND NOT CPPWINDOW_BUILD_EXAMPLES
@@ -66,18 +56,11 @@ endif()
 # Fetch GLFW
 # ------------------------------------------------------------------------------
 if(NOT TARGET glfw)
-    if(EXISTS "${CPPWINDOW_GLFW_SOURCE_DIR_ABS}/CMakeLists.txt")
-        message(STATUS "cppwindow: Configuring GLFW from ${CPPWINDOW_GLFW_SOURCE_DIR_ABS}")
-    else()
-        message(STATUS
-            "cppwindow: Fetching GLFW v${CPPWINDOW_REQUIRED_GLFW_VERSION} "
-            "to ${CPPWINDOW_GLFW_SOURCE_DIR_ABS}")
-    endif()
+    message(STATUS "cppwindow: Fetching/configuring GLFW v${CPPWINDOW_REQUIRED_GLFW_VERSION}")
     FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
         GIT_TAG        ${CPPWINDOW_REQUIRED_GLFW_VERSION}
-        SOURCE_DIR     "${CPPWINDOW_GLFW_SOURCE_DIR_ABS}"
     )
     # Quiet the GLFW internal build
     set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "")
