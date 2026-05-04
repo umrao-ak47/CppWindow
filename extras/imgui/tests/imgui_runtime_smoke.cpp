@@ -11,23 +11,6 @@ namespace {
 
 constexpr int SkipTest = 77;
 
-struct ImGuiContextGuard
-{
-    ImGuiContextGuard()
-    {
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-    }
-
-    ~ImGuiContextGuard()
-    {
-        ImGui::DestroyContext();
-    }
-
-    ImGuiContextGuard(const ImGuiContextGuard&) = delete;
-    ImGuiContextGuard& operator=(const ImGuiContextGuard&) = delete;
-};
-
 [[nodiscard]] bool isEnvironmentUnavailable(const cwin::Error& error) noexcept
 {
     return error.code() == cwin::ErrorCode::InitializationFailed
@@ -56,8 +39,7 @@ int main()
         example::loadOpenGL(context);
         window.setVSync(false);
 
-        ImGuiContextGuard imguiContext;
-        ImGui::StyleColorsDark();
+        cwin::imgui::Context imguiContext{ { .style = cwin::imgui::Style::Dark } };
 
         {
             cwin::imgui::Layer<example::OpenGLImGuiRenderer> imguiLayer(window, "#version 410");

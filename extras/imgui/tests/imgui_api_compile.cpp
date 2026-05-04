@@ -11,6 +11,15 @@ struct TestRenderer {
 };
 
 static_assert(cwin::imgui::Renderer<TestRenderer>);
+static_assert(std::is_constructible_v<cwin::imgui::Context>);
+static_assert(std::is_constructible_v<cwin::imgui::Context, cwin::imgui::ContextOptions>);
+static_assert(!std::is_copy_constructible_v<cwin::imgui::Context>);
+static_assert(!std::is_move_constructible_v<cwin::imgui::Context>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::imgui::Context&>().get()),
+                             ImGuiContext*>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::imgui::Context&>().makeCurrent()),
+              void>);
 
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::imgui::Platform&>().handleEvents(

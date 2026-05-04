@@ -25,9 +25,7 @@ int main()
     FrameLimiter frameLimiter(120.0);
     frameLimiter.setVSyncEnabled(useVSync);
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
+    cwin::imgui::Context imguiContext{ { .style = cwin::imgui::Style::Dark } };
 
     {
         cwin::imgui::Layer<example::OpenGLImGuiRenderer> imguiLayer(window, "#version 410");
@@ -75,5 +73,4 @@ int main()
         }
     }
 
-    ImGui::DestroyContext();
 }

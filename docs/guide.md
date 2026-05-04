@@ -370,6 +370,7 @@ app owns the renderer backend.
 - `cppwindow::dear_imgui`: builds Dear ImGui and exposes its headers.
 - `cppwindow::imgui`: feeds CppWindow events, clipboard, cursors, DPI, and
   display size into ImGui.
+- `cwin::imgui::Context`: owns a Dear ImGui context with RAII lifetime.
 - `cwin::imgui::Layer`: coordinates the common platform + renderer frame flow
   with a renderer adapter supplied by the app.
 
@@ -473,6 +474,7 @@ frame flow:
 ```cpp
 #include <cppwindow/imgui.hpp>
 
+cwin::imgui::Context imguiContext;
 cwin::imgui::Platform imguiPlatform(window);
 
 ctx.pollEvents();
@@ -504,8 +506,7 @@ public:
     void render(ImDrawData* drawData);
 };
 
-IMGUI_CHECKVERSION();
-ImGui::CreateContext();
+cwin::imgui::Context imguiContext{ { .style = cwin::imgui::Style::Dark } };
 {
     cwin::imgui::Layer<MyImGuiRenderer> imguiLayer(window);
 
@@ -523,7 +524,6 @@ ImGui::CreateContext();
         window.swapBuffers();
     }
 }
-ImGui::DestroyContext();
 ```
 
 The renderer adapter only needs:

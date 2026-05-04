@@ -10,6 +10,7 @@ struct TargetProviderRenderer {
 };
 
 static_assert(cwin::imgui::Renderer<TargetProviderRenderer>);
+static_assert(std::is_constructible_v<cwin::imgui::Context>);
 static_assert(
     std::is_same_v<decltype(std::declval<cwin::imgui::Platform&>().newFrame()), void>);
 static_assert(std::is_same_v<

@@ -19,9 +19,10 @@ namespace cwin::imgui {
 
 /// Dear ImGui platform backend backed by `cwin::Window` events and state.
 ///
-/// Create an ImGui context before constructing this object. This backend does
-/// not render draw data; pair it with a renderer adapter provided by the
-/// application, or use `Layer` to coordinate both pieces.
+/// Create a `Context` or app-owned Dear ImGui context before constructing this
+/// object. This backend does not render draw data; pair it with a renderer
+/// adapter provided by the application, or use `Layer` to coordinate both
+/// pieces.
 class Platform final
 {
 public:

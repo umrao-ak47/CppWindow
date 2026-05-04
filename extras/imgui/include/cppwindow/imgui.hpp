@@ -9,6 +9,7 @@
 #ifndef CPPWINDOW_HEADER_IMGUI_HPP
 #define CPPWINDOW_HEADER_IMGUI_HPP
 
+#include <cppwindow/imgui/context.hpp>
 #include <cppwindow/imgui/layer.hpp>
 #include <cppwindow/imgui/platform.hpp>
 

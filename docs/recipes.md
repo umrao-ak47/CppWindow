@@ -148,8 +148,7 @@ public:
     void render(ImDrawData* drawData);
 };
 
-IMGUI_CHECKVERSION();
-ImGui::CreateContext();
+cwin::imgui::Context imguiContext{ { .style = cwin::imgui::Style::Dark } };
 {
     cwin::imgui::Layer<MyImGuiRenderer> imguiLayer(window);
 
@@ -170,7 +169,6 @@ ImGui::CreateContext();
         window.swapBuffers();
     }
 }
-ImGui::DestroyContext();
 ```
 
 ## ImGui Platform Only
@@ -180,6 +178,7 @@ Use `Platform` directly when your renderer already owns the draw-data step.
 ```cpp
 #include <cppwindow/imgui.hpp>
 
+cwin::imgui::Context imguiContext;
 cwin::imgui::Platform imguiPlatform(window);
 
 ctx.pollEvents();
