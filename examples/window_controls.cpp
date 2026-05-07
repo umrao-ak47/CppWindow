@@ -131,6 +131,8 @@ int main()
               << "  U: request attention\n"
               << "  O: decrease opacity\n"
               << "  P: increase opacity\n"
+              << "  Y: print title and windowed placement\n"
+              << "  W: apply 960x540 windowed placement\n"
               << "  L: set size limits\n"
               << "  K: clear size limits\n"
               << "  A: set 16:9 aspect ratio\n"
@@ -192,6 +194,21 @@ int main()
                 window.setOpacity(opacity);
                 opacity = window.opacity();
                 std::cout << "opacity: " << opacity << "\n";
+            } else if (key.key == Key::Y) {
+                const auto placement = window.windowedPlacement();
+                std::cout << "title: " << window.title() << "\n";
+                std::cout << "windowed placement: " << placement.x << ", " << placement.y << " "
+                          << placement.width << "x" << placement.height
+                          << " maximized=" << placement.maximized << "\n";
+            } else if (key.key == Key::W) {
+                const auto placement = window.windowedPlacement();
+                window.setWindowedPlacement(
+                    WindowPlacement{ .x = placement.x,
+                                     .y = placement.y,
+                                     .width = 960,
+                                     .height = 540,
+                                     .maximized = false });
+                std::cout << "windowed placement applied: 960x540\n";
             } else if (key.key == Key::L) {
                 window.setSizeLimits(
                     SizeLimits{

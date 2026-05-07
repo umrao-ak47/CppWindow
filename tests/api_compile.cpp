@@ -68,6 +68,7 @@ concept CanSubscribeEach = requires(cwin::EventDispatcher dispatcher, Handler ha
 }  // namespace
 
 static_assert(cwin::EventSubtypeOf<cwin::Event::Closed, cwin::Event>);
+static_assert(cwin::EventSubtypeOf<cwin::Event::Refresh, cwin::Event>);
 static_assert(cwin::EventSubtypeOf<cwin::Event::FramebufferResized, cwin::Event>);
 static_assert(cwin::EventSubtypeOf<cwin::Event::KeyPressed, cwin::Event>);
 static_assert(!cwin::EventSubtypeOf<int, cwin::Event>);
@@ -113,6 +114,17 @@ static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>()
                            .requiredVulkanInstanceExtensions()),
               std::vector<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::A)),
+              std::optional<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().keyName(
+                  cwin::Key::Unknown,
+                  42)),
+              std::optional<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().keyScancode(cwin::Key::A)),
+              int>);
 
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().defineAction("jump")),
@@ -183,6 +195,14 @@ static_assert(std::is_same_v<
               decltype(std::declval<cwin::Window&>().setIcons(
                   std::declval<std::span<const cwin::ImageRgba>>())),
               bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().title()), std::string>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Window&>().windowedPlacement()),
+              cwin::WindowPlacement>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::Window&>().setWindowedPlacement(
+                  std::declval<const cwin::WindowPlacement&>())),
+              void>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Window&>().framebufferSize()),
               std::pair<uint32_t, uint32_t>>);

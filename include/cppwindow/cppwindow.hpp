@@ -238,6 +238,21 @@ struct AspectRatio
     int denominator = 1;
 };
 
+/// Saved or requested placement for a restored window.
+struct WindowPlacement
+{
+    /// Window x position in virtual desktop coordinates.
+    int x = 0;
+    /// Window y position in virtual desktop coordinates.
+    int y = 0;
+    /// Window content width in screen coordinates.
+    int width = 0;
+    /// Window content height in screen coordinates.
+    int height = 0;
+    /// Whether the restored window should be maximized.
+    bool maximized = false;
+};
+
 /// Window-to-framebuffer content scale helper.
 struct DpiScale
 {
@@ -722,6 +737,10 @@ public:
     struct Closed
     {};
 
+    /// Window contents should be redrawn.
+    struct Refresh
+    {};
+
     /// Window content size changed.
     struct Resized
     {
@@ -966,6 +985,7 @@ public:
     using Data = std::variant<
         FramebufferResized,
         Closed,
+        Refresh,
         Resized,
         Moved,
         Minimized,
@@ -1734,6 +1754,8 @@ public:
 
     /// Sets the window title.
     void setTitle(const std::string& title);
+    /// Returns the current UTF-8 window title.
+    std::string title() const;
     /// Sets the content size in screen coordinates.
     void setSize(int width, int height);
     /// Sets the window position in virtual desktop coordinates.
@@ -1791,6 +1813,10 @@ public:
     void setFocus(bool focus) const noexcept;
     /// Shows or hides the window.
     void setVisible(bool visible) const noexcept;
+    /// Returns the saved/restored windowed placement.
+    WindowPlacement windowedPlacement() const noexcept;
+    /// Applies a saved/restored windowed placement.
+    void setWindowedPlacement(const WindowPlacement& placement);
     /// Returns the content size in screen coordinates.
     std::pair<int, int> size() const noexcept;
     /// Returns the window position in virtual desktop coordinates.
@@ -1942,6 +1968,10 @@ public:
     std::optional<GamepadState> gamepadState(uint32_t gamepadId = 0) const;
     /// Returns whether raw mouse motion is supported by the backend/platform.
     bool isRawMouseMotionSupported() const;
+    /// Returns a localized key label for a logical key or platform scancode.
+    [[nodiscard]] std::optional<std::string> keyName(Key key, int scancode = -1) const;
+    /// Returns the platform scancode for a logical key, or -1 when unavailable.
+    [[nodiscard]] int keyScancode(Key key) const noexcept;
     /// Sets the platform clipboard text. Returns false when the backend reports failure.
     [[nodiscard]] bool setClipboardText(std::string_view text) const;
     /// Returns whether clipboard text is currently available and non-empty.

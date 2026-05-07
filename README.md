@@ -93,8 +93,9 @@ Apps link `cppwindow::imgui`; extensions such as ImPlot link
 and configuration. CppWindow can fetch Dear ImGui, or you can provide an
 existing target with `CPPWINDOW_DEAR_IMGUI_TARGET`. See the
 [guide](docs/guide.md#dear-imgui) for renderer adapter and extension examples.
-Example targets include `example_imgui_minimal`, `example_imgui_overlay`,
-`example_imgui_input_capture`, and `example_imgui_style_demo`.
+Example targets include `cppwindow_example_imgui_minimal`,
+`cppwindow_example_imgui_overlay`, `cppwindow_example_imgui_input_capture`, and
+`cppwindow_example_imgui_style_demo`.
 
 ## 🚀 Quick Start
 
@@ -237,6 +238,9 @@ window.setCursorMode(cwin::CursorMode::Captured);
 window.setCursorShape(cwin::CursorShape::Hand);
 window.requestAttention();
 window.setWindowMode(cwin::WindowMode::BorderlessFullscreen);
+auto placement = window.windowedPlacement();
+window.setWindowedPlacement(placement);
+std::string title = window.title();
 bool decorated = window.isDecorated();
 bool maximized = window.isMaximized();
 ```

@@ -47,6 +47,14 @@ static_assert(std::is_same_v<
               decltype(std::declval<cwin::Window&>().setIcons(
                   std::declval<std::span<const cwin::ImageRgba>>())),
               bool>);
+static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().title()), std::string>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Window&>().windowedPlacement()),
+              cwin::WindowPlacement>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::Window&>().setWindowedPlacement(
+                  std::declval<const cwin::WindowPlacement&>())),
+              void>);
 static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().clearCursor()), void>);
 static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().clearIcon()), void>);
 static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().requestAttention()), void>);
@@ -66,6 +74,12 @@ static_assert(
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().clipboardText()),
               std::optional<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::A)),
+              std::optional<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::WindowContext&>().keyScancode(cwin::Key::A)),
+              int>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isResizable()), bool>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isDecorated()), bool>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isFloating()), bool>);
@@ -95,10 +109,19 @@ int main()
         .currentVideoMode = mode,
         .primary = true,
     };
+    cwin::WindowPlacement placement{
+        .x = 100,
+        .y = 120,
+        .width = 800,
+        .height = 600,
+        .maximized = true,
+    };
 
     assert(limits.minWidth == 320);
     assert(ratio.numerator == 16);
     assert(monitor.currentVideoMode.refreshRate == 60);
+    assert(placement.width == 800);
+    assert(placement.maximized);
     assert(cwin::CursorMode::Captured != cwin::CursorMode::Normal);
     assert(cwin::CursorShape::Hand != cwin::CursorShape::Arrow);
     assert(cwin::CursorShape::ResizeAll != cwin::CursorShape::NotAllowed);
@@ -175,8 +198,9 @@ int main()
     assert(textEvent.is<cwin::Event::TextEntered>());
     assert(textEvent.getIf<cwin::Event::TextEntered>()->unicode == U'a');
 
-    std::array<cwin::Event, 3> dispatchedEvents{
+    std::array<cwin::Event, 4> dispatchedEvents{
         cwin::Event::Closed{},
+        cwin::Event::Refresh{},
         cwin::Event::KeyPressed{
             .key = cwin::Key::Escape,
             .scancode = 0,
@@ -216,7 +240,7 @@ int main()
     assert(dispatcher.handlerCount() == 4);
     dispatcher.dispatch(
         std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
-    assert(eachCount == 3);
+    assert(eachCount == 4);
     assert(closedCount == 1);
     assert(escapeSeen);
     assert(resizedWidth == 640);
@@ -229,7 +253,7 @@ int main()
     resizedWidth = 0;
     dispatcher.dispatch(
         std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
-    assert(eachCount == 3);
+    assert(eachCount == 4);
     assert(closedCount == 2);
     assert(escapeSeen);
     assert(resizedWidth == 640);
@@ -258,7 +282,7 @@ int main()
     assert(secondSubscription);
     disconnectingDispatcher.dispatch(
         std::span<const cwin::Event>{ dispatchedEvents.data(), dispatchedEvents.size() });
-    assert(firstHandlerCount == 3);
+    assert(firstHandlerCount == 4);
     assert(secondHandlerCount == 0);
 
     cwin::EventDispatcher clearingDispatcher;

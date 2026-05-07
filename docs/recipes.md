@@ -351,3 +351,17 @@ dispatcher
 Renderers should size viewports and swapchains from `framebufferSize()` and
 handle `Event::FramebufferResized`. Use `dpiScale()` when converting between
 window coordinates and framebuffer pixels.
+
+## Save And Restore Windowed Placement
+
+Use `windowedPlacement()` for the restored window position and size. Fullscreen
+modes remain controlled by `setWindowMode()`.
+
+```cpp
+cwin::WindowPlacement placement = window.windowedPlacement();
+
+// Store placement in your app config.
+
+window.setWindowMode(cwin::WindowMode::Windowed);
+window.setWindowedPlacement(placement);
+```

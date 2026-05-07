@@ -1012,6 +1012,11 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
         glfwSetWindowShouldClose(window, GLFW_FALSE);
     });
 
+    glfwSetWindowRefreshCallback(handle, [](GLFWwindow* window) {
+        auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
+        self->handleEvent(Event::Refresh{});
+    });
+
     glfwSetWindowFocusCallback(handle, [](GLFWwindow* window, int focused) {
         auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
         if (focused == GLFW_TRUE) {
@@ -1024,6 +1029,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
     glfwSetWindowSizeCallback(handle, [](GLFWwindow* window, int width, int height) {
         auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
         self->handleMonitorChanged(getWindowMonitorId(window));
+        self->handleWindowedBoundsChanged();
         self->handleEvent(
             Event::Resized{
                 .width = width,
@@ -1034,6 +1040,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
     glfwSetWindowPosCallback(handle, [](GLFWwindow* window, int x, int y) {
         auto* self = static_cast<GLFWNativeWindow*>(glfwGetWindowUserPointer(window));
         self->handleMonitorChanged(getWindowMonitorId(window));
+        self->handleWindowedBoundsChanged();
         self->handleEvent(
             Event::Moved{
                 .x = x,
@@ -1046,6 +1053,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
         if (iconified == GLFW_TRUE) {
             self->handleEvent(Event::Minimized{});
         } else {
+            self->handleWindowedBoundsChanged();
             self->handleEvent(Event::Restored{});
         }
     });
@@ -1055,6 +1063,7 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
         if (maximized == GLFW_TRUE) {
             self->handleEvent(Event::Maximized{});
         } else {
+            self->handleWindowedBoundsChanged();
             self->handleEvent(Event::Restored{});
         }
     });
@@ -1256,7 +1265,7 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 
 void GLFWNativeWindow::captureWindowedBounds()
 {
-    if (windowMode_ != WindowMode::Windowed || !handle_) {
+    if (windowMode_ != WindowMode::Windowed || !handle_ || isMinimized() || isMaximized()) {
         return;
     }
 
@@ -1284,6 +1293,11 @@ void GLFWNativeWindow::handleMonitorChanged(uint32_t monitorId)
             .monitorId = currentMonitorId_,
             .mode = windowMode_,
         });
+}
+
+void GLFWNativeWindow::handleWindowedBoundsChanged()
+{
+    captureWindowedBounds();
 }
 
 VulkanHandle GLFWNativeWindow::createVulkanSurface(void* instance) const
@@ -1341,6 +1355,12 @@ const InputStateData* GLFWNativeWindow::inputData() const noexcept
 void GLFWNativeWindow::setTitle(const std::string& title)
 {
     glfwSetWindowTitle(handle_.get(), title.c_str());
+}
+
+std::string GLFWNativeWindow::title() const
+{
+    const char* currentTitle = glfwGetWindowTitle(handle_.get());
+    return currentTitle ? std::string{ currentTitle } : std::string{};
 }
 
 void GLFWNativeWindow::setSize(int width, int height)
@@ -1703,6 +1723,56 @@ void GLFWNativeWindow::setVisible(bool visible) const noexcept
     }
 }
 
+WindowPlacement GLFWNativeWindow::windowedPlacement() const noexcept
+{
+    WindowPlacement placement{
+        .x = windowedX_,
+        .y = windowedY_,
+        .width = windowedWidth_,
+        .height = windowedHeight_,
+        .maximized = isMaximized(),
+    };
+
+    if (windowMode_ == WindowMode::Windowed && !isMinimized() && !isMaximized()) {
+        auto [x, y] = position();
+        auto [width, height] = size();
+        if (width > 0 && height > 0) {
+            placement = WindowPlacement{
+                .x = x,
+                .y = y,
+                .width = width,
+                .height = height,
+                .maximized = false,
+            };
+        }
+    }
+
+    return placement;
+}
+
+void GLFWNativeWindow::setWindowedPlacement(const WindowPlacement& placement)
+{
+    if (placement.width <= 0 || placement.height <= 0) {
+        return;
+    }
+
+    if (windowMode_ != WindowMode::Windowed) {
+        setWindowMode(WindowMode::Windowed, currentMonitorId_, std::nullopt);
+    }
+
+    glfwRestoreWindow(handle_.get());
+    windowedX_ = placement.x;
+    windowedY_ = placement.y;
+    windowedWidth_ = placement.width;
+    windowedHeight_ = placement.height;
+    glfwSetWindowPos(handle_.get(), placement.x, placement.y);
+    glfwSetWindowSize(handle_.get(), placement.width, placement.height);
+
+    if (placement.maximized) {
+        glfwMaximizeWindow(handle_.get());
+    }
+}
+
 std::pair<int, int> GLFWNativeWindow::size() const noexcept
 {
     int width, height;
@@ -1954,6 +2024,26 @@ std::optional<GamepadState> GLFWWindowContext::gamepadState(uint32_t gamepadId) 
 bool GLFWWindowContext::isRawMouseMotionSupported() const
 {
     return glfwRawMouseMotionSupported() == GLFW_TRUE;
+}
+
+std::optional<std::string> GLFWWindowContext::keyName(Key key, int scancode) const
+{
+    const char* name = glfwGetKeyName(inputmap::toGlfwKey(key), scancode);
+    if (!name) {
+        return std::nullopt;
+    }
+
+    return std::string{ name };
+}
+
+int GLFWWindowContext::keyScancode(Key key) const noexcept
+{
+    const int glfwKey = inputmap::toGlfwKey(key);
+    if (glfwKey == GLFW_KEY_UNKNOWN) {
+        return -1;
+    }
+
+    return glfwGetKeyScancode(glfwKey);
 }
 
 bool GLFWWindowContext::setClipboardText(std::string_view text) const

@@ -153,6 +153,7 @@ public:
 
     void handleEvent(Event&& event);
     void handleMonitorChanged(uint32_t monitorId);
+    void handleWindowedBoundsChanged();
     void registerCallbacks();
 
     NativeHandles nativeHandles() const;
@@ -167,6 +168,7 @@ public:
     const InputStateData* inputData() const noexcept;
 
     void setTitle(const std::string& title);
+    std::string title() const;
     void setSize(int width, int height);
     void setPosition(int x, int y);
     void setSizeLimits(const SizeLimits& limits);
@@ -193,6 +195,8 @@ public:
     void requestAttention();
     void setFocus(bool focus) const noexcept;
     void setVisible(bool visible) const noexcept;
+    WindowPlacement windowedPlacement() const noexcept;
+    void setWindowedPlacement(const WindowPlacement& placement);
     std::pair<int, int> size() const noexcept;
     std::pair<int, int> position() const noexcept;
     std::pair<uint32_t, uint32_t> framebufferSize() const noexcept;
@@ -253,6 +257,8 @@ public:
     std::vector<GamepadInfo> gamepads() const;
     std::optional<GamepadState> gamepadState(uint32_t gamepadId) const;
     bool isRawMouseMotionSupported() const;
+    std::optional<std::string> keyName(Key key, int scancode) const;
+    int keyScancode(Key key) const noexcept;
     bool setClipboardText(std::string_view text) const;
     std::optional<std::string> clipboardText() const;
 

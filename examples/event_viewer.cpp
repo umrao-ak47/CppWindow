@@ -17,6 +17,8 @@ constexpr const char* eventName()
         return "FramebufferResized";
     } else if constexpr (std::is_same_v<T, Event::Closed>) {
         return "Closed";
+    } else if constexpr (std::is_same_v<T, Event::Refresh>) {
+        return "Refresh";
     } else if constexpr (std::is_same_v<T, Event::Resized>) {
         return "Resized";
     } else if constexpr (std::is_same_v<T, Event::Moved>) {
@@ -113,7 +115,12 @@ void logEvent(const Event& event)
             std::cout << " codepoint=" << static_cast<uint32_t>(payload.unicode);
         } else if constexpr (
             std::is_same_v<T, Event::KeyPressed> || std::is_same_v<T, Event::KeyReleased>) {
+            auto& ctx = WindowContext::get();
+            const auto name = ctx.keyName(payload.key, payload.scancode);
             std::cout << " key=" << enumIndex(payload.key) << " scancode=" << payload.scancode;
+            if (name) {
+                std::cout << " name=" << *name;
+            }
             logModifiers(payload.modifiers);
         } else if constexpr (std::is_same_v<T, Event::MouseWheelScrolled>) {
             std::cout << " delta=" << payload.deltaX << ", " << payload.deltaY

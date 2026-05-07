@@ -37,9 +37,31 @@ int main()
             return 1;
         }
 
+        if (utilityWindow.title() != "CppWindow Runtime Smoke") {
+            std::cerr << "Utility window reported unexpected title\n";
+            return 1;
+        }
+
         const auto [width, height] = utilityWindow.size();
         if (width <= 0 || height <= 0) {
             std::cerr << "Utility window reported invalid size\n";
+            return 1;
+        }
+
+        const auto placement = utilityWindow.windowedPlacement();
+        if (placement.width <= 0 || placement.height <= 0) {
+            std::cerr << "Utility window reported invalid placement\n";
+            return 1;
+        }
+
+        utilityWindow.setWindowedPlacement(
+            cwin::WindowPlacement{ .x = placement.x,
+                                   .y = placement.y,
+                                   .width = 320,
+                                   .height = 240 });
+
+        if (context.keyScancode(cwin::Key::A) < 0) {
+            std::cerr << "Key scancode lookup failed\n";
             return 1;
         }
 

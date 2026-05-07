@@ -121,17 +121,17 @@ ctest --preset multi-release
 Useful example targets:
 
 ```bash
-cmake --build --preset dev --target example_basic
-cmake --build --preset dev --target example_opengl
-cmake --build --preset dev --target example_window_controls
-cmake --build --preset dev --target example_fullscreen_toggle
-cmake --build --preset dev --target example_input_helpers
-cmake --build --preset dev --target example_app_utilities
-cmake --build --preset dev --target example_particles
-cmake --build --preset imgui --target example_imgui_minimal
-cmake --build --preset imgui --target example_imgui_overlay
-cmake --build --preset imgui --target example_imgui_input_capture
-cmake --build --preset imgui --target example_imgui_style_demo
+cmake --build --preset dev --target cppwindow_example_basic
+cmake --build --preset dev --target cppwindow_example_opengl
+cmake --build --preset dev --target cppwindow_example_window_controls
+cmake --build --preset dev --target cppwindow_example_fullscreen_toggle
+cmake --build --preset dev --target cppwindow_example_input_helpers
+cmake --build --preset dev --target cppwindow_example_app_utilities
+cmake --build --preset dev --target cppwindow_example_particles
+cmake --build --preset imgui --target cppwindow_example_imgui_minimal
+cmake --build --preset imgui --target cppwindow_example_imgui_overlay
+cmake --build --preset imgui --target cppwindow_example_imgui_input_capture
+cmake --build --preset imgui --target cppwindow_example_imgui_style_demo
 ```
 
 Build the generated API reference:
@@ -462,10 +462,10 @@ Build the included ImGui examples with:
 
 ```bash
 cmake --preset imgui
-cmake --build --preset imgui --target example_imgui_minimal
-cmake --build --preset imgui --target example_imgui_overlay
-cmake --build --preset imgui --target example_imgui_input_capture
-cmake --build --preset imgui --target example_imgui_style_demo
+cmake --build --preset imgui --target cppwindow_example_imgui_minimal
+cmake --build --preset imgui --target cppwindow_example_imgui_overlay
+cmake --build --preset imgui --target cppwindow_example_imgui_input_capture
+cmake --build --preset imgui --target cppwindow_example_imgui_style_demo
 ```
 
 ### Extensions
@@ -666,6 +666,7 @@ dispatcher.disconnect(keyHandler);
 Common event types:
 
 - `Closed`
+- `Refresh`
 - `Resized`
 - `FramebufferResized`
 - `Moved`
@@ -699,6 +700,10 @@ if (const auto* key = event.getIf<cwin::Event::KeyPressed>()) {
     }
 }
 ```
+
+Use `WindowContext::keyName(key, scancode)` when UI needs the platform/localized
+label for a key, and `keyScancode(key)` when storing platform scancode-based
+bindings.
 
 ## Gamepads
 
@@ -773,6 +778,7 @@ Basic controls:
 
 ```cpp
 window.setTitle("New Title");
+std::string title = window.title();
 window.setSize(1024, 768);
 window.setPosition(100, 100);
 window.setResizable(true);
@@ -785,6 +791,13 @@ window.setFocus(true);
 if (window.isResizable() && window.isDecorated()) {
     // Update app UI state.
 }
+```
+
+Persist restored/windowed placement separately from fullscreen state:
+
+```cpp
+cwin::WindowPlacement saved = window.windowedPlacement();
+window.setWindowedPlacement(saved);
 ```
 
 State controls:

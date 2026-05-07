@@ -900,6 +900,11 @@ void Window::setTitle(const std::string& title)
     impl_->window.setTitle(title);
 }
 
+std::string Window::title() const
+{
+    return impl_->window.title();
+}
+
 void Window::setSize(int width, int height)
 {
     impl_->window.setSize(width, height);
@@ -1033,6 +1038,16 @@ void Window::setFocus(bool focus) const noexcept
 void Window::setVisible(bool visible) const noexcept
 {
     impl_->window.setVisible(visible);
+}
+
+WindowPlacement Window::windowedPlacement() const noexcept
+{
+    return impl_->window.windowedPlacement();
+}
+
+void Window::setWindowedPlacement(const WindowPlacement& placement)
+{
+    impl_->window.setWindowedPlacement(placement);
 }
 
 std::pair<int, int> Window::size() const noexcept
@@ -1390,6 +1405,16 @@ std::optional<GamepadState> WindowContext::gamepadState(uint32_t gamepadId) cons
 bool WindowContext::isRawMouseMotionSupported() const
 {
     return impl_->context.isRawMouseMotionSupported();
+}
+
+std::optional<std::string> WindowContext::keyName(Key key, int scancode) const
+{
+    return impl_->context.keyName(key, scancode);
+}
+
+int WindowContext::keyScancode(Key key) const noexcept
+{
+    return impl_->context.keyScancode(key);
 }
 
 bool WindowContext::setClipboardText(std::string_view text) const
