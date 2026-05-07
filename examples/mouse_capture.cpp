@@ -36,7 +36,7 @@ int main()
                       .build();
     window.makeContextCurrent();
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     const bool useVSync = true;
@@ -77,13 +77,13 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [deltaX, deltaY] = window.getInput().getMouseDelta();
+        auto [deltaX, deltaY] = window.input().mouseDelta();
         displayDeltaX += deltaX;
         displayDeltaY += deltaY;
 
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         const std::string status =
-            makeStatus(displayDeltaX, displayDeltaY, window.getInput().isMouseInside(), captured);
+            makeStatus(displayDeltaX, displayDeltaY, window.input().isMouseInside(), captured);
         example::drawStatusBar(fbWidth, fbHeight, status);
         window.swapBuffers();
 

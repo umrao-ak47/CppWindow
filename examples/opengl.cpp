@@ -19,7 +19,7 @@ int main()
     window.makeContextCurrent();
 
     // Load OpenGL
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
 
@@ -41,7 +41,7 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
         glClearColor(0.5f, 0.1f, 0.9f, 1.f);

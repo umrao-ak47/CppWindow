@@ -37,7 +37,7 @@ int main()
             return 1;
         }
 
-        const auto [width, height] = utilityWindow.getSize();
+        const auto [width, height] = utilityWindow.size();
         if (width <= 0 || height <= 0) {
             std::cerr << "Utility window reported invalid size\n";
             return 1;
@@ -61,7 +61,7 @@ int main()
                             .build();
         glWindow.makeContextCurrent();
 
-        const auto loader = context.getProcLoader();
+        const auto loader = context.procLoader();
         if (loader == nullptr || loader("glGetString") == nullptr) {
             std::cerr << "OpenGL procedure loader did not resolve glGetString\n";
             return 1;

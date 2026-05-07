@@ -15,7 +15,7 @@ static_assert(std::is_constructible_v<cwin::imgui::Context>);
 static_assert(std::is_constructible_v<cwin::imgui::Context, cwin::imgui::ContextOptions>);
 static_assert(!std::is_copy_constructible_v<cwin::imgui::Context>);
 static_assert(!std::is_move_constructible_v<cwin::imgui::Context>);
-static_assert(std::is_same_v<decltype(std::declval<const cwin::imgui::Context&>().get()),
+static_assert(std::is_same_v<decltype(std::declval<const cwin::imgui::Context&>().handle()),
                              ImGuiContext*>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::imgui::Context&>().makeCurrent()),

@@ -93,7 +93,7 @@ int main()
                       .build();
     window.makeContextCurrent();
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     const bool useVSync = true;
@@ -108,7 +108,7 @@ int main()
     }
 
     std::cout << "Monitors:\n";
-    for (const auto& monitor : ctx.getMonitors()) {
+    for (const auto& monitor : ctx.monitors()) {
         std::cout << "  [" << monitor.id << "] " << monitor.name << " "
                   << monitor.currentVideoMode.width << "x" << monitor.currentVideoMode.height
                   << " scale " << monitor.contentScaleX << "x" << monitor.contentScaleY;
@@ -185,12 +185,12 @@ int main()
             } else if (key.key == Key::O) {
                 opacity -= 0.1f;
                 window.setOpacity(opacity);
-                opacity = window.getOpacity();
+                opacity = window.opacity();
                 std::cout << "opacity: " << opacity << "\n";
             } else if (key.key == Key::P) {
                 opacity += 0.1f;
                 window.setOpacity(opacity);
-                opacity = window.getOpacity();
+                opacity = window.opacity();
                 std::cout << "opacity: " << opacity << "\n";
             } else if (key.key == Key::L) {
                 window.setSizeLimits(
@@ -223,7 +223,7 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
         const bool decorated = window.isDecorated();

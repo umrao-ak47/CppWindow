@@ -35,7 +35,7 @@ EventDispatcher makeWindowDispatcher(Window& window, std::string_view name, int&
 void updateWindowTitle(Window& window, std::string_view name, int presses)
 {
     if (!window.shouldClose()) {
-        auto [x, y] = window.getInput().getMousePosition();
+        auto [x, y] = window.input().mousePosition();
         std::ostringstream title;
         title << name << " - Space presses " << presses << " - mouse " << static_cast<int>(x)
               << ", " << static_cast<int>(y);

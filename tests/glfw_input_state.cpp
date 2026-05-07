@@ -42,7 +42,7 @@ int main()
             .deltaX = 1.0,
             .deltaY = -2.0,
         });
-    const auto scrollDelta = input.getScrollDelta();
+    const auto scrollDelta = input.scrollDelta();
     assert(scrollDelta.first == 1.0);
     assert(scrollDelta.second == -2.0);
 
@@ -52,7 +52,7 @@ int main()
             .posX = 10.0,
             .posY = 20.0,
         });
-    auto mouseDelta = input.getMouseDelta();
+    auto mouseDelta = input.mouseDelta();
     assert(mouseDelta.first == 0.0);
     assert(mouseDelta.second == 0.0);
 
@@ -61,12 +61,12 @@ int main()
             .posX = 15.0,
             .posY = 18.0,
         });
-    mouseDelta = input.getMouseDelta();
+    mouseDelta = input.mouseDelta();
     assert(mouseDelta.first == 5.0);
     assert(mouseDelta.second == -2.0);
 
     input.reset();
-    mouseDelta = input.getMouseDelta();
+    mouseDelta = input.mouseDelta();
     assert(mouseDelta.first == 0.0);
     assert(mouseDelta.second == 0.0);
 

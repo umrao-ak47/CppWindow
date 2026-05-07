@@ -32,9 +32,9 @@ int main()
         cwin::imgui::Layer<example::OpenGLImGuiRenderer> imguiLayer(window, "#version 410");
 
         ActionMap actions;
-        const ActionId quit = actions.getOrCreateActionId("quit");
-        const ActionId moveLeft = actions.getOrCreateActionId("move_left");
-        const ActionId moveRight = actions.getOrCreateActionId("move_right");
+        const ActionId quit = actions.defineAction("quit");
+        const ActionId moveLeft = actions.defineAction("move_left");
+        const ActionId moveRight = actions.defineAction("move_right");
         actions.bindKey(quit, Key::Escape)
             .bindKey(moveLeft, Key::A)
             .bindKey(moveRight, Key::D)
@@ -63,7 +63,7 @@ int main()
 
             const bool uiCapturesInput = imguiLayer.wantsMouse() || imguiLayer.wantsKeyboard();
             actions.setContextEnabled("gameplay", !uiCapturesInput);
-            actions.update(window.getInput());
+            actions.update(window.input());
 
             if (actions.isPressed(quit)) {
                 window.requestClose();

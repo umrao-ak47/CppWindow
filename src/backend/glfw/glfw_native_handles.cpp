@@ -30,7 +30,7 @@
 
 namespace cwin {
 
-NativeHandles GLFWNativeWindow::getNativeHandles() const
+NativeHandles GLFWNativeWindow::nativeHandles() const
 {
     NativeHandles handles{};
 

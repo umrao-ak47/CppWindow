@@ -26,6 +26,9 @@ add_subdirectory(external/CppWindow)
 target_link_libraries(my_app PRIVATE cppwindow::cppwindow)
 ```
 
+If the parent project already provides a target named `glfw`, CppWindow uses
+that target. Otherwise it fetches GLFW 3.4 with CMake `FetchContent`.
+
 Then include the public header:
 
 ```cpp
@@ -33,7 +36,26 @@ Then include the public header:
 ```
 
 CppWindow currently builds a static library target named
-`cppwindow::cppwindow`.
+`cppwindow::cppwindow`. GLFW is private to CppWindow's public C++ API, but a
+static `libcppwindow.a` still needs GLFW at final link time. Installed packages
+therefore call `find_dependency(glfw3)` and expose GLFW as a link dependency of
+the imported CppWindow target. When CppWindow fetched GLFW during installation,
+GLFW is installed into the same prefix for convenience.
+
+Installed package usage:
+
+```cmake
+find_package(cppwindow CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE cppwindow::cppwindow)
+```
+
+## API Shape
+
+Public methods use `lowerCamelCase`. State queries use noun-style accessors
+such as `window.input()`, `window.framebufferSize()`, `ctx.monitors()`, and
+`actions.binding(id)`. Boolean state uses `isX()` or `hasX()`. The main
+exceptions are `WindowContext::get()` for the singleton context and
+`Event::getIf<T>()`, which follows the `std::get_if` naming pattern.
 
 ## Build This Repository
 
@@ -75,6 +97,15 @@ ctest --preset installed
 cmake --preset installed-imgui
 cmake --build --preset installed-imgui
 ctest --preset installed-imgui
+
+cd ../subproject_consumer
+cmake --preset subproject
+cmake --build --preset subproject
+ctest --preset subproject
+
+cmake --preset provided-glfw
+cmake --build --preset provided-glfw
+ctest --preset provided-glfw
 ```
 
 Use the `multi` preset when you want Debug and Release from one build tree:
@@ -90,20 +121,13 @@ ctest --preset multi-release
 Useful example targets:
 
 ```bash
-cmake --build build --target example_basic
-cmake --build build --target example_opengl
-cmake --build build --target example_window_controls
-cmake --build build --target example_fullscreen_toggle
-cmake --build build --target example_text_input
-cmake --build build --target example_gamepad
-cmake --build build --target example_app_utilities
-cmake --build build --target example_input_helpers
-cmake --build build --target example_multi_window
-cmake --build build --target example_event_viewer
-cmake --build build --target example_monitor_info
-cmake --build build --target example_native_handles
-cmake --build build --target example_fixed_step_loop
-cmake --build build --target example_particles
+cmake --build --preset dev --target example_basic
+cmake --build --preset dev --target example_opengl
+cmake --build --preset dev --target example_window_controls
+cmake --build --preset dev --target example_fullscreen_toggle
+cmake --build --preset dev --target example_input_helpers
+cmake --build --preset dev --target example_app_utilities
+cmake --build --preset dev --target example_particles
 cmake --build --preset imgui --target example_imgui_minimal
 cmake --build --preset imgui --target example_imgui_overlay
 cmake --build --preset imgui --target example_imgui_input_capture
@@ -152,7 +176,7 @@ int main()
 
 `pollEvents()` clears each window event queue, updates previous input state,
 then collects new events for the current frame. Read `window.events()` and
-`window.getInput()` after polling.
+`window.input()` after polling.
 
 For event-driven tools that can sleep while idle, use `waitEvents()` or
 `waitEventsTimeout(seconds)` instead. `postEmptyEvent()` wakes a thread blocked
@@ -196,13 +220,13 @@ auto window = cwin::WindowBuilder{}
                   .build();
 
 window.makeContextCurrent();
-gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()));
+gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()));
 window.setVSync(true);
 
 while (!window.shouldClose()) {
     ctx.pollEvents();
 
-    auto [fbWidth, fbHeight] = window.getFramebufferSize();
+    auto [fbWidth, fbHeight] = window.framebufferSize();
     glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
     glClearColor(0.05f, 0.08f, 0.10f, 1.0f);
@@ -222,7 +246,7 @@ Use `DpiScale` when you need to convert between window coordinates and
 framebuffer pixels:
 
 ```cpp
-cwin::DpiScale dpi = window.getDpiScale();
+cwin::DpiScale dpi = window.dpiScale();
 
 auto [framebufferX, framebufferY] =
     dpi.windowToFramebuffer(mouseX, mouseY);
@@ -231,8 +255,8 @@ auto [framebufferWidth, framebufferHeight] =
     dpi.windowSizeToFramebuffer(uiWidth, uiHeight);
 ```
 
-`Window::getDpiScale()` uses the window content scale. `WindowContext` also
-offers `getDpiScale(monitorId)` for monitor-level conversions.
+`Window::dpiScale()` uses the window content scale. `WindowContext` also
+offers `dpiScale(monitorId)` for monitor-level conversions.
 
 ## Vulkan Windows
 
@@ -250,7 +274,7 @@ auto window = cwin::WindowBuilder{}
 Query required instance extensions from the context:
 
 ```cpp
-auto extensions = cwin::WindowContext::get().getRequiredVulkanInstanceExtensions();
+auto extensions = cwin::WindowContext::get().requiredVulkanInstanceExtensions();
 ```
 
 After creating the Vulkan instance, create the window surface:
@@ -267,14 +291,14 @@ Vulkan headers.
 Input state is per-window.
 
 ```cpp
-const auto& input = window.getInput();
+const auto& input = window.input();
 
 if (input.isKeyPressed(cwin::Key::Escape)) {
     window.requestClose();
 }
 
 if (input.isMouseButtonDown(cwin::MouseButton::Left)) {
-    auto [x, y] = input.getMousePosition();
+    auto [x, y] = input.mousePosition();
 }
 ```
 
@@ -282,13 +306,13 @@ Available input queries:
 
 - `isKeyDown`, `isKeyPressed`, `isKeyReleased`
 - `isMouseButtonDown`, `isMouseButtonPressed`, `isMouseButtonReleased`
-- `getMousePosition`
-- `getMouseDelta`
-- `getScrollDelta`
+- `mousePosition`
+- `mouseDelta`
+- `scrollDelta`
 - `isMouseInside`
 
 `Pressed` and `Released` are frame transitions. Poll once per frame before
-reading them. `getMouseDelta()` and `getScrollDelta()` are also per-frame
+reading them. `mouseDelta()` and `scrollDelta()` are also per-frame
 values and reset on the next `pollEvents()`.
 
 Mouse control helpers live on `Window`:
@@ -309,11 +333,11 @@ For named commands, use `ActionMap`:
 
 ```cpp
 cwin::ActionMap actions;
-const cwin::ActionId jump = actions.getOrCreateActionId("jump");
-const cwin::ActionId saveAction = actions.getOrCreateActionId("save");
-const cwin::ActionId leftDash = actions.getOrCreateActionId("left_dash");
-const cwin::ActionId fire = actions.getOrCreateActionId("fire");
-const cwin::ActionId moveX = actions.getOrCreateActionId("move_x");
+const cwin::ActionId jump = actions.defineAction("jump");
+const cwin::ActionId saveAction = actions.defineAction("save");
+const cwin::ActionId leftDash = actions.defineAction("left_dash");
+const cwin::ActionId fire = actions.defineAction("fire");
+const cwin::ActionId moveX = actions.defineAction("move_x");
 
 actions.bindKey(jump, cwin::Key::Space)
        .bindKey(saveAction, cwin::Key::S, cwin::Modifiers{ .control = true })
@@ -327,7 +351,7 @@ actions.bindKey(jump, cwin::Key::Space)
 
 while (!window.shouldClose()) {
     ctx.pollEvents();
-    actions.update(window.getInput(), ctx.getGamepadState(0));
+    actions.update(window.input(), ctx.gamepadState(0));
 
     if (actions.isPressed(jump)) {
         jump();
@@ -337,12 +361,12 @@ while (!window.shouldClose()) {
         save();
     }
 
-    move(actions.getAxis(moveX));
+    move(actions.axisValue(moveX));
 }
 ```
 
 Use action names at setup or rebinding-screen boundaries, then keep the
-returned `ActionId` values for per-frame queries. `getActions()` returns
+returned `ActionId` values for per-frame queries. `actions()` returns
 snapshots with names, metadata, bindings, and current state for debug UI or
 rebinding menus.
 
@@ -564,7 +588,7 @@ actions.setContextEnabled(
     "gameplay",
     !imguiLayer.wantsMouse() && !imguiLayer.wantsKeyboard());
 
-actions.update(window.getInput());
+actions.update(window.input());
 ```
 
 Use `wantsTextInput()` when text entry should disable additional shortcuts:
@@ -684,22 +708,22 @@ layer. This gives stable button and axis names across common controllers.
 ```cpp
 auto& ctx = cwin::WindowContext::get();
 
-for (const auto& gamepad : ctx.getGamepads()) {
+for (const auto& gamepad : ctx.gamepads()) {
     std::cout << gamepad.id << ": " << gamepad.name << "\n";
 }
 
-if (auto state = ctx.getGamepadState(0)) {
+if (auto state = ctx.gamepadState(0)) {
     if (state->isButtonDown(cwin::GamepadButton::A)) {
         jump();
     }
 
-    float moveX = state->getAxis(cwin::GamepadAxis::LeftX);
-    float moveY = state->getAxis(cwin::GamepadAxis::LeftY);
+    float moveX = state->axis(cwin::GamepadAxis::LeftX);
+    float moveY = state->axis(cwin::GamepadAxis::LeftY);
 }
 ```
 
-`getGamepads()` lists present joystick devices and tells you whether each one
-has a standard mapping. `getGamepadState()` returns a value only for present
+`gamepads()` lists present joystick devices and tells you whether each one
+has a standard mapping. `gamepadState()` returns a value only for present
 devices with a standard mapping.
 
 Gamepad connection, button, and axis events are delivered to window event
@@ -720,15 +744,14 @@ if (!ctx.setClipboardText("Copied from my app")) {
     // Clipboard write was rejected by the platform/backend.
 }
 
-if (auto text = ctx.tryGetClipboardText()) {
+if (auto text = ctx.clipboardText()) {
     paste(*text);
 }
 ```
 
-`tryGetClipboardText()` returns `std::nullopt` when the backend reports a
-clipboard read error. `getClipboardText()` is still available as a convenience
-fallback and returns an empty string on failure. `hasClipboardText()` reports
-whether readable, non-empty clipboard text is currently available.
+`clipboardText()` returns `std::nullopt` when the backend reports a clipboard
+read error. `hasClipboardText()` reports whether readable, non-empty clipboard
+text is currently available.
 
 Drag-and-drop files onto a window to receive `Event::FilesDropped`:
 
@@ -864,7 +887,7 @@ window.setWindowMode(cwin::WindowMode::Windowed);
 For exclusive fullscreen on macOS/Retina displays, cursor size and content
 scaling can appear to change because the system may change the active display
 mode and framebuffer scale. Treat this as platform behavior. Render using
-`getFramebufferSize()`, handle `FramebufferResized`, and listen for
+`framebufferSize()`, handle `FramebufferResized`, and listen for
 `ContentScaleChanged`.
 
 If you want smooth app switching and stable desktop scaling, use
@@ -877,16 +900,16 @@ Use `WindowContext` to inspect monitors and video modes:
 ```cpp
 auto& ctx = cwin::WindowContext::get();
 
-for (const auto& monitor : ctx.getMonitors()) {
+for (const auto& monitor : ctx.monitors()) {
     std::cout << monitor.id << ": " << monitor.name << "\n";
     std::cout << monitor.currentVideoMode.width << "x"
               << monitor.currentVideoMode.height << "\n";
 }
 
-auto primary = ctx.getPrimaryMonitor();
-auto modes = ctx.getVideoModes(primary ? primary->id : 0);
-auto [scaleX, scaleY] = ctx.getContentScale();
-cwin::DpiScale dpi = ctx.getDpiScale();
+auto primary = ctx.primaryMonitor();
+auto modes = ctx.videoModes(primary ? primary->id : 0);
+auto [scaleX, scaleY] = ctx.contentScale();
+cwin::DpiScale dpi = ctx.dpiScale();
 ```
 
 Pass a monitor id to `setWindowMode` when you want a specific monitor:
@@ -931,7 +954,7 @@ while (!window.shouldClose()) {
 
     ctx.pollEvents();
     handleEvents(window.events());
-    update(frame.deltaSeconds, window.getInput());
+    update(frame.deltaSeconds, window.input());
     render(window);
     window.swapBuffers(); // OpenGL apps; Vulkan apps present from their renderer.
     limiter.wait();
@@ -968,10 +991,10 @@ while (!window.shouldClose()) {
 
 ## Native Handles
 
-`window.getNativeHandles()` returns platform handles for interop:
+`window.nativeHandles()` returns platform handles for interop:
 
 ```cpp
-cwin::NativeHandles handles = window.getNativeHandles();
+cwin::NativeHandles handles = window.nativeHandles();
 ```
 
 `handles.system` identifies the platform. The `window` and `display` pointers
@@ -997,24 +1020,37 @@ GLFW error code and description, are included in `what()` when available.
 
 ## Examples
 
-- `examples/basic.cpp`: minimal no-API window.
-- `examples/opengl.cpp`: OpenGL setup and presentation.
+Core and loop examples:
+
+- `examples/basic.cpp`: minimal no-API window using `waitEventsTimeout()`.
+- `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation,
+  FPS sampling, and frame limiting.
+- `examples/multi_window.cpp`: independent event/input handling for multiple windows.
+- `examples/event_viewer.cpp`: logs all event payloads with `Event::visit`.
+
+Window, platform, and input examples:
+
 - `examples/window_controls.cpp`: resizing, decoration, opacity, cursor modes,
   cursor images, icons, attention requests, monitor info, and content-scale events.
 - `examples/fullscreen_toggle.cpp`: windowed, fullscreen, borderless
   fullscreen, and exclusive fullscreen modes.
+- `examples/borderless.cpp`: initially undecorated OpenGL window.
 - `examples/mouse_capture.cpp`: captured cursor behavior with an OpenGL status bar.
 - `examples/text_input.cpp`: Unicode text input events.
 - `examples/gamepad.cpp`: standard gamepad queries and events.
 - `examples/app_utilities.cpp`: clipboard, file drop events, FPS, and frame limiting.
 - `examples/input_helpers.cpp`: action bindings, mouse positioning, and raw mouse mode.
-- `examples/multi_window.cpp`: independent event/input handling for multiple windows.
-- `examples/event_viewer.cpp`: logs all event payloads with `Event::visit`.
 - `examples/monitor_info.cpp`: monitor metadata, content scale, and video modes.
 - `examples/native_handles.cpp`: platform handle and Vulkan extension inspection.
-- `examples/fixed_step_loop.cpp`: caller-owned loop with fixed-step simulation,
-  FPS sampling, and frame limiting.
-- `examples/particles.cpp`: richer OpenGL rendering example.
+
+OpenGL rendering examples:
+
+- `examples/opengl.cpp`: minimal OpenGL setup and presentation.
+- `examples/heightmap.cpp`: simple 3D terrain rendering.
+- `examples/particles.cpp`: richer OpenGL particle rendering.
+
+ImGui examples:
+
 - `extras/imgui/examples/imgui_minimal.cpp`: smallest ImGui setup with
   `cwin::imgui::Layer`.
 - `extras/imgui/examples/imgui_overlay.cpp`: optional Dear ImGui layer with an

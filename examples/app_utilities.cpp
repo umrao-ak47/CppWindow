@@ -48,7 +48,7 @@ int main()
                     std::cout << "clipboard set failed\n";
                 }
             } else if (key.key == Key::V) {
-                if (auto text = ctx.tryGetClipboardText()) {
+                if (auto text = ctx.clipboardText()) {
                     std::cout << "clipboard: " << *text << "\n";
                 } else {
                     std::cout << "clipboard unavailable\n";

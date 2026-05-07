@@ -38,12 +38,12 @@ int main()
         });
 
         ActionMap actions;
-        const ActionId quit = actions.getOrCreateActionId("quit");
-        const ActionId moveLeft = actions.getOrCreateActionId("move_left");
-        const ActionId moveRight = actions.getOrCreateActionId("move_right");
-        const ActionId moveUp = actions.getOrCreateActionId("move_up");
-        const ActionId moveDown = actions.getOrCreateActionId("move_down");
-        const ActionId boost = actions.getOrCreateActionId("boost");
+        const ActionId quit = actions.defineAction("quit");
+        const ActionId moveLeft = actions.defineAction("move_left");
+        const ActionId moveRight = actions.defineAction("move_right");
+        const ActionId moveUp = actions.defineAction("move_up");
+        const ActionId moveDown = actions.defineAction("move_down");
+        const ActionId boost = actions.defineAction("boost");
         actions.bindKey(quit, Key::Escape)
             .bindKey(moveLeft, Key::A)
             .bindKey(moveRight, Key::D)
@@ -77,7 +77,7 @@ int main()
 
             const bool uiCapturesInput = imguiLayer.wantsMouse() || imguiLayer.wantsKeyboard();
             actions.setContextEnabled("gameplay", !uiCapturesInput);
-            actions.update(window.getInput());
+            actions.update(window.input());
 
             if (actions.isPressed(quit)) {
                 window.requestClose();
@@ -111,7 +111,7 @@ int main()
                 1.0f);
 
             example::clearFramebuffer(window, { 0.045f, 0.055f, 0.065f, 1.0f });
-            auto [fbWidth, fbHeight] = window.getFramebufferSize();
+            auto [fbWidth, fbHeight] = window.framebufferSize();
             constexpr int MarkerSize = 54;
             const int markerPixelX = static_cast<int>(
                 markerX * static_cast<float>(fbWidth > MarkerSize ? fbWidth - MarkerSize : 0));

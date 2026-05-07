@@ -4,17 +4,13 @@ project(cppwindow_imgui_target_provider LANGUAGES CXX)
 
 include(FetchContent)
 
-set(CPPWINDOW_TEST_IMGUI_SOURCE_DIR
-    "${CMAKE_CURRENT_LIST_DIR}/../../.deps/imgui")
-if(NOT EXISTS "${CPPWINDOW_TEST_IMGUI_SOURCE_DIR}/imgui.h")
-    FetchContent_Declare(
-        cppwindow_test_imgui_source
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG        v1.92.7
-        SOURCE_DIR     "${CPPWINDOW_TEST_IMGUI_SOURCE_DIR}"
-    )
-    FetchContent_MakeAvailable(cppwindow_test_imgui_source)
-endif()
+FetchContent_Declare(
+    cppwindow_test_imgui_source
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG        v1.92.7
+)
+FetchContent_MakeAvailable(cppwindow_test_imgui_source)
+set(CPPWINDOW_TEST_IMGUI_SOURCE_DIR "${cppwindow_test_imgui_source_SOURCE_DIR}")
 
 add_library(test_imgui STATIC
     "${CPPWINDOW_TEST_IMGUI_SOURCE_DIR}/imgui.cpp"

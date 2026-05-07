@@ -94,17 +94,17 @@ struct InputStateData
                !mouseButtonStates.test(index) && previousMouseButtonStates.test(index);
     }
 
-    [[nodiscard]] std::pair<double, double> getMousePosition() const noexcept
+    [[nodiscard]] std::pair<double, double> mousePosition() const noexcept
     {
         return { mousePositionX, mousePositionY };
     }
 
-    [[nodiscard]] std::pair<double, double> getMouseDelta() const noexcept
+    [[nodiscard]] std::pair<double, double> mouseDelta() const noexcept
     {
         return { mouseDeltaX, mouseDeltaY };
     }
 
-    [[nodiscard]] std::pair<double, double> getScrollDelta() const noexcept
+    [[nodiscard]] std::pair<double, double> scrollDelta() const noexcept
     {
         return { scrollDeltaX, scrollDeltaY };
     }

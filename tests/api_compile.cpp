@@ -107,21 +107,21 @@ static_assert(std::is_same_v<
 
 static_assert(std::is_same_v<decltype(cwin::WindowContext::get()), cwin::WindowContext&>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().getMonitors()),
+              decltype(std::declval<const cwin::WindowContext&>().monitors()),
               std::vector<cwin::MonitorInfo>>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>()
-                           .getRequiredVulkanInstanceExtensions()),
+                           .requiredVulkanInstanceExtensions()),
               std::vector<std::string>>);
 
 static_assert(std::is_same_v<
-              decltype(std::declval<cwin::ActionMap&>().getOrCreateActionId("jump")),
+              decltype(std::declval<cwin::ActionMap&>().defineAction("jump")),
               cwin::ActionId>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::ActionMap&>().getActionId(std::string_view{})),
+              decltype(std::declval<const cwin::ActionMap&>().findAction(std::string_view{})),
               cwin::ActionId>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::ActionMap&>().getActions()),
+              decltype(std::declval<const cwin::ActionMap&>().actions()),
               std::vector<cwin::ActionInfo>>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().setMetadata(
@@ -154,7 +154,7 @@ static_assert(std::is_same_v<
                   cwin::AxisDirection::Positive)),
               cwin::ActionMap&>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::ActionMap&>().getBinding(cwin::ActionId{ 1 })),
+              decltype(std::declval<const cwin::ActionMap&>().binding(cwin::ActionId{ 1 })),
               const cwin::ActionBinding*>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::ActionMap&>().isPressed(cwin::ActionId{ 1 })),
@@ -184,7 +184,7 @@ static_assert(std::is_same_v<
                   std::declval<std::span<const cwin::ImageRgba>>())),
               bool>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::Window&>().getFramebufferSize()),
+              decltype(std::declval<const cwin::Window&>().framebufferSize()),
               std::pair<uint32_t, uint32_t>>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isResizable()), bool>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isDecorated()), bool>);

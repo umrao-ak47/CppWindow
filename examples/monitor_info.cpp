@@ -15,7 +15,7 @@ void printVideoMode(const VideoMode& mode)
 
 void printMonitors(const WindowContext& ctx)
 {
-    const auto monitors = ctx.getMonitors();
+    const auto monitors = ctx.monitors();
     std::cout << "Monitors: " << monitors.size() << "\n";
 
     for (const auto& monitor : monitors) {
@@ -30,7 +30,7 @@ void printMonitors(const WindowContext& ctx)
         printVideoMode(monitor.currentVideoMode);
         std::cout << "\n";
 
-        const auto modes = ctx.getVideoModes(monitor.id);
+        const auto modes = ctx.videoModes(monitor.id);
         const std::size_t count = modes.size() < 5 ? modes.size() : 5;
         for (std::size_t i = 0; i < count; ++i) {
             std::cout << "  mode " << i << ": ";
@@ -78,9 +78,9 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [width, height] = window.getSize();
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
-        const DpiScale dpi = window.getDpiScale();
+        auto [width, height] = window.size();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
+        const DpiScale dpi = window.dpiScale();
         auto [scaledWidth, scaledHeight] = dpi.windowSizeToFramebuffer(width, height);
 
         std::ostringstream title;

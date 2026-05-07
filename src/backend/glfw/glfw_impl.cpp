@@ -390,9 +390,9 @@ bool GLFWInputState::isMouseButtonReleased(MouseButton button) const
     return data_.isMouseButtonReleased(button);
 }
 
-std::pair<double, double> GLFWInputState::getMousePosition() const
+std::pair<double, double> GLFWInputState::mousePosition() const
 {
-    return data_.getMousePosition();
+    return data_.mousePosition();
 }
 
 void GLFWInputState::setMousePosition(double x, double y)
@@ -402,14 +402,14 @@ void GLFWInputState::setMousePosition(double x, double y)
     data_.hasMousePosition = true;
 }
 
-std::pair<double, double> GLFWInputState::getMouseDelta() const
+std::pair<double, double> GLFWInputState::mouseDelta() const
 {
-    return data_.getMouseDelta();
+    return data_.mouseDelta();
 }
 
-std::pair<double, double> GLFWInputState::getScrollDelta() const
+std::pair<double, double> GLFWInputState::scrollDelta() const
 {
-    return data_.getScrollDelta();
+    return data_.scrollDelta();
 }
 
 bool GLFWInputState::isMouseInside() const
@@ -1333,7 +1333,7 @@ std::span<const Event> GLFWNativeWindow::events() const noexcept
     return std::span<const Event>{ storage_->eventQueue.data(), storage_->eventQueue.size() };
 }
 
-const InputStateData* GLFWNativeWindow::getInputData() const noexcept
+const InputStateData* GLFWNativeWindow::inputData() const noexcept
 {
     return &storage_->inputState.data();
 }
@@ -1703,7 +1703,7 @@ void GLFWNativeWindow::setVisible(bool visible) const noexcept
     }
 }
 
-std::pair<int, int> GLFWNativeWindow::getSize() const noexcept
+std::pair<int, int> GLFWNativeWindow::size() const noexcept
 {
     int width, height;
     glfwGetWindowSize(handle_.get(), &width, &height);
@@ -1713,7 +1713,7 @@ std::pair<int, int> GLFWNativeWindow::getSize() const noexcept
     };
 }
 
-std::pair<int, int> GLFWNativeWindow::getPosition() const noexcept
+std::pair<int, int> GLFWNativeWindow::position() const noexcept
 {
     int x, y;
     glfwGetWindowPos(handle_.get(), &x, &y);
@@ -1723,7 +1723,7 @@ std::pair<int, int> GLFWNativeWindow::getPosition() const noexcept
     };
 }
 
-std::pair<uint32_t, uint32_t> GLFWNativeWindow::getFramebufferSize() const noexcept
+std::pair<uint32_t, uint32_t> GLFWNativeWindow::framebufferSize() const noexcept
 {
     int width, height;
     glfwGetFramebufferSize(handle_.get(), &width, &height);
@@ -1733,7 +1733,7 @@ std::pair<uint32_t, uint32_t> GLFWNativeWindow::getFramebufferSize() const noexc
     };
 }
 
-std::pair<float, float> GLFWNativeWindow::getContentScale() const noexcept
+std::pair<float, float> GLFWNativeWindow::contentScale() const noexcept
 {
     float xScale = 1.0f;
     float yScale = 1.0f;
@@ -1744,12 +1744,12 @@ std::pair<float, float> GLFWNativeWindow::getContentScale() const noexcept
     };
 }
 
-float GLFWNativeWindow::getOpacity() const noexcept
+float GLFWNativeWindow::opacity() const noexcept
 {
     return glfwGetWindowOpacity(handle_.get());
 }
 
-CursorMode GLFWNativeWindow::getCursorMode() const noexcept
+CursorMode GLFWNativeWindow::cursorMode() const noexcept
 {
     return cursorMode_;
 }
@@ -1759,7 +1759,7 @@ bool GLFWNativeWindow::isRawMouseMotionEnabled() const noexcept
     return glfwGetInputMode(handle_.get(), GLFW_RAW_MOUSE_MOTION) == GLFW_TRUE;
 }
 
-WindowMode GLFWNativeWindow::getWindowMode() const noexcept
+WindowMode GLFWNativeWindow::windowMode() const noexcept
 {
     return windowMode_;
 }
@@ -1852,7 +1852,7 @@ void GLFWWindowContext::postEmptyEvent() noexcept
     glfwPostEmptyEvent();
 }
 
-ProcLoader GLFWWindowContext::getProcLoader() const
+ProcLoader GLFWWindowContext::procLoader() const
 {
     return [](const char* name) -> ProcFunction {
         return glfwGetProcAddress(name);
@@ -1864,7 +1864,7 @@ bool GLFWWindowContext::isVulkanSupported() const
     return glfwVulkanSupported();
 }
 
-std::vector<std::string> GLFWWindowContext::getRequiredVulkanExtensions() const
+std::vector<std::string> GLFWWindowContext::requiredVulkanExtensions() const
 {
     uint32_t count = 0;
     const char** ext = glfwGetRequiredInstanceExtensions(&count);
@@ -1875,7 +1875,7 @@ std::vector<std::string> GLFWWindowContext::getRequiredVulkanExtensions() const
     return std::vector<std::string>(ext, ext + count);
 }
 
-std::vector<MonitorInfo> GLFWWindowContext::getMonitors() const
+std::vector<MonitorInfo> GLFWWindowContext::monitors() const
 {
     std::vector<MonitorInfo> infos;
     auto monitors = getOrderedMonitors();
@@ -1888,7 +1888,7 @@ std::vector<MonitorInfo> GLFWWindowContext::getMonitors() const
     return infos;
 }
 
-std::optional<MonitorInfo> GLFWWindowContext::getPrimaryMonitor() const
+std::optional<MonitorInfo> GLFWWindowContext::primaryMonitor() const
 {
     GLFWmonitor* primary = glfwGetPrimaryMonitor();
     if (!primary) {
@@ -1898,7 +1898,7 @@ std::optional<MonitorInfo> GLFWWindowContext::getPrimaryMonitor() const
     return toMonitorInfo(primary, 0, true);
 }
 
-std::vector<VideoMode> GLFWWindowContext::getVideoModes(uint32_t monitorId) const
+std::vector<VideoMode> GLFWWindowContext::videoModes(uint32_t monitorId) const
 {
     GLFWmonitor* monitor = getMonitorById(monitorId);
     if (!monitor) {
@@ -1919,7 +1919,7 @@ std::vector<VideoMode> GLFWWindowContext::getVideoModes(uint32_t monitorId) cons
     return result;
 }
 
-std::pair<float, float> GLFWWindowContext::getContentScale(uint32_t monitorId) const
+std::pair<float, float> GLFWWindowContext::contentScale(uint32_t monitorId) const
 {
     GLFWmonitor* monitor = getMonitorById(monitorId);
     if (!monitor) {
@@ -1932,7 +1932,7 @@ std::pair<float, float> GLFWWindowContext::getContentScale(uint32_t monitorId) c
     return { xScale, yScale };
 }
 
-std::vector<GamepadInfo> GLFWWindowContext::getGamepads() const
+std::vector<GamepadInfo> GLFWWindowContext::gamepads() const
 {
     std::vector<GamepadInfo> gamepads;
     gamepads.reserve(MaxGamepads);
@@ -1946,7 +1946,7 @@ std::vector<GamepadInfo> GLFWWindowContext::getGamepads() const
     return gamepads;
 }
 
-std::optional<GamepadState> GLFWWindowContext::getGamepadState(uint32_t gamepadId) const
+std::optional<GamepadState> GLFWWindowContext::gamepadState(uint32_t gamepadId) const
 {
     return readStandardGamepadState(gamepadId);
 }
@@ -1956,19 +1956,15 @@ bool GLFWWindowContext::isRawMouseMotionSupported() const
     return glfwRawMouseMotionSupported() == GLFW_TRUE;
 }
 
-bool GLFWWindowContext::setClipboardText(const std::string& text) const
+bool GLFWWindowContext::setClipboardText(std::string_view text) const
 {
+    const std::string ownedText{ text };
     clearGlfwError();
-    glfwSetClipboardString(nullptr, text.c_str());
+    glfwSetClipboardString(nullptr, ownedText.c_str());
     return takeGlfwError().code == GLFW_NO_ERROR;
 }
 
-std::string GLFWWindowContext::getClipboardText() const
-{
-    return tryGetClipboardText().value_or(std::string());
-}
-
-std::optional<std::string> GLFWWindowContext::tryGetClipboardText() const
+std::optional<std::string> GLFWWindowContext::clipboardText() const
 {
     clearGlfwError();
     const char* text = glfwGetClipboardString(nullptr);

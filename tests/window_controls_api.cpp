@@ -28,9 +28,9 @@ static_assert(std::is_same_v<
                   std::declval<cwin::EventDispatcher::Subscription>())),
               bool>);
 static_assert(
-    std::is_same_v<decltype(std::declval<const cwin::Window&>().getDpiScale()), cwin::DpiScale>);
+    std::is_same_v<decltype(std::declval<const cwin::Window&>().dpiScale()), cwin::DpiScale>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().getDpiScale()),
+              decltype(std::declval<const cwin::WindowContext&>().dpiScale()),
               cwin::DpiScale>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::Window&>().setCursorShape(cwin::CursorShape::Hand)),
@@ -64,7 +64,7 @@ static_assert(std::is_same_v<
 static_assert(
     std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().hasClipboardText()), bool>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().tryGetClipboardText()),
+              decltype(std::declval<const cwin::WindowContext&>().clipboardText()),
               std::optional<std::string>>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isResizable()), bool>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isDecorated()), bool>);
@@ -166,8 +166,8 @@ int main()
 
     assert(gamepadState.isButtonDown(cwin::GamepadButton::A));
     assert(!gamepadState.isButtonDown(cwin::GamepadButton::B));
-    assert(gamepadState.getAxis(cwin::GamepadAxis::LeftX) == 0.5f);
-    assert(gamepadState.getAxis(static_cast<cwin::GamepadAxis>(99)) == 0.0f);
+    assert(gamepadState.axis(cwin::GamepadAxis::LeftX) == 0.5f);
+    assert(gamepadState.axis(static_cast<cwin::GamepadAxis>(99)) == 0.0f);
     assert(cwin::MaxGamepads == 16);
     assert(cwin::MaxJoysticks == 16);
 

@@ -121,12 +121,12 @@ int main()
         std::ostringstream title;
         title << "Gamepad";
 
-        const auto gamepads = ctx.getGamepads();
+        const auto gamepads = ctx.gamepads();
         if (gamepads.empty()) {
             title << " - no device";
-        } else if (const auto state = ctx.getGamepadState(gamepads.front().id)) {
-            title << " - " << state->name << " LX " << state->getAxis(GamepadAxis::LeftX) << " LY "
-                  << state->getAxis(GamepadAxis::LeftY) << " A "
+        } else if (const auto state = ctx.gamepadState(gamepads.front().id)) {
+            title << " - " << state->name << " LX " << state->axis(GamepadAxis::LeftX) << " LY "
+                  << state->axis(GamepadAxis::LeftY) << " A "
                   << state->isButtonDown(GamepadButton::A);
         } else {
             title << " - " << gamepads.front().name << " (no standard mapping)";

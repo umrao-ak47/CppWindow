@@ -33,10 +33,10 @@ int main()
     }
 
     cwin::ActionMap actions;
-    const cwin::ActionId jump = actions.getOrCreateActionId("jump");
+    const cwin::ActionId jump = actions.defineAction("jump");
     actions.setMetadata(jump, { "Jump", "Test installed action API" })
         .bindKey(jump, cwin::Key::Space);
-    if (!jump || !actions.hasAction(jump) || actions.getBinding(jump) == nullptr) {
+    if (!jump || !actions.hasAction(jump) || actions.binding(jump) == nullptr) {
         return 1;
     }
 

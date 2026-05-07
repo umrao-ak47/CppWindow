@@ -294,7 +294,7 @@ int main()
 
     window.makeContextCurrent();
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {
         throw std::runtime_error("Failed to load OpenGL");
     }
 
@@ -411,7 +411,7 @@ int main()
             static_cast<GLsizeiptr>(vertices.size() * sizeof(ParticleVertex)),
             vertices.data());
 
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         fbWidth = std::max<uint32_t>(fbWidth, 1);
         fbHeight = std::max<uint32_t>(fbHeight, 1);
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));

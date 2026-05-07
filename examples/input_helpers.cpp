@@ -62,7 +62,7 @@ int main()
                       .build();
     window.makeContextCurrent();
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     const bool useVSync = true;
@@ -71,16 +71,16 @@ int main()
     frameLimiter.setVSyncEnabled(useVSync);
 
     ActionMap actions;
-    const ActionId quit = actions.getOrCreateActionId("quit");
-    const ActionId jump = actions.getOrCreateActionId("jump");
-    const ActionId moveX = actions.getOrCreateActionId("move_x");
-    const ActionId fire = actions.getOrCreateActionId("fire");
-    const ActionId save = actions.getOrCreateActionId("save");
-    const ActionId leftShiftA = actions.getOrCreateActionId("left_shift_a");
-    const ActionId rightShiftA = actions.getOrCreateActionId("right_shift_a");
-    const ActionId toggleGameplay = actions.getOrCreateActionId("toggle_gameplay");
-    const ActionId capture = actions.getOrCreateActionId("capture");
-    const ActionId centerMouse = actions.getOrCreateActionId("center_mouse");
+    const ActionId quit = actions.defineAction("quit");
+    const ActionId jump = actions.defineAction("jump");
+    const ActionId moveX = actions.defineAction("move_x");
+    const ActionId fire = actions.defineAction("fire");
+    const ActionId save = actions.defineAction("save");
+    const ActionId leftShiftA = actions.defineAction("left_shift_a");
+    const ActionId rightShiftA = actions.defineAction("right_shift_a");
+    const ActionId toggleGameplay = actions.defineAction("toggle_gameplay");
+    const ActionId capture = actions.defineAction("capture");
+    const ActionId centerMouse = actions.defineAction("center_mouse");
 
     actions.setMetadata(jump, { "Jump", "Keyboard Space or gamepad A" })
         .setMetadata(moveX, { "Move X", "Gamepad left stick horizontal axis" })
@@ -132,7 +132,7 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        actions.update(window.getInput(), ctx.getGamepadState(0));
+        actions.update(window.input(), ctx.gamepadState(0));
 
         if (actions.isPressed(quit)) {
             window.requestClose();
@@ -157,13 +157,13 @@ int main()
         }
 
         if (actions.isPressed(centerMouse)) {
-            auto [width, height] = window.getSize();
+            auto [width, height] = window.size();
             window.setMousePosition(width * 0.5, height * 0.5);
         }
 
-        auto [x, y] = window.getInput().getMousePosition();
-        auto [dx, dy] = window.getInput().getMouseDelta();
-        const DpiScale dpi = window.getDpiScale();
+        auto [x, y] = window.input().mousePosition();
+        auto [dx, dy] = window.input().mouseDelta();
+        const DpiScale dpi = window.dpiScale();
         auto [fbMouseX, fbMouseY] = dpi.windowToFramebuffer(x, y);
 
         std::ostringstream state;
@@ -175,12 +175,12 @@ int main()
               << " CAP:" << (captured ? "ON" : "OFF") << " RAW:" << (rawMouse ? "ON" : "OFF");
 
         std::ostringstream mouse;
-        mouse << std::fixed << std::setprecision(2) << "MOVE:" << actions.getAxis(moveX)
+        mouse << std::fixed << std::setprecision(2) << "MOVE:" << actions.axisValue(moveX)
               << " MOUSE:" << static_cast<int>(x) << "," << static_cast<int>(y)
               << " FB:" << static_cast<int>(fbMouseX) << "," << static_cast<int>(fbMouseY)
               << " DELTA:" << static_cast<int>(dx) << "," << static_cast<int>(dy);
 
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         drawInputPanel(
             fbWidth,
             fbHeight,

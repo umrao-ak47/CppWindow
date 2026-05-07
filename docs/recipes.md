@@ -37,7 +37,7 @@ while (!window.shouldClose()) {
     ctx.pollEvents();
     dispatcher.dispatch(window.events());
 
-    updateGame(frame.deltaSeconds, window.getInput());
+    updateGame(frame.deltaSeconds, window.input());
     renderGame(window);
     window.swapBuffers();
 
@@ -231,7 +231,7 @@ actions.setContextEnabled(
     !imguiLayer.wantsMouse() && !imguiLayer.wantsKeyboard());
 actions.setContextEnabled("shortcuts", !imguiLayer.wantsTextInput());
 
-actions.update(window.getInput());
+actions.update(window.input());
 ```
 
 ## Action Contexts
@@ -241,11 +241,11 @@ menu or text field is focused.
 
 ```cpp
 cwin::ActionMap actions;
-const cwin::ActionId jump = actions.getOrCreateActionId("jump");
-const cwin::ActionId fire = actions.getOrCreateActionId("fire");
-const cwin::ActionId moveX = actions.getOrCreateActionId("move_x");
-const cwin::ActionId saveAction = actions.getOrCreateActionId("save");
-const cwin::ActionId leftDash = actions.getOrCreateActionId("left_dash");
+const cwin::ActionId jump = actions.defineAction("jump");
+const cwin::ActionId fire = actions.defineAction("fire");
+const cwin::ActionId moveX = actions.defineAction("move_x");
+const cwin::ActionId saveAction = actions.defineAction("save");
+const cwin::ActionId leftDash = actions.defineAction("left_dash");
 
 actions.bindKey(jump, cwin::Key::Space)
        .bindMouseButton(fire, cwin::MouseButton::Left)
@@ -262,7 +262,7 @@ while (!window.shouldClose()) {
     ctx.pollEvents();
 
     actions.setContextEnabled("gameplay", !menuOpen);
-    actions.update(window.getInput(), ctx.getGamepadState(0));
+    actions.update(window.input(), ctx.gamepadState(0));
 
     if (actions.isPressed(saveAction)) {
         saveProject();
@@ -272,7 +272,7 @@ while (!window.shouldClose()) {
         jump();
     }
 
-    movePlayer(actions.getAxis(moveX));
+    movePlayer(actions.axisValue(moveX));
 }
 ```
 
@@ -348,6 +348,6 @@ dispatcher
     });
 ```
 
-Renderers should size viewports and swapchains from `getFramebufferSize()` and
-handle `Event::FramebufferResized`. Use `getDpiScale()` when converting between
+Renderers should size viewports and swapchains from `framebufferSize()` and
+handle `Event::FramebufferResized`. Use `dpiScale()` when converting between
 window coordinates and framebuffer pixels.

@@ -424,7 +424,7 @@ Platform::Platform(Window& window)
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.SetClipboardTextFn = &Platform::setClipboardText;
-    io.GetClipboardTextFn = &Platform::getClipboardText;
+    io.GetClipboardTextFn = &Platform::clipboardText;
     io.ClipboardUserData = this;
 }
 
@@ -462,8 +462,8 @@ void Platform::newFrame()
 {
     ImGuiIO& io = ImGui::GetIO();
 
-    auto [width, height] = window_->getSize();
-    auto [framebufferWidth, framebufferHeight] = window_->getFramebufferSize();
+    auto [width, height] = window_->size();
+    auto [framebufferWidth, framebufferHeight] = window_->framebufferSize();
     width = std::max(width, 0);
     height = std::max(height, 0);
 
@@ -514,10 +514,10 @@ bool Platform::mouseCursorUpdatesEnabled() const noexcept
     return updateMouseCursor_;
 }
 
-const char* Platform::getClipboardText(void* userData)
+const char* Platform::clipboardText(void* userData)
 {
     auto* platform = static_cast<Platform*>(userData);
-    platform->clipboardText_ = WindowContext::get().tryGetClipboardText().value_or(std::string{});
+    platform->clipboardText_ = WindowContext::get().clipboardText().value_or(std::string{});
     return platform->clipboardText_.c_str();
 }
 

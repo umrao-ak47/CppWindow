@@ -85,10 +85,10 @@ public:
     bool isMouseButtonDown(MouseButton button) const;
     bool isMouseButtonPressed(MouseButton button) const;
     bool isMouseButtonReleased(MouseButton button) const;
-    std::pair<double, double> getMousePosition() const;
+    std::pair<double, double> mousePosition() const;
     void setMousePosition(double x, double y);
-    std::pair<double, double> getMouseDelta() const;
-    std::pair<double, double> getScrollDelta() const;
+    std::pair<double, double> mouseDelta() const;
+    std::pair<double, double> scrollDelta() const;
     bool isMouseInside() const;
 
     [[nodiscard]] const InputStateData& data() const noexcept;
@@ -155,7 +155,7 @@ public:
     void handleMonitorChanged(uint32_t monitorId);
     void registerCallbacks();
 
-    NativeHandles getNativeHandles() const;
+    NativeHandles nativeHandles() const;
     VulkanHandle createVulkanSurface(void* instance) const;
     void makeContextCurrent();
     void swapBuffers();
@@ -164,7 +164,7 @@ public:
     void requestClose() noexcept;
 
     std::span<const Event> events() const noexcept;
-    const InputStateData* getInputData() const noexcept;
+    const InputStateData* inputData() const noexcept;
 
     void setTitle(const std::string& title);
     void setSize(int width, int height);
@@ -193,14 +193,14 @@ public:
     void requestAttention();
     void setFocus(bool focus) const noexcept;
     void setVisible(bool visible) const noexcept;
-    std::pair<int, int> getSize() const noexcept;
-    std::pair<int, int> getPosition() const noexcept;
-    std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept;
-    std::pair<float, float> getContentScale() const noexcept;
-    float getOpacity() const noexcept;
-    CursorMode getCursorMode() const noexcept;
+    std::pair<int, int> size() const noexcept;
+    std::pair<int, int> position() const noexcept;
+    std::pair<uint32_t, uint32_t> framebufferSize() const noexcept;
+    std::pair<float, float> contentScale() const noexcept;
+    float opacity() const noexcept;
+    CursorMode cursorMode() const noexcept;
     bool isRawMouseMotionEnabled() const noexcept;
-    WindowMode getWindowMode() const noexcept;
+    WindowMode windowMode() const noexcept;
     bool isResizable() const noexcept;
     bool isDecorated() const noexcept;
     bool isFloating() const noexcept;
@@ -243,19 +243,18 @@ public:
     void waitEventsTimeout(double timeoutSeconds) noexcept;
     void postEmptyEvent() noexcept;
 
-    ProcLoader getProcLoader() const;
+    ProcLoader procLoader() const;
     bool isVulkanSupported() const;
-    std::vector<std::string> getRequiredVulkanExtensions() const;
-    std::vector<MonitorInfo> getMonitors() const;
-    std::optional<MonitorInfo> getPrimaryMonitor() const;
-    std::vector<VideoMode> getVideoModes(uint32_t monitorId) const;
-    std::pair<float, float> getContentScale(uint32_t monitorId) const;
-    std::vector<GamepadInfo> getGamepads() const;
-    std::optional<GamepadState> getGamepadState(uint32_t gamepadId) const;
+    std::vector<std::string> requiredVulkanExtensions() const;
+    std::vector<MonitorInfo> monitors() const;
+    std::optional<MonitorInfo> primaryMonitor() const;
+    std::vector<VideoMode> videoModes(uint32_t monitorId) const;
+    std::pair<float, float> contentScale(uint32_t monitorId) const;
+    std::vector<GamepadInfo> gamepads() const;
+    std::optional<GamepadState> gamepadState(uint32_t gamepadId) const;
     bool isRawMouseMotionSupported() const;
-    bool setClipboardText(const std::string& text) const;
-    std::string getClipboardText() const;
-    std::optional<std::string> tryGetClipboardText() const;
+    bool setClipboardText(std::string_view text) const;
+    std::optional<std::string> clipboardText() const;
 
 private:
     GLFWerrorfun previousErrorCallback_ = nullptr;

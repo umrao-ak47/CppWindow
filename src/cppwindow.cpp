@@ -331,7 +331,7 @@ bool GamepadState::isButtonDown(GamepadButton button) const noexcept
     return buttons[static_cast<size_t>(button)];
 }
 
-float GamepadState::getAxis(GamepadAxis axis) const noexcept
+float GamepadState::axis(GamepadAxis axis) const noexcept
 {
     if (!isValidGamepadAxis(axis)) {
         return 0.0f;
@@ -378,19 +378,19 @@ bool InputState::isMouseButtonReleased(MouseButton button) const
     return state_->isMouseButtonReleased(button);
 }
 
-std::pair<double, double> InputState::getMousePosition() const
+std::pair<double, double> InputState::mousePosition() const
 {
-    return state_->getMousePosition();
+    return state_->mousePosition();
 }
 
-std::pair<double, double> InputState::getMouseDelta() const
+std::pair<double, double> InputState::mouseDelta() const
 {
-    return state_->getMouseDelta();
+    return state_->mouseDelta();
 }
 
-std::pair<double, double> InputState::getScrollDelta() const
+std::pair<double, double> InputState::scrollDelta() const
 {
-    return state_->getScrollDelta();
+    return state_->scrollDelta();
 }
 
 bool InputState::isMouseInside() const
@@ -425,12 +425,12 @@ float sanitizeDeadzone(float deadzone) noexcept
 
 }  // namespace
 
-ActionId ActionMap::getOrCreateActionId(std::string action)
+ActionId ActionMap::defineAction(std::string action)
 {
-    return getOrCreateEntry(std::move(action)).id;
+    return ensureEntry(std::move(action)).id;
 }
 
-ActionId ActionMap::getActionId(std::string_view action) const noexcept
+ActionId ActionMap::findAction(std::string_view action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry ? entry->id : ActionId{};
@@ -446,7 +446,7 @@ bool ActionMap::hasAction(ActionId action) const noexcept
     return findEntry(action) != nullptr;
 }
 
-std::vector<ActionInfo> ActionMap::getActions() const
+std::vector<ActionInfo> ActionMap::actions() const
 {
     std::vector<ActionInfo> actions;
     actions.reserve(entries_.size());
@@ -475,7 +475,7 @@ ActionMap& ActionMap::setMetadata(ActionId action, ActionMetadata metadata)
     return *this;
 }
 
-const ActionMetadata* ActionMap::getMetadata(ActionId action) const noexcept
+const ActionMetadata* ActionMap::metadata(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry ? &entry->metadata : nullptr;
@@ -712,13 +712,13 @@ bool ActionMap::isReleased(ActionId action) const
     return entry && !entry->down && entry->previousDown;
 }
 
-float ActionMap::getAxis(ActionId action) const
+float ActionMap::axisValue(ActionId action) const
 {
     const Entry* entry = findEntry(action);
     return entry ? entry->axisValue : 0.0f;
 }
 
-const ActionBinding* ActionMap::getBinding(ActionId action) const noexcept
+const ActionBinding* ActionMap::binding(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry ? &entry->binding : nullptr;
@@ -798,7 +798,7 @@ const ActionMap::ContextState* ActionMap::findContext(std::string_view context) 
     return nullptr;
 }
 
-ActionMap::Entry& ActionMap::getOrCreateEntry(std::string action)
+ActionMap::Entry& ActionMap::ensureEntry(std::string action)
 {
     if (Entry* entry = findEntry(action)) {
         return *entry;
@@ -842,7 +842,7 @@ struct Window::Impl
 };
 
 Window::Window(std::unique_ptr<Impl> impl)
-    : inputState_(impl->window.getInputData()),
+    : inputState_(impl->window.inputData()),
       impl_(std::move(impl))
 {
 }
@@ -855,9 +855,9 @@ Window::Window(Window&& other) noexcept
 
 Window::~Window() = default;
 
-NativeHandles Window::getNativeHandles() const
+NativeHandles Window::nativeHandles() const
 {
-    return impl_->window.getNativeHandles();
+    return impl_->window.nativeHandles();
 }
 
 VulkanHandle Window::createVulkanSurface(void* instance) const
@@ -890,7 +890,7 @@ std::span<const Event> Window::events() const noexcept
     return impl_->window.events();
 }
 
-const InputState& Window::getInput() const noexcept
+const InputState& Window::input() const noexcept
 {
     return inputState_;
 }
@@ -1035,40 +1035,40 @@ void Window::setVisible(bool visible) const noexcept
     impl_->window.setVisible(visible);
 }
 
-std::pair<int, int> Window::getSize() const noexcept
+std::pair<int, int> Window::size() const noexcept
 {
-    return impl_->window.getSize();
+    return impl_->window.size();
 }
 
-std::pair<int, int> Window::getPosition() const noexcept
+std::pair<int, int> Window::position() const noexcept
 {
-    return impl_->window.getPosition();
+    return impl_->window.position();
 }
 
-std::pair<uint32_t, uint32_t> Window::getFramebufferSize() const noexcept
+std::pair<uint32_t, uint32_t> Window::framebufferSize() const noexcept
 {
-    return impl_->window.getFramebufferSize();
+    return impl_->window.framebufferSize();
 }
 
-std::pair<float, float> Window::getContentScale() const noexcept
+std::pair<float, float> Window::contentScale() const noexcept
 {
-    return impl_->window.getContentScale();
+    return impl_->window.contentScale();
 }
 
-DpiScale Window::getDpiScale() const noexcept
+DpiScale Window::dpiScale() const noexcept
 {
-    auto [x, y] = getContentScale();
+    auto [x, y] = contentScale();
     return DpiScale{ .x = x, .y = y };
 }
 
-float Window::getOpacity() const noexcept
+float Window::opacity() const noexcept
 {
-    return impl_->window.getOpacity();
+    return impl_->window.opacity();
 }
 
-CursorMode Window::getCursorMode() const noexcept
+CursorMode Window::cursorMode() const noexcept
 {
-    return impl_->window.getCursorMode();
+    return impl_->window.cursorMode();
 }
 
 bool Window::isRawMouseMotionEnabled() const noexcept
@@ -1076,9 +1076,9 @@ bool Window::isRawMouseMotionEnabled() const noexcept
     return impl_->window.isRawMouseMotionEnabled();
 }
 
-WindowMode Window::getWindowMode() const noexcept
+WindowMode Window::windowMode() const noexcept
 {
-    return impl_->window.getWindowMode();
+    return impl_->window.windowMode();
 }
 
 bool Window::isResizable() const noexcept
@@ -1336,9 +1336,9 @@ void WindowContext::postEmptyEvent() const noexcept
     impl_->context.postEmptyEvent();
 }
 
-ProcLoader WindowContext::getProcLoader() const
+ProcLoader WindowContext::procLoader() const
 {
-    return impl_->context.getProcLoader();
+    return impl_->context.procLoader();
 }
 
 bool WindowContext::isVulkanSupported() const
@@ -1346,45 +1346,45 @@ bool WindowContext::isVulkanSupported() const
     return impl_->context.isVulkanSupported();
 }
 
-std::vector<std::string> WindowContext::getRequiredVulkanInstanceExtensions() const
+std::vector<std::string> WindowContext::requiredVulkanInstanceExtensions() const
 {
-    return impl_->context.getRequiredVulkanExtensions();
+    return impl_->context.requiredVulkanExtensions();
 }
 
-std::vector<MonitorInfo> WindowContext::getMonitors() const
+std::vector<MonitorInfo> WindowContext::monitors() const
 {
-    return impl_->context.getMonitors();
+    return impl_->context.monitors();
 }
 
-std::optional<MonitorInfo> WindowContext::getPrimaryMonitor() const
+std::optional<MonitorInfo> WindowContext::primaryMonitor() const
 {
-    return impl_->context.getPrimaryMonitor();
+    return impl_->context.primaryMonitor();
 }
 
-std::vector<VideoMode> WindowContext::getVideoModes(uint32_t monitorId) const
+std::vector<VideoMode> WindowContext::videoModes(uint32_t monitorId) const
 {
-    return impl_->context.getVideoModes(monitorId);
+    return impl_->context.videoModes(monitorId);
 }
 
-std::pair<float, float> WindowContext::getContentScale(uint32_t monitorId) const
+std::pair<float, float> WindowContext::contentScale(uint32_t monitorId) const
 {
-    return impl_->context.getContentScale(monitorId);
+    return impl_->context.contentScale(monitorId);
 }
 
-DpiScale WindowContext::getDpiScale(uint32_t monitorId) const
+DpiScale WindowContext::dpiScale(uint32_t monitorId) const
 {
-    auto [x, y] = getContentScale(monitorId);
+    auto [x, y] = contentScale(monitorId);
     return DpiScale{ .x = x, .y = y };
 }
 
-std::vector<GamepadInfo> WindowContext::getGamepads() const
+std::vector<GamepadInfo> WindowContext::gamepads() const
 {
-    return impl_->context.getGamepads();
+    return impl_->context.gamepads();
 }
 
-std::optional<GamepadState> WindowContext::getGamepadState(uint32_t gamepadId) const
+std::optional<GamepadState> WindowContext::gamepadState(uint32_t gamepadId) const
 {
-    return impl_->context.getGamepadState(gamepadId);
+    return impl_->context.gamepadState(gamepadId);
 }
 
 bool WindowContext::isRawMouseMotionSupported() const
@@ -1392,25 +1392,20 @@ bool WindowContext::isRawMouseMotionSupported() const
     return impl_->context.isRawMouseMotionSupported();
 }
 
-bool WindowContext::setClipboardText(const std::string& text) const
+bool WindowContext::setClipboardText(std::string_view text) const
 {
     return impl_->context.setClipboardText(text);
 }
 
 bool WindowContext::hasClipboardText() const
 {
-    const auto text = tryGetClipboardText();
+    const auto text = clipboardText();
     return text.has_value() && !text->empty();
 }
 
-std::string WindowContext::getClipboardText() const
+std::optional<std::string> WindowContext::clipboardText() const
 {
-    return impl_->context.getClipboardText();
-}
-
-std::optional<std::string> WindowContext::tryGetClipboardText() const
-{
-    return impl_->context.tryGetClipboardText();
+    return impl_->context.clipboardText();
 }
 
 }  // namespace cwin

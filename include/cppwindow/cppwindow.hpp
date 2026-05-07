@@ -536,7 +536,7 @@ struct GamepadState
     /// Returns whether a standard gamepad button is down.
     [[nodiscard]] bool isButtonDown(GamepadButton button) const noexcept;
     /// Returns the current value for a standard gamepad axis.
-    [[nodiscard]] float getAxis(GamepadAxis axis) const noexcept;
+    [[nodiscard]] float axis(GamepadAxis axis) const noexcept;
 };
 
 //----------------------------------------------------------------------------
@@ -1328,11 +1328,11 @@ public:
     /// Returns whether a mouse button transitioned from down to up this frame.
     bool isMouseButtonReleased(MouseButton button) const;
     /// Returns the current cursor position in window coordinates.
-    std::pair<double, double> getMousePosition() const;
+    std::pair<double, double> mousePosition() const;
     /// Returns cursor movement since the previous poll/update.
-    std::pair<double, double> getMouseDelta() const;
+    std::pair<double, double> mouseDelta() const;
     /// Returns accumulated scroll delta since the previous poll/update.
-    std::pair<double, double> getScrollDelta() const;
+    std::pair<double, double> scrollDelta() const;
     /// Returns whether the cursor is inside the window content area.
     bool isMouseInside() const;
 
@@ -1452,20 +1452,20 @@ class ActionMap final
 {
 public:
     /// Returns an existing action id or creates one.
-    [[nodiscard]] ActionId getOrCreateActionId(std::string action);
+    [[nodiscard]] ActionId defineAction(std::string action);
     /// Returns an action id by name, or an empty id when missing.
-    [[nodiscard]] ActionId getActionId(std::string_view action) const noexcept;
+    [[nodiscard]] ActionId findAction(std::string_view action) const noexcept;
     /// Returns whether an action exists.
     [[nodiscard]] bool hasAction(std::string_view action) const noexcept;
     /// Returns whether an action exists.
     [[nodiscard]] bool hasAction(ActionId action) const noexcept;
     /// Returns a snapshot of every action, suitable for debug UI or rebinding screens.
-    [[nodiscard]] std::vector<ActionInfo> getActions() const;
+    [[nodiscard]] std::vector<ActionInfo> actions() const;
 
     /// Sets metadata for an existing action id.
     ActionMap& setMetadata(ActionId action, ActionMetadata metadata);
     /// Returns metadata for an action id, or null when missing.
-    [[nodiscard]] const ActionMetadata* getMetadata(ActionId action) const noexcept;
+    [[nodiscard]] const ActionMetadata* metadata(ActionId action) const noexcept;
 
     /// Binds a key plus optional required modifiers to an action id.
     ActionMap&
@@ -1540,9 +1540,9 @@ public:
     /// Returns whether an action id transitioned from down to up on the last update.
     [[nodiscard]] bool isReleased(ActionId action) const;
     /// Returns the current axis value for an action id, or zero when inactive.
-    [[nodiscard]] float getAxis(ActionId action) const;
+    [[nodiscard]] float axisValue(ActionId action) const;
     /// Returns the binding for an action id, or null if it does not exist.
-    [[nodiscard]] const ActionBinding* getBinding(ActionId action) const noexcept;
+    [[nodiscard]] const ActionBinding* binding(ActionId action) const noexcept;
 
 private:
     struct ContextState
@@ -1568,7 +1568,7 @@ private:
     [[nodiscard]] const Entry* findEntry(ActionId action) const noexcept;
     [[nodiscard]] ContextState* findContext(std::string_view context) noexcept;
     [[nodiscard]] const ContextState* findContext(std::string_view context) const noexcept;
-    [[nodiscard]] Entry& getOrCreateEntry(std::string action);
+    [[nodiscard]] Entry& ensureEntry(std::string action);
     [[nodiscard]] ActionId nextActionId() noexcept;
     static void resetEntryState(Entry& entry) noexcept;
 
@@ -1666,7 +1666,7 @@ private:
         const GamepadState& gamepad,
         const GamepadAxisBinding& binding) noexcept
     {
-        const float value = gamepad.getAxis(binding.axis);
+        const float value = gamepad.axis(binding.axis);
         const float magnitude = std::abs(value);
         if (magnitude <= binding.deadzone) {
             return 0.0f;
@@ -1714,7 +1714,7 @@ public:
     Window& operator=(Window&&) = delete;
 
     /// Returns platform-native handles for advanced integration.
-    NativeHandles getNativeHandles() const;
+    NativeHandles nativeHandles() const;
     /// Creates a Vulkan surface for the given native VkInstance pointer.
     VulkanHandle createVulkanSurface(void* instance) const;
     /// Makes this window's OpenGL context current on the calling thread.
@@ -1730,7 +1730,7 @@ public:
     /// Returns read-only events collected by the last context poll.
     std::span<const Event> events() const noexcept;
     /// Returns the input query interface for this window.
-    const InputState& getInput() const noexcept;
+    const InputState& input() const noexcept;
 
     /// Sets the window title.
     void setTitle(const std::string& title);
@@ -1792,23 +1792,23 @@ public:
     /// Shows or hides the window.
     void setVisible(bool visible) const noexcept;
     /// Returns the content size in screen coordinates.
-    std::pair<int, int> getSize() const noexcept;
+    std::pair<int, int> size() const noexcept;
     /// Returns the window position in virtual desktop coordinates.
-    std::pair<int, int> getPosition() const noexcept;
+    std::pair<int, int> position() const noexcept;
     /// Returns framebuffer pixel size.
-    std::pair<uint32_t, uint32_t> getFramebufferSize() const noexcept;
+    std::pair<uint32_t, uint32_t> framebufferSize() const noexcept;
     /// Returns content scale for the window.
-    std::pair<float, float> getContentScale() const noexcept;
+    std::pair<float, float> contentScale() const noexcept;
     /// Returns DPI/content scale conversion helper for this window.
-    DpiScale getDpiScale() const noexcept;
+    DpiScale dpiScale() const noexcept;
     /// Returns current window opacity.
-    float getOpacity() const noexcept;
+    float opacity() const noexcept;
     /// Returns current cursor mode.
-    CursorMode getCursorMode() const noexcept;
+    CursorMode cursorMode() const noexcept;
     /// Returns whether raw mouse motion is enabled for this window.
     bool isRawMouseMotionEnabled() const noexcept;
     /// Returns current presentation mode.
-    WindowMode getWindowMode() const noexcept;
+    WindowMode windowMode() const noexcept;
     /// Returns whether user resizing is enabled.
     bool isResizable() const noexcept;
     /// Returns whether platform decorations are enabled.
@@ -1921,35 +1921,33 @@ public:
     void postEmptyEvent() const noexcept;
 
     /// Returns a procedure loader for OpenGL or backend integration.
-    ProcLoader getProcLoader() const;
+    ProcLoader procLoader() const;
     /// Returns whether Vulkan presentation support is available.
     bool isVulkanSupported() const;
     /// Returns Vulkan instance extensions required by the active window backend.
-    std::vector<std::string> getRequiredVulkanInstanceExtensions() const;
+    std::vector<std::string> requiredVulkanInstanceExtensions() const;
     /// Returns metadata for all connected monitors.
-    std::vector<MonitorInfo> getMonitors() const;
+    std::vector<MonitorInfo> monitors() const;
     /// Returns the primary monitor, if one is available.
-    std::optional<MonitorInfo> getPrimaryMonitor() const;
+    std::optional<MonitorInfo> primaryMonitor() const;
     /// Returns video modes for a monitor id, defaulting to the primary monitor.
-    std::vector<VideoMode> getVideoModes(uint32_t monitorId = 0) const;
+    std::vector<VideoMode> videoModes(uint32_t monitorId = 0) const;
     /// Returns monitor content scale, defaulting to the primary monitor.
-    std::pair<float, float> getContentScale(uint32_t monitorId = 0) const;
+    std::pair<float, float> contentScale(uint32_t monitorId = 0) const;
     /// Returns DPI/content scale conversion helper for a monitor.
-    DpiScale getDpiScale(uint32_t monitorId = 0) const;
+    DpiScale dpiScale(uint32_t monitorId = 0) const;
     /// Returns connected standard gamepads.
-    std::vector<GamepadInfo> getGamepads() const;
+    std::vector<GamepadInfo> gamepads() const;
     /// Returns the current state for a standard gamepad.
-    std::optional<GamepadState> getGamepadState(uint32_t gamepadId = 0) const;
+    std::optional<GamepadState> gamepadState(uint32_t gamepadId = 0) const;
     /// Returns whether raw mouse motion is supported by the backend/platform.
     bool isRawMouseMotionSupported() const;
     /// Sets the platform clipboard text. Returns false when the backend reports failure.
-    [[nodiscard]] bool setClipboardText(const std::string& text) const;
+    [[nodiscard]] bool setClipboardText(std::string_view text) const;
     /// Returns whether clipboard text is currently available and non-empty.
     [[nodiscard]] bool hasClipboardText() const;
-    /// Returns the platform clipboard text, or an empty string on failure.
-    std::string getClipboardText() const;
     /// Returns platform clipboard text, or null when the backend reports failure.
-    [[nodiscard]] std::optional<std::string> tryGetClipboardText() const;
+    [[nodiscard]] std::optional<std::string> clipboardText() const;
 
 private:
     struct Impl;

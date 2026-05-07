@@ -63,8 +63,8 @@ public:
     Context(Context&&) = delete;
     Context& operator=(Context&&) = delete;
 
-    /// Returns the owned Dear ImGui context.
-    [[nodiscard]] ImGuiContext* get() const noexcept
+    /// Returns the owned Dear ImGui context handle.
+    [[nodiscard]] ImGuiContext* handle() const noexcept
     {
         return context_;
     }

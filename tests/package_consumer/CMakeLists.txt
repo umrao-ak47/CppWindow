@@ -13,6 +13,11 @@ else()
     find_package(cppwindow ${CPPWINDOW_VERSION} CONFIG REQUIRED)
 endif()
 
+if(NOT TARGET glfw)
+    message(FATAL_ERROR
+        "cppwindow_package_consumer: installed static cppwindow package must resolve glfw")
+endif()
+
 add_executable(cppwindow_package_consumer main.cpp)
 
 if(CPPWINDOW_PACKAGE_CONSUMER_USE_IMGUI)

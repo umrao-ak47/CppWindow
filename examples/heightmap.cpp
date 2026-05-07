@@ -198,7 +198,7 @@ int main()
 
     window.makeContextCurrent();
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader())))
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader())))
         throw std::runtime_error("Failed to load OpenGL");
 
     const bool useVSync = true;
@@ -268,7 +268,7 @@ int main()
         Vec3 eye{ std::cos(cameraAngle) * 3.0f, 2.0f, std::sin(cameraAngle) * 3.0f };
 
         Mat4 view = mat4LookAt(eye, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         fbWidth = std::max<uint32_t>(fbWidth, 1);
         fbHeight = std::max<uint32_t>(fbHeight, 1);
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));

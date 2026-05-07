@@ -54,7 +54,7 @@ public:
     [[nodiscard]] bool mouseCursorUpdatesEnabled() const noexcept;
 
 private:
-    static const char* getClipboardText(void* userData);
+    static const char* clipboardText(void* userData);
     static void setClipboardText(void* userData, const char* text);
 
     void updateMouseCursor();

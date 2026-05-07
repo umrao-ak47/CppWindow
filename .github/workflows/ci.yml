@@ -200,6 +200,30 @@ jobs:
         working-directory: tests/package_consumer
         run: ctest --preset installed
 
+      - name: Configure subproject consumer
+        working-directory: tests/subproject_consumer
+        run: cmake --preset subproject -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build subproject consumer
+        working-directory: tests/subproject_consumer
+        run: cmake --build --preset subproject --parallel
+
+      - name: Test subproject consumer
+        working-directory: tests/subproject_consumer
+        run: ctest --preset subproject
+
+      - name: Configure subproject consumer with provided GLFW
+        working-directory: tests/subproject_consumer
+        run: cmake --preset provided-glfw -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build subproject consumer with provided GLFW
+        working-directory: tests/subproject_consumer
+        run: cmake --build --preset provided-glfw --parallel
+
+      - name: Test subproject consumer with provided GLFW
+        working-directory: tests/subproject_consumer
+        run: ctest --preset provided-glfw
+
       - name: Configure ImGui install build
         run: cmake --preset install-imgui -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF
 

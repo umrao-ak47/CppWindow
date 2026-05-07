@@ -126,38 +126,38 @@ void testMouseState()
 
     input.handleEvent(cwin::Event::MouseWheelScrolled{ .deltaX = 1.0, .deltaY = -2.0 });
     input.handleEvent(cwin::Event::MouseWheelScrolled{ .deltaX = 0.5, .deltaY = 3.0 });
-    auto scroll = input.getScrollDelta();
+    auto scroll = input.scrollDelta();
     assert(scroll.first == 1.5);
     assert(scroll.second == 1.0);
 
     input.handleEvent(cwin::Event::MouseMoved{ .posX = 10.0, .posY = 20.0 });
-    auto delta = input.getMouseDelta();
+    auto delta = input.mouseDelta();
     assert(delta.first == 0.0);
     assert(delta.second == 0.0);
-    auto pos = input.getMousePosition();
+    auto pos = input.mousePosition();
     assert(pos.first == 10.0);
     assert(pos.second == 20.0);
 
     input.handleEvent(cwin::Event::MouseMoved{ .posX = 15.0, .posY = 18.0 });
     input.handleEvent(cwin::Event::MouseMoved{ .posX = 18.5, .posY = 21.0 });
-    delta = input.getMouseDelta();
+    delta = input.mouseDelta();
     assert(delta.first == 8.5);
     assert(delta.second == 1.0);
 
     input.reset();
-    delta = input.getMouseDelta();
-    scroll = input.getScrollDelta();
+    delta = input.mouseDelta();
+    scroll = input.scrollDelta();
     assert(delta.first == 0.0);
     assert(delta.second == 0.0);
     assert(scroll.first == 0.0);
     assert(scroll.second == 0.0);
 
     input.setMousePosition(100.0, 50.0);
-    pos = input.getMousePosition();
+    pos = input.mousePosition();
     assert(pos.first == 100.0);
     assert(pos.second == 50.0);
     input.handleEvent(cwin::Event::MouseMoved{ .posX = 103.0, .posY = 44.0 });
-    delta = input.getMouseDelta();
+    delta = input.mouseDelta();
     assert(delta.first == 3.0);
     assert(delta.second == -6.0);
 
@@ -173,8 +173,8 @@ void testActionMapTransitions()
     cwin::GamepadState gamepad;
 
     cwin::ActionMap actions;
-    const cwin::ActionId jumpId = actions.getOrCreateActionId("jump");
-    const cwin::ActionId fireId = actions.getOrCreateActionId("fire");
+    const cwin::ActionId jumpId = actions.defineAction("jump");
+    const cwin::ActionId fireId = actions.defineAction("fire");
     const cwin::ActionId missingId{};
     actions.bindKey(jumpId, cwin::Key::Space)
         .bindKey(jumpId, cwin::Key::Space)
@@ -184,13 +184,13 @@ void testActionMapTransitions()
         .bindGamepadButton(jumpId, cwin::GamepadButton::A)
         .bindMouseButton(fireId, cwin::MouseButton::Right);
 
-    const cwin::ActionBinding* jump = actions.getBinding(jumpId);
+    const cwin::ActionBinding* jump = actions.binding(jumpId);
     assert(jump);
     assert(jump->keys.size() == 1);
     assert(jump->keys.front().key == cwin::Key::Space);
     assert(jump->mouseButtons.size() == 1);
     assert(jump->gamepadButtons.size() == 1);
-    assert(!actions.getBinding(missingId));
+    assert(!actions.binding(missingId));
 
     actions.update(input);
     assert(!actions.isDown(jumpId));
@@ -246,12 +246,12 @@ void testActionMapTransitions()
     assert(!actions.isPressed(jumpId));
 
     actions.clear(jumpId);
-    assert(!actions.getBinding(jumpId));
+    assert(!actions.binding(jumpId));
     assert(!actions.isDown(jumpId));
-    assert(actions.getBinding(fireId));
+    assert(actions.binding(fireId));
 
     actions.clearAll();
-    assert(!actions.getBinding(fireId));
+    assert(!actions.binding(fireId));
     assert(!actions.isDown(fireId));
 }
 
@@ -261,15 +261,15 @@ void testActionMapIdsMetadataAndSnapshots()
     cwin::GamepadState gamepad;
     cwin::ActionMap actions;
 
-    const cwin::ActionId missing = actions.getActionId("missing");
+    const cwin::ActionId missing = actions.findAction("missing");
     assert(!missing);
     assert(!actions.hasAction(missing));
     assert(!actions.hasAction("jump"));
 
-    const cwin::ActionId jump = actions.getOrCreateActionId("jump");
+    const cwin::ActionId jump = actions.defineAction("jump");
     assert(jump);
-    assert(actions.getOrCreateActionId("jump") == jump);
-    assert(actions.getActionId("jump") == jump);
+    assert(actions.defineAction("jump") == jump);
+    assert(actions.findAction("jump") == jump);
     assert(actions.hasAction("jump"));
     assert(actions.hasAction(jump));
 
@@ -279,8 +279,8 @@ void testActionMapIdsMetadataAndSnapshots()
             .displayName = "Jump",
             .description = "Leave the ground",
         });
-    assert(actions.getMetadata(jump));
-    assert(actions.getMetadata(jump)->displayName == "Jump");
+    assert(actions.metadata(jump));
+    assert(actions.metadata(jump)->displayName == "Jump");
 
     actions.bindKey(jump, cwin::Key::Space)
         .bindMouseButton(jump, cwin::MouseButton::Left)
@@ -288,7 +288,7 @@ void testActionMapIdsMetadataAndSnapshots()
         .bindGamepadAxis(jump, cwin::GamepadAxis::LeftX, 0.2f)
         .setContext(jump, "gameplay");
 
-    const cwin::ActionBinding* binding = actions.getBinding(jump);
+    const cwin::ActionBinding* binding = actions.binding(jump);
     assert(binding);
     assert(binding->context == "gameplay");
     assert(binding->keys.size() == 1);
@@ -302,7 +302,7 @@ void testActionMapIdsMetadataAndSnapshots()
     assert(actions.isPressed(jump));
     assert(!actions.isReleased(jump));
 
-    std::vector<cwin::ActionInfo> infos = actions.getActions();
+    std::vector<cwin::ActionInfo> infos = actions.actions();
     assert(infos.size() == 1);
     assert(infos.front().id == jump);
     assert(infos.front().name == "jump");
@@ -314,7 +314,7 @@ void testActionMapIdsMetadataAndSnapshots()
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = 0.7f;
     actions.update(input, gamepad);
     assert(actions.isDown(jump));
-    assert(closeTo(actions.getAxis(jump), 0.7f));
+    assert(closeTo(actions.axisValue(jump), 0.7f));
 
     actions.replaceKey(jump, cwin::Key::F5)
         .replaceKeyCombo(jump, cwin::Key::A, { cwin::Key::LShift })
@@ -322,7 +322,7 @@ void testActionMapIdsMetadataAndSnapshots()
         .replaceGamepadButton(jump, cwin::GamepadButton::B)
         .replaceGamepadAxis(jump, cwin::GamepadAxis::RightY, -1.0f);
 
-    binding = actions.getBinding(jump);
+    binding = actions.binding(jump);
     assert(binding);
     assert(binding->keys.size() == 1);
     assert(binding->keys.front().key == cwin::Key::A);
@@ -334,7 +334,7 @@ void testActionMapIdsMetadataAndSnapshots()
     assert(!actions.isDown(jump));
 
     actions.clearBindings(jump);
-    binding = actions.getBinding(jump);
+    binding = actions.binding(jump);
     assert(binding);
     assert(binding->context == "gameplay");
     assert(binding->keys.empty());
@@ -347,7 +347,7 @@ void testActionMapIdsMetadataAndSnapshots()
     actions.clearContextStates();
     assert(actions.isContextEnabled("gameplay"));
 
-    const cwin::ActionId pause = actions.getOrCreateActionId("pause");
+    const cwin::ActionId pause = actions.defineAction("pause");
     actions.setMetadata(
         pause,
         cwin::ActionMetadata{
@@ -356,39 +356,39 @@ void testActionMapIdsMetadataAndSnapshots()
         });
     assert(pause);
     assert(pause != jump);
-    assert(actions.getMetadata(pause)->displayName == "Pause");
+    assert(actions.metadata(pause)->displayName == "Pause");
 
     actions.clear(jump);
     assert(!actions.hasAction(jump));
     assert(actions.hasAction(pause));
 
     actions.clear(pause);
-    assert(actions.getActions().empty());
+    assert(actions.actions().empty());
 
     actions.bindKey(cwin::ActionId{ 999 }, cwin::Key::Q)
         .replaceKey(cwin::ActionId{ 999 }, cwin::Key::W)
         .setMetadata(cwin::ActionId{ 999 }, cwin::ActionMetadata{});
     actions.clearBindings(cwin::ActionId{ 999 });
     actions.clear(cwin::ActionId{ 999 });
-    assert(actions.getActions().empty());
+    assert(actions.actions().empty());
 }
 
 void testActionMapModifiers()
 {
     FakeInput input;
     cwin::ActionMap actions;
-    const cwin::ActionId saveId = actions.getOrCreateActionId("save");
-    const cwin::ActionId exactSaveId = actions.getOrCreateActionId("exact_save");
-    const cwin::ActionId shiftJumpId = actions.getOrCreateActionId("shift_jump");
-    const cwin::ActionId leftShiftAId = actions.getOrCreateActionId("left_shift_a");
-    const cwin::ActionId rightShiftAId = actions.getOrCreateActionId("right_shift_a");
+    const cwin::ActionId saveId = actions.defineAction("save");
+    const cwin::ActionId exactSaveId = actions.defineAction("exact_save");
+    const cwin::ActionId shiftJumpId = actions.defineAction("shift_jump");
+    const cwin::ActionId leftShiftAId = actions.defineAction("left_shift_a");
+    const cwin::ActionId rightShiftAId = actions.defineAction("right_shift_a");
     actions.bindKey(saveId, cwin::Key::S, cwin::Modifiers{ .control = true })
         .bindKey(exactSaveId, cwin::Key::S, cwin::Modifiers{ .control = true }, true)
         .bindKey(shiftJumpId, cwin::Key::Space, cwin::Modifiers{ .shift = true })
         .bindKeyCombo(leftShiftAId, cwin::Key::A, { cwin::Key::LShift })
         .bindKeyCombo(rightShiftAId, cwin::Key::A, { cwin::Key::RShift });
 
-    const cwin::ActionBinding* save = actions.getBinding(saveId);
+    const cwin::ActionBinding* save = actions.binding(saveId);
     assert(save);
     assert(save->keys.size() == 1);
     assert(save->keys.front().modifiers.control);
@@ -427,7 +427,7 @@ void testActionMapModifiers()
     assert(actions.isDown(rightShiftAId));
 
     actions.replaceKeyCombo(leftShiftAId, cwin::Key::B, { cwin::Key::LShift });
-    const cwin::ActionBinding* chord = actions.getBinding(leftShiftAId);
+    const cwin::ActionBinding* chord = actions.binding(leftShiftAId);
     assert(chord);
     assert(chord->keys.size() == 1);
     assert(chord->keys.front().key == cwin::Key::B);
@@ -435,7 +435,7 @@ void testActionMapModifiers()
     assert(chord->keys.front().requiredKeys.front() == cwin::Key::LShift);
 
     actions.replaceKey(saveId, cwin::Key::F5);
-    save = actions.getBinding(saveId);
+    save = actions.binding(saveId);
     assert(save);
     assert(save->keys.size() == 1);
     assert(save->keys.front().key == cwin::Key::F5);
@@ -453,10 +453,10 @@ void testActionMapAxesContextsAndRebinding()
     FakeInput input;
     cwin::GamepadState gamepad;
     cwin::ActionMap actions;
-    const cwin::ActionId jumpId = actions.getOrCreateActionId("jump");
-    const cwin::ActionId fireId = actions.getOrCreateActionId("fire");
-    const cwin::ActionId moveXId = actions.getOrCreateActionId("move_x");
-    const cwin::ActionId moveLeftId = actions.getOrCreateActionId("move_left");
+    const cwin::ActionId jumpId = actions.defineAction("jump");
+    const cwin::ActionId fireId = actions.defineAction("fire");
+    const cwin::ActionId moveXId = actions.defineAction("move_x");
+    const cwin::ActionId moveLeftId = actions.defineAction("move_left");
     actions.bindKey(jumpId, cwin::Key::Space)
         .bindMouseButton(fireId, cwin::MouseButton::Left)
         .bindGamepadAxis(moveXId, cwin::GamepadAxis::LeftX, 0.25f)
@@ -470,7 +470,7 @@ void testActionMapAxesContextsAndRebinding()
         .setContext(moveXId, "gameplay")
         .setContext(moveLeftId, "gameplay");
 
-    const cwin::ActionBinding* move = actions.getBinding(moveXId);
+    const cwin::ActionBinding* move = actions.binding(moveXId);
     assert(move);
     assert(move->context == "gameplay");
     assert(move->gamepadAxes.size() == 1);
@@ -479,21 +479,21 @@ void testActionMapAxesContextsAndRebinding()
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = 0.2f;
     actions.update(input, gamepad);
     assert(!actions.isDown(moveXId));
-    assert(closeTo(actions.getAxis(moveXId), 0.0f));
+    assert(closeTo(actions.axisValue(moveXId), 0.0f));
 
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = 0.6f;
     actions.update(input, gamepad);
     assert(actions.isDown(moveXId));
     assert(actions.isPressed(moveXId));
-    assert(closeTo(actions.getAxis(moveXId), 0.6f));
+    assert(closeTo(actions.axisValue(moveXId), 0.6f));
     assert(!actions.isDown(moveLeftId));
 
     gamepad.axes[static_cast<std::size_t>(cwin::GamepadAxis::LeftX)] = -0.7f;
     actions.update(input, gamepad);
     assert(actions.isDown(moveXId));
-    assert(closeTo(actions.getAxis(moveXId), -0.7f));
+    assert(closeTo(actions.axisValue(moveXId), -0.7f));
     assert(actions.isDown(moveLeftId));
-    assert(closeTo(actions.getAxis(moveLeftId), -0.7f));
+    assert(closeTo(actions.axisValue(moveLeftId), -0.7f));
 
     input.setKey(cwin::Key::Space, true);
     actions.update(input, gamepad);
@@ -505,7 +505,7 @@ void testActionMapAxesContextsAndRebinding()
     assert(!actions.isDown(jumpId));
     assert(actions.isReleased(jumpId));
     assert(!actions.isDown(moveXId));
-    assert(closeTo(actions.getAxis(moveXId), 0.0f));
+    assert(closeTo(actions.axisValue(moveXId), 0.0f));
 
     actions.setContextEnabled("gameplay", true);
     actions.update(input, gamepad);
@@ -513,20 +513,20 @@ void testActionMapAxesContextsAndRebinding()
     assert(actions.isPressed(jumpId));
 
     actions.replaceMouseButton(fireId, cwin::MouseButton::Right);
-    const cwin::ActionBinding* fire = actions.getBinding(fireId);
+    const cwin::ActionBinding* fire = actions.binding(fireId);
     assert(fire);
     assert(fire->context == "gameplay");
     assert(fire->mouseButtons.size() == 1);
     assert(fire->mouseButtons.front() == cwin::MouseButton::Right);
 
     actions.replaceGamepadAxis(moveXId, cwin::GamepadAxis::RightX, 2.0f);
-    move = actions.getBinding(moveXId);
+    move = actions.binding(moveXId);
     assert(move);
     assert(move->gamepadAxes.size() == 1);
     assert(closeTo(move->gamepadAxes.front().deadzone, 1.0f));
 
     actions.clearBindings(moveXId);
-    move = actions.getBinding(moveXId);
+    move = actions.binding(moveXId);
     assert(move);
     assert(move->context == "gameplay");
     assert(move->gamepadAxes.empty());

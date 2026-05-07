@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "subproject",
+      "displayName": "Subproject Consumer",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../build-presets/subproject-consumer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "provided-glfw",
+      "displayName": "Subproject Consumer With Provided GLFW",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../build-presets/subproject-consumer-provided-glfw",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CPPWINDOW_SUBPROJECT_CONSUMER_PROVIDE_GLFW": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "subproject",
+      "configurePreset": "subproject"
+    },
+    {
+      "name": "provided-glfw",
+      "configurePreset": "provided-glfw"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "subproject",
+      "configurePreset": "subproject",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "provided-glfw",
+      "configurePreset": "provided-glfw",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

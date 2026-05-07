@@ -30,7 +30,7 @@ int main()
                       .build();
     window.makeContextCurrent();
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     const bool useVSync = true;
@@ -83,7 +83,7 @@ int main()
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
 
-        auto [fbWidth, fbHeight] = window.getFramebufferSize();
+        auto [fbWidth, fbHeight] = window.framebufferSize();
         glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
 
         if (mode == DemoMode::BorderlessFullscreen) {

@@ -26,7 +26,7 @@ const char* systemName(NativeHandles::System system)
 
 void printNativeHandles(const Window& window)
 {
-    const NativeHandles handles = window.getNativeHandles();
+    const NativeHandles handles = window.nativeHandles();
 
     std::cout << "native system: " << systemName(handles.system) << "\n";
     std::cout << "window handle: " << handles.window << "\n";
@@ -37,7 +37,7 @@ void printVulkanInfo(const WindowContext& ctx)
 {
     std::cout << "vulkan supported: " << ctx.isVulkanSupported() << "\n";
 
-    const auto extensions = ctx.getRequiredVulkanInstanceExtensions();
+    const auto extensions = ctx.requiredVulkanInstanceExtensions();
     std::cout << "required GLFW Vulkan extensions: " << extensions.size() << "\n";
     for (const auto& extension : extensions) {
         std::cout << "  " << extension << "\n";

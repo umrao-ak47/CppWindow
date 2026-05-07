@@ -2,7 +2,8 @@
 
 CppWindow is a modern C++20 windowing and input abstraction built on top of GLFW, designed for high-performance graphics applications and engine development.
 
-It provides a clean, type-safe API for window creation, event processing, and per-window input while keeping backend details fully hidden.
+It provides a clean, type-safe API for window creation, event processing, and
+per-window input while keeping backend details out of public headers.
 
 CppWindow is not a rendering library - it is a platform layer intended to sit beneath Vulkan, OpenGL, or future graphics backends.
 
@@ -42,18 +43,30 @@ CppWindow is not a rendering library - it is a platform layer intended to sit be
 
 ### Git Submodule
 
-#### Add the submodule to your project:
-
 ```bash
 git submodule add git@github.com:umrao-ak47/CppWindow.git external/CppWindow
 ```
-
-#### Include it in your CMakeLists.txt:
 
 ```cmake
 add_subdirectory(external/CppWindow)
 target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
 ```
+
+If your project already defines a `glfw` target, CppWindow uses it. Otherwise
+CppWindow fetches GLFW 3.4 with CMake `FetchContent`.
+
+### Installed Package
+
+```cmake
+find_package(cppwindow CONFIG REQUIRED)
+target_link_libraries(your_project PRIVATE cppwindow::cppwindow)
+```
+
+CppWindow is currently a static library. GLFW is private to the public C++ API,
+but the installed static target still has a GLFW link dependency. If CppWindow
+fetched GLFW during install, GLFW is installed into the same prefix.
+
+### Local Development
 
 For local development with multiple CMake build directories, CMake
 `FetchContent` manages dependency download locations. Each build directory
@@ -150,7 +163,7 @@ auto window =
         .build();
 
 window.makeContextCurrent();
-gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.getProcLoader()));
+gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()));
 ```
 
 Render loop:
@@ -172,12 +185,12 @@ while (!window.shouldClose())
 Input is tracked per window, avoiding hidden global state.
 
 ```cpp
-const auto& input = window.getInput();
+const auto& input = window.input();
 
 if (input.isKeyPressed(cwin::Key::Escape))
     window.requestClose();
 
-auto [x,y] = input.getMousePosition();
+auto [x,y] = input.mousePosition();
 ```
 
 ### 📬 Events

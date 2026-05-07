@@ -474,7 +474,7 @@ void main()
 
 void loadOpenGL(cwin::WindowContext& context)
 {
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(context.getProcLoader()))) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(context.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
 }
@@ -612,7 +612,7 @@ void OpenGLImGuiRenderer::render(ImDrawData* drawData)
 
 void clearFramebuffer(cwin::Window& window, const ImVec4& color)
 {
-    auto [fbWidth, fbHeight] = window.getFramebufferSize();
+    auto [fbWidth, fbHeight] = window.framebufferSize();
     glViewport(0, 0, static_cast<GLsizei>(fbWidth), static_cast<GLsizei>(fbHeight));
     glClearColor(color.x, color.y, color.z, color.w);
     glClear(GL_COLOR_BUFFER_BIT);
