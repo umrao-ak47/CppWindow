@@ -2,9 +2,11 @@
 
 #include <cassert>
 
+#include "backend/glfw/glfw_input_map.hpp"
+
 int main()
 {
-    cwin::GLFWInputState input;
+    cwin::backend::glfw::GLFWInputState input;
 
     input.handleEvent(
         cwin::Event::KeyPressed{
@@ -81,4 +83,16 @@ int main()
     assert(!input.isKeyDown(static_cast<cwin::Key>(9999)));
     assert(!input.isMouseButtonDown(cwin::MouseButton::Unknown));
     assert(!input.isMouseButtonDown(static_cast<cwin::MouseButton>(99)));
+
+    assert(
+        cwin::backend::glfw::toGlfwGamepadButton(cwin::GamepadButton::Start) ==
+        GLFW_GAMEPAD_BUTTON_START);
+    assert(
+        cwin::backend::glfw::toGamepadButton(GLFW_GAMEPAD_BUTTON_DPAD_LEFT) ==
+        cwin::GamepadButton::DPadLeft);
+    assert(
+        cwin::backend::glfw::toGlfwGamepadAxis(cwin::GamepadAxis::RightTrigger) ==
+        GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    assert(
+        cwin::backend::glfw::toGamepadAxis(GLFW_GAMEPAD_AXIS_LEFT_Y) == cwin::GamepadAxis::LeftY);
 }

@@ -15,7 +15,7 @@
 
 struct GLFWwindow;
 
-namespace cwin {
+namespace cwin::backend::glfw {
 
 class GLFWInputState
 {
@@ -50,6 +50,6 @@ private:
     InputStateData data_{};
 };
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw
 
 #endif

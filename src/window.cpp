@@ -18,7 +18,7 @@ namespace cwin {
 
 struct Window::State
 {
-    explicit State(WindowDesc desc)
+    explicit State(backend::WindowDesc desc)
         : window(std::move(desc))
     {
     }
@@ -26,7 +26,7 @@ struct Window::State
     backend::Window window;
 };
 
-Window WindowAccess::makeWindow(WindowDesc desc)
+Window WindowAccess::makeWindow(backend::WindowDesc desc)
 {
     return Window(std::make_unique<Window::State>(std::move(desc)));
 }

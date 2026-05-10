@@ -16,7 +16,7 @@ namespace cwin {
 
 struct WindowBuilder::State
 {
-    GraphicsModeTag mode = NoneGraphicsModeTag();
+    backend::GraphicsModeTag mode = backend::NoneGraphicsModeTag();
     std::string title = "CppWindow";
     uint32_t width = 1280;
     uint32_t height = 720;
@@ -66,7 +66,7 @@ WindowBuilder& WindowBuilder::position(int x, int y)
 
 WindowBuilder& WindowBuilder::openGL(OpenGLConfig cfg)
 {
-    state_->mode = OpenGLGraphicsModeTag{
+    state_->mode = backend::OpenGLGraphicsModeTag{
         .config = cfg,
     };
     return *this;
@@ -74,7 +74,7 @@ WindowBuilder& WindowBuilder::openGL(OpenGLConfig cfg)
 
 WindowBuilder& WindowBuilder::noGraphicsApi()
 {
-    state_->mode = NoneGraphicsModeTag{};
+    state_->mode = backend::NoneGraphicsModeTag{};
     return *this;
 }
 
@@ -168,7 +168,7 @@ WindowBuilder::windowMode(WindowMode mode, uint32_t monitorId, std::optional<Vid
 
 Window WindowBuilder::build()
 {
-    WindowDesc desc{
+    backend::WindowDesc desc{
         .mode = state_->mode,
         .title = state_->title,
         .width = state_->width,

@@ -12,7 +12,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace cwin {
+namespace cwin::backend {
 
 struct InputStateData
 {
@@ -87,6 +87,6 @@ struct InputStateData
     bool mouseInside = false;
 };
 
-}  // namespace cwin
+}  // namespace cwin::backend
 
 #endif

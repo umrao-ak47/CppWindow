@@ -7,13 +7,6 @@
 #ifndef CPPWINDOW_HEADER_GLFW_WINDOW_HPP
 #define CPPWINDOW_HEADER_GLFW_WINDOW_HPP
 
-#include "../window_desc.hpp"
-#include "glfw_input_state.hpp"
-
-// Prevent GLFW from including OpenGL headers
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
 #include <GLFW/glfw3.h>
 #include <cstdint>
 #include <memory>
@@ -23,7 +16,10 @@
 #include <utility>
 #include <vector>
 
-namespace cwin {
+#include "../window_desc.hpp"
+#include "glfw_input_state.hpp"
+
+namespace cwin::backend::glfw {
 
 struct GLFWwindowDeleter
 {
@@ -155,6 +151,6 @@ private:
     int windowedHeight_ = 720;
 };
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw
 
 #endif

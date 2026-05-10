@@ -4,6 +4,9 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
+#include "glfw_gamepad.hpp"
+#include <cppwindow/events.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -13,77 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include "glfw_internal.hpp"
+#include "glfw_input_map.hpp"
+#include "glfw_registry.hpp"
 
-namespace cwin::glfw_backend {
-
-int toGlfwGamepadButton(GamepadButton button)
-{
-    switch (button) {
-        case GamepadButton::A:
-            return GLFW_GAMEPAD_BUTTON_A;
-        case GamepadButton::B:
-            return GLFW_GAMEPAD_BUTTON_B;
-        case GamepadButton::X:
-            return GLFW_GAMEPAD_BUTTON_X;
-        case GamepadButton::Y:
-            return GLFW_GAMEPAD_BUTTON_Y;
-        case GamepadButton::LeftBumper:
-            return GLFW_GAMEPAD_BUTTON_LEFT_BUMPER;
-        case GamepadButton::RightBumper:
-            return GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER;
-        case GamepadButton::Back:
-            return GLFW_GAMEPAD_BUTTON_BACK;
-        case GamepadButton::Start:
-            return GLFW_GAMEPAD_BUTTON_START;
-        case GamepadButton::Guide:
-            return GLFW_GAMEPAD_BUTTON_GUIDE;
-        case GamepadButton::LeftThumb:
-            return GLFW_GAMEPAD_BUTTON_LEFT_THUMB;
-        case GamepadButton::RightThumb:
-            return GLFW_GAMEPAD_BUTTON_RIGHT_THUMB;
-        case GamepadButton::DPadUp:
-            return GLFW_GAMEPAD_BUTTON_DPAD_UP;
-        case GamepadButton::DPadRight:
-            return GLFW_GAMEPAD_BUTTON_DPAD_RIGHT;
-        case GamepadButton::DPadDown:
-            return GLFW_GAMEPAD_BUTTON_DPAD_DOWN;
-        case GamepadButton::DPadLeft:
-            return GLFW_GAMEPAD_BUTTON_DPAD_LEFT;
-    }
-
-    return GLFW_GAMEPAD_BUTTON_A;
-}
-
-int toGlfwGamepadAxis(GamepadAxis axis)
-{
-    switch (axis) {
-        case GamepadAxis::LeftX:
-            return GLFW_GAMEPAD_AXIS_LEFT_X;
-        case GamepadAxis::LeftY:
-            return GLFW_GAMEPAD_AXIS_LEFT_Y;
-        case GamepadAxis::RightX:
-            return GLFW_GAMEPAD_AXIS_RIGHT_X;
-        case GamepadAxis::RightY:
-            return GLFW_GAMEPAD_AXIS_RIGHT_Y;
-        case GamepadAxis::LeftTrigger:
-            return GLFW_GAMEPAD_AXIS_LEFT_TRIGGER;
-        case GamepadAxis::RightTrigger:
-            return GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER;
-    }
-
-    return GLFW_GAMEPAD_AXIS_LEFT_X;
-}
-
-GamepadButton toGamepadButton(size_t index)
-{
-    return static_cast<GamepadButton>(index);
-}
-
-GamepadAxis toGamepadAxis(size_t index)
-{
-    return static_cast<GamepadAxis>(index);
-}
+namespace cwin::backend::glfw {
 
 std::optional<GamepadState> readStandardGamepadState(uint32_t gamepadId)
 {
@@ -112,11 +48,13 @@ std::optional<GamepadState> readStandardGamepadState(uint32_t gamepadId)
     }
 
     for (size_t i = 0; i < GamepadButtonCount; ++i) {
-        state.buttons[i] = glfwState.buttons[toGlfwGamepadButton(toGamepadButton(i))] == GLFW_PRESS;
+        state.buttons[i] =
+            glfwState.buttons[toGlfwGamepadButton(toGamepadButton(static_cast<int>(i)))] ==
+            GLFW_PRESS;
     }
 
     for (size_t i = 0; i < GamepadAxisCount; ++i) {
-        state.axes[i] = glfwState.axes[toGlfwGamepadAxis(toGamepadAxis(i))];
+        state.axes[i] = glfwState.axes[toGlfwGamepadAxis(toGamepadAxis(static_cast<int>(i)))];
     }
 
     return state;
@@ -282,13 +220,13 @@ void pollGamepads()
                     dispatchEventToAllWindows(
                         Event::GamepadButtonPressed{
                             .gamepadId = id,
-                            .button = toGamepadButton(button),
+                            .button = toGamepadButton(static_cast<int>(button)),
                         });
                 } else {
                     dispatchEventToAllWindows(
                         Event::GamepadButtonReleased{
                             .gamepadId = id,
-                            .button = toGamepadButton(button),
+                            .button = toGamepadButton(static_cast<int>(button)),
                         });
                 }
             }
@@ -303,7 +241,7 @@ void pollGamepads()
                 dispatchEventToAllWindows(
                     Event::GamepadAxisMoved{
                         .gamepadId = id,
-                        .axis = toGamepadAxis(axis),
+                        .axis = toGamepadAxis(static_cast<int>(axis)),
                         .value = currentValue,
                     });
             }
@@ -313,4 +251,4 @@ void pollGamepads()
     }
 }
 
-}  // namespace cwin::glfw_backend
+}  // namespace cwin::backend::glfw

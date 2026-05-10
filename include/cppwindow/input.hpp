@@ -307,8 +307,11 @@ struct GamepadState
 //----------------------------------------------------------------------------
 /// Main window type.
 class Window;
+
+namespace backend {
 /// Backend-owned input snapshot storage.
 struct InputStateData;
+}  // namespace backend
 
 /// Snapshot-style input query interface for a window.
 class InputState final
@@ -339,9 +342,9 @@ public:
     bool isMouseInside() const;
 
 private:
-    explicit InputState(const InputStateData* state);
+    explicit InputState(const backend::InputStateData* state);
 
-    const InputStateData* state_;
+    const backend::InputStateData* state_;
 };
 
 //----------------------------------------------------------------------------

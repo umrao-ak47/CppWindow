@@ -4,13 +4,36 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
+#include "glfw_cursor.hpp"
+
 #include <cstddef>
 #include <limits>
 #include <optional>
 
-#include "glfw_internal.hpp"
+namespace cwin::backend::glfw {
 
-namespace cwin::glfw_backend {
+namespace {
+
+bool isValidImage(const ImageRgba& image) noexcept
+{
+    if (image.width == 0 || image.height == 0) {
+        return false;
+    }
+
+    const size_t maxSize = std::numeric_limits<size_t>::max();
+    if (static_cast<size_t>(image.width) > maxSize / static_cast<size_t>(image.height)) {
+        return false;
+    }
+
+    const size_t pixelCount = static_cast<size_t>(image.width) * static_cast<size_t>(image.height);
+    if (pixelCount > maxSize / 4) {
+        return false;
+    }
+
+    return image.pixels.size() >= pixelCount * 4;
+}
+
+}  // namespace
 
 int toGlfwCursorMode(CursorMode mode)
 {
@@ -54,25 +77,6 @@ int toGlfwCursorShape(CursorShape shape)
     return GLFW_ARROW_CURSOR;
 }
 
-bool isValidImage(const ImageRgba& image) noexcept
-{
-    if (image.width == 0 || image.height == 0) {
-        return false;
-    }
-
-    const size_t maxSize = std::numeric_limits<size_t>::max();
-    if (static_cast<size_t>(image.width) > maxSize / static_cast<size_t>(image.height)) {
-        return false;
-    }
-
-    const size_t pixelCount = static_cast<size_t>(image.width) * static_cast<size_t>(image.height);
-    if (pixelCount > maxSize / 4) {
-        return false;
-    }
-
-    return image.pixels.size() >= pixelCount * 4;
-}
-
 std::optional<GLFWimage> toGlfwImage(const ImageRgba& image) noexcept
 {
     if (!isValidImage(image)) {
@@ -91,4 +95,4 @@ std::optional<GLFWimage> toGlfwImage(const ImageRgba& image) noexcept
     };
 }
 
-}  // namespace cwin::glfw_backend
+}  // namespace cwin::backend::glfw

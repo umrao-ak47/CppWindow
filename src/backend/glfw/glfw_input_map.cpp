@@ -4,10 +4,11 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "../../static_lookup.hpp"
-#include "glfw_internal.hpp"
+#include "glfw_input_map.hpp"
 
-namespace cwin::glfw_backend {
+#include "../../static_lookup.hpp"
+
+namespace cwin::backend::glfw {
 
 struct GlfwKeyMapTraits
 {
@@ -35,8 +36,36 @@ struct GlfwMouseMapTraits
     static constexpr int BackendLast = GLFW_MOUSE_BUTTON_LAST;
 };
 
+struct GlfwGamepadButtonMapTraits
+{
+    using WrapperType = GamepadButton;
+    using BackendType = int;
+
+    static constexpr GamepadButton WrapperNone = GamepadButton::A;
+    static constexpr GamepadButton WrapperFirst = GamepadButton::A;
+    static constexpr GamepadButton WrapperLast = GamepadButton::Last;
+    static constexpr int BackendNone = GLFW_GAMEPAD_BUTTON_A;
+    static constexpr int BackendFirst = GLFW_GAMEPAD_BUTTON_A;
+    static constexpr int BackendLast = GLFW_GAMEPAD_BUTTON_LAST;
+};
+
+struct GlfwGamepadAxisMapTraits
+{
+    using WrapperType = GamepadAxis;
+    using BackendType = int;
+
+    static constexpr GamepadAxis WrapperNone = GamepadAxis::LeftX;
+    static constexpr GamepadAxis WrapperFirst = GamepadAxis::LeftX;
+    static constexpr GamepadAxis WrapperLast = GamepadAxis::Last;
+    static constexpr int BackendNone = GLFW_GAMEPAD_AXIS_LEFT_X;
+    static constexpr int BackendFirst = GLFW_GAMEPAD_AXIS_LEFT_X;
+    static constexpr int BackendLast = GLFW_GAMEPAD_AXIS_LAST;
+};
+
 using KeyMapLookup = StaticLookup<GlfwKeyMapTraits>;
 using MouseMapLookup = StaticLookup<GlfwMouseMapTraits>;
+using GamepadButtonMapLookup = StaticLookup<GlfwGamepadButtonMapTraits>;
+using GamepadAxisMapLookup = StaticLookup<GlfwGamepadAxisMapTraits>;
 
 static constexpr KeyMapLookup KeyMap(
     {
@@ -188,6 +217,35 @@ static constexpr MouseMapLookup MouseMap(
         { MouseButton::Button8, GLFW_MOUSE_BUTTON_8 },
     });
 
+static constexpr GamepadButtonMapLookup GamepadButtonMap(
+    {
+        { GamepadButton::A, GLFW_GAMEPAD_BUTTON_A },
+        { GamepadButton::B, GLFW_GAMEPAD_BUTTON_B },
+        { GamepadButton::X, GLFW_GAMEPAD_BUTTON_X },
+        { GamepadButton::Y, GLFW_GAMEPAD_BUTTON_Y },
+        { GamepadButton::LeftBumper, GLFW_GAMEPAD_BUTTON_LEFT_BUMPER },
+        { GamepadButton::RightBumper, GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER },
+        { GamepadButton::Back, GLFW_GAMEPAD_BUTTON_BACK },
+        { GamepadButton::Start, GLFW_GAMEPAD_BUTTON_START },
+        { GamepadButton::Guide, GLFW_GAMEPAD_BUTTON_GUIDE },
+        { GamepadButton::LeftThumb, GLFW_GAMEPAD_BUTTON_LEFT_THUMB },
+        { GamepadButton::RightThumb, GLFW_GAMEPAD_BUTTON_RIGHT_THUMB },
+        { GamepadButton::DPadUp, GLFW_GAMEPAD_BUTTON_DPAD_UP },
+        { GamepadButton::DPadRight, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT },
+        { GamepadButton::DPadDown, GLFW_GAMEPAD_BUTTON_DPAD_DOWN },
+        { GamepadButton::DPadLeft, GLFW_GAMEPAD_BUTTON_DPAD_LEFT },
+    });
+
+static constexpr GamepadAxisMapLookup GamepadAxisMap(
+    {
+        { GamepadAxis::LeftX, GLFW_GAMEPAD_AXIS_LEFT_X },
+        { GamepadAxis::LeftY, GLFW_GAMEPAD_AXIS_LEFT_Y },
+        { GamepadAxis::RightX, GLFW_GAMEPAD_AXIS_RIGHT_X },
+        { GamepadAxis::RightY, GLFW_GAMEPAD_AXIS_RIGHT_Y },
+        { GamepadAxis::LeftTrigger, GLFW_GAMEPAD_AXIS_LEFT_TRIGGER },
+        { GamepadAxis::RightTrigger, GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER },
+    });
+
 int toGlfwKey(Key k)
 {
     return KeyMap.toBackend(k);
@@ -209,4 +267,24 @@ MouseButton toMouseButton(int b)
     return MouseMap.toWrapper(b);
 }
 
-}  // namespace cwin::glfw_backend
+int toGlfwGamepadButton(GamepadButton button)
+{
+    return GamepadButtonMap.toBackend(button);
+}
+
+GamepadButton toGamepadButton(int button)
+{
+    return GamepadButtonMap.toWrapper(button);
+}
+
+int toGlfwGamepadAxis(GamepadAxis axis)
+{
+    return GamepadAxisMap.toBackend(axis);
+}
+
+GamepadAxis toGamepadAxis(int axis)
+{
+    return GamepadAxisMap.toWrapper(axis);
+}
+
+}  // namespace cwin::backend::glfw

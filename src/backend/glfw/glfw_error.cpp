@@ -4,14 +4,18 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
+#include "glfw_error.hpp"
+
 #include <string>
 #include <utility>
 
-#include "glfw_internal.hpp"
+namespace cwin::backend::glfw {
 
-namespace cwin::glfw_backend {
+namespace {
 
 thread_local GlfwError g_LastGlfwError;
+
+}  // namespace
 
 void glfwErrorCallback(int code, const char* description)
 {
@@ -67,4 +71,4 @@ Error makeGlfwError(ErrorCode code, const std::string& message, const std::strin
     return Error(code, std::move(fullMessage));
 }
 
-}  // namespace cwin::glfw_backend
+}  // namespace cwin::backend::glfw

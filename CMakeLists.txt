@@ -105,7 +105,6 @@ target_sources(cppwindow
         src/backend/glfw/glfw_gamepad.cpp
         src/backend/glfw/glfw_input_map.cpp
         src/backend/glfw/glfw_input_state.cpp
-        src/backend/glfw/glfw_modifiers.cpp
         src/backend/glfw/glfw_monitor.cpp
         src/backend/glfw/glfw_native_handles.cpp
         src/backend/glfw/glfw_registry.cpp
@@ -142,6 +141,7 @@ target_compile_features(cppwindow
 )
 
 target_compile_definitions(cppwindow PRIVATE
+    GLFW_INCLUDE_NONE
     $<$<PLATFORM_ID:Windows>:CPPWINDOW_PLATFORM_WINDOWS>
     $<$<PLATFORM_ID:Darwin>:CPPWINDOW_PLATFORM_MACOS>
     $<$<PLATFORM_ID:Linux>:CPPWINDOW_PLATFORM_LINUX>

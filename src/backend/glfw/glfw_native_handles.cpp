@@ -28,7 +28,7 @@
 #endif
 #include <GLFW/glfw3native.h>
 
-namespace cwin {
+namespace cwin::backend::glfw {
 
 NativeHandles GLFWNativeWindow::nativeHandles() const
 {
@@ -63,4 +63,4 @@ NativeHandles GLFWNativeWindow::nativeHandles() const
     return handles;
 }
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw

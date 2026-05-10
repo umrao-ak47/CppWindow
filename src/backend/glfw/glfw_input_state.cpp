@@ -6,12 +6,11 @@
 
 #include "glfw_input_state.hpp"
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <cstddef>
 #include <type_traits>
 
-namespace cwin {
+namespace cwin::backend::glfw {
 
 //----------------------------------------------------------------------------
 //  GLFW Input State Implementation
@@ -173,4 +172,4 @@ const InputStateData& GLFWInputState::data() const noexcept
     return data_;
 }
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw

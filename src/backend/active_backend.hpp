@@ -11,8 +11,8 @@
 
 namespace cwin::backend {
 
-using Window = GLFWNativeWindow;
-using WindowContext = GLFWWindowContext;
+using Window = glfw::GLFWNativeWindow;
+using WindowContext = glfw::GLFWWindowContext;
 
 }  // namespace cwin::backend
 

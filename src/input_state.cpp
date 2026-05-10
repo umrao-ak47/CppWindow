@@ -12,7 +12,7 @@ namespace cwin {
 //----------------------------------------------------------------------------
 //  Input State Implemenation
 //----------------------------------------------------------------------------
-InputState::InputState(const InputStateData* state)
+InputState::InputState(const backend::InputStateData* state)
     : state_(state)
 {
 }

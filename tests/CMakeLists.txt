@@ -26,6 +26,16 @@ endfunction()
 function(cppwindow_add_internal_test TARGET)
     cppwindow_add_api_test(${TARGET} ${ARGN})
 
+    target_link_libraries(${TARGET}
+        PRIVATE
+            glfw
+    )
+
+    target_compile_definitions(${TARGET}
+        PRIVATE
+            GLFW_INCLUDE_NONE
+    )
+
     target_include_directories(${TARGET}
         PRIVATE
             ${PROJECT_SOURCE_DIR}/src

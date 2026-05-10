@@ -4,13 +4,13 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
+#include "glfw_monitor.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <vector>
 
-#include "glfw_internal.hpp"
-
-namespace cwin::glfw_backend {
+namespace cwin::backend::glfw {
 
 std::vector<GLFWmonitor*> getOrderedMonitors()
 {
@@ -129,4 +129,4 @@ uint32_t getWindowMonitorId(GLFWwindow* window)
     return bestId;
 }
 
-}  // namespace cwin::glfw_backend
+}  // namespace cwin::backend::glfw

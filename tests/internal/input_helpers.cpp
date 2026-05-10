@@ -69,7 +69,7 @@ private:
 
 void testInputStateTransitions()
 {
-    cwin::GLFWInputState input;
+    cwin::backend::glfw::GLFWInputState input;
 
     assert(!input.isKeyDown(cwin::Key::Unknown));
     assert(!input.isKeyPressed(static_cast<cwin::Key>(9999)));
@@ -122,7 +122,7 @@ void testInputStateTransitions()
 
 void testMouseState()
 {
-    cwin::GLFWInputState input;
+    cwin::backend::glfw::GLFWInputState input;
 
     input.handleEvent(cwin::Event::MouseWheelScrolled{ .deltaX = 1.0, .deltaY = -2.0 });
     input.handleEvent(cwin::Event::MouseWheelScrolled{ .deltaX = 0.5, .deltaY = 3.0 });

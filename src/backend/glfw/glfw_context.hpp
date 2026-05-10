@@ -10,10 +10,6 @@
 #include <cppwindow/core.hpp>
 #include <cppwindow/input.hpp>
 
-// Prevent GLFW from including OpenGL headers
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <string>
@@ -21,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace cwin {
+namespace cwin::backend::glfw {
 
 class GLFWWindowContext
 {
@@ -53,6 +49,6 @@ private:
     GLFWerrorfun previousErrorCallback_ = nullptr;
 };
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw
 
 #endif

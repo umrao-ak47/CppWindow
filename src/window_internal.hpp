@@ -14,7 +14,7 @@ class Window;
 
 struct WindowAccess
 {
-    [[nodiscard]] static Window makeWindow(WindowDesc desc);
+    [[nodiscard]] static Window makeWindow(backend::WindowDesc desc);
 };
 
 }  // namespace cwin

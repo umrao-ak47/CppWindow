@@ -14,7 +14,7 @@
 #include <utility>
 #include <variant>
 
-namespace cwin {
+namespace cwin::backend {
 
 struct NoneGraphicsModeTag
 {};
@@ -49,6 +49,6 @@ struct WindowDesc
     std::optional<VideoMode> videoMode;
 };
 
-}  // namespace cwin
+}  // namespace cwin::backend
 
 #endif

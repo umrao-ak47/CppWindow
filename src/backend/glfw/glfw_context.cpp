@@ -12,11 +12,13 @@
 #include <string_view>
 #include <vector>
 
-#include "glfw_internal.hpp"
+#include "glfw_error.hpp"
+#include "glfw_gamepad.hpp"
+#include "glfw_input_map.hpp"
+#include "glfw_monitor.hpp"
+#include "glfw_registry.hpp"
 
-namespace cwin {
-
-using namespace glfw_backend;
+namespace cwin::backend::glfw {
 
 GLFWWindowContext::GLFWWindowContext()
 {
@@ -213,4 +215,4 @@ std::optional<std::string> GLFWWindowContext::clipboardText() const
                                                  : std::nullopt;
 }
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw

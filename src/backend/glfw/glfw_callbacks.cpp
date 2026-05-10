@@ -4,14 +4,29 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
+#include "glfw_callbacks.hpp"
+
 #include <algorithm>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
-#include "glfw_internal.hpp"
+#include "glfw_input_map.hpp"
+#include "glfw_monitor.hpp"
+#include "glfw_window.hpp"
 
-namespace cwin::glfw_backend {
+namespace cwin::backend::glfw {
+
+namespace {
+
+template <typename... Ts>
+struct Overloaded : Ts...
+{
+    using Ts::operator()...;
+};
+
+}  // namespace
 
 void setupGlfwWindowHints(const WindowDesc& desc)
 {
@@ -241,4 +256,4 @@ void registerGlfwCallbacks(GLFWwindow* const handle)
     });
 }
 
-}  // namespace cwin::glfw_backend
+}  // namespace cwin::backend::glfw

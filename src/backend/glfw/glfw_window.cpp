@@ -13,7 +13,11 @@
 #include <variant>
 #include <vector>
 
-#include "glfw_internal.hpp"
+#include "glfw_callbacks.hpp"
+#include "glfw_cursor.hpp"
+#include "glfw_error.hpp"
+#include "glfw_monitor.hpp"
+#include "glfw_registry.hpp"
 
 // Manually forward declare the Vulkan types GLFW needs.
 typedef struct VkInstance_T* VkInstance;
@@ -26,9 +30,7 @@ extern "C" VkResult glfwCreateWindowSurface(
     const void* allocator,
     VkSurfaceKHR* surface);
 
-namespace cwin {
-
-using namespace glfw_backend;
+namespace cwin::backend::glfw {
 
 GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
 {
@@ -708,4 +710,4 @@ bool GLFWNativeWindow::isVisible() const noexcept
     return glfwGetWindowAttrib(handle_.get(), GLFW_VISIBLE) == GLFW_TRUE;
 }
 
-}  // namespace cwin
+}  // namespace cwin::backend::glfw
