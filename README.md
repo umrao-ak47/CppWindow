@@ -7,6 +7,16 @@ per-window input while keeping backend details out of public headers.
 
 CppWindow is not a rendering library - it is a platform layer intended to sit beneath Vulkan, OpenGL, or future graphics backends.
 
+## Project Status
+
+CppWindow is pre-1.0 software. It is usable for experiments and early
+applications, but the public API may still change while real projects exercise
+the design.
+
+Use the `main` branch for the supported GLFW backend. The `native-backend`
+branch is experimental and exists for learning/native backend exploration; do
+not treat it as the recommended integration branch.
+
 ## Documentation
 
 - [CppWindow Guide](docs/guide.md): setup, event loop, OpenGL/Vulkan usage, input, events, monitors, window controls, and fullscreen behavior.
@@ -125,6 +135,7 @@ int main()
     {
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
+        dispatcher.dispatch(ctx.events());
     }
 }
 ```
@@ -214,6 +225,7 @@ while (!window.shouldClose())
 {
     ctx.pollEvents();
     dispatcher.dispatch(window.events());
+    dispatcher.dispatch(ctx.events());
 }
 ```
 
