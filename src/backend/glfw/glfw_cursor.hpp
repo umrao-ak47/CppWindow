@@ -14,8 +14,8 @@
 
 namespace cwin::backend::glfw {
 
-int toGlfwCursorMode(CursorMode mode);
-int toGlfwCursorShape(CursorShape shape);
+int toGlfwCursorMode(CursorMode mode) noexcept;
+int toGlfwCursorShape(CursorShape shape) noexcept;
 std::optional<GLFWimage> toGlfwImage(const ImageRgba& image) noexcept;
 
 }  // namespace cwin::backend::glfw

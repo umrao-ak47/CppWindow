@@ -35,7 +35,7 @@ bool isValidImage(const ImageRgba& image) noexcept
 
 }  // namespace
 
-int toGlfwCursorMode(CursorMode mode)
+int toGlfwCursorMode(CursorMode mode) noexcept
 {
     switch (mode) {
         case CursorMode::Normal:
@@ -49,7 +49,7 @@ int toGlfwCursorMode(CursorMode mode)
     return GLFW_CURSOR_NORMAL;
 }
 
-int toGlfwCursorShape(CursorShape shape)
+int toGlfwCursorShape(CursorShape shape) noexcept
 {
     switch (shape) {
         case CursorShape::Arrow:

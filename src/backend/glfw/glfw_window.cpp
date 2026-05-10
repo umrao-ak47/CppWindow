@@ -104,7 +104,7 @@ GLFWNativeWindow::GLFWNativeWindow(WindowDesc desc)
     registerWindowStorage(storage_);
 }
 
-void GLFWNativeWindow::captureWindowedBounds()
+void GLFWNativeWindow::captureWindowedBounds() noexcept
 {
     if (windowMode_ != WindowMode::Windowed || !handle_ || isMinimized() || isMaximized()) {
         return;
@@ -163,12 +163,12 @@ VulkanHandle GLFWNativeWindow::createVulkanSurface(void* instance) const
     return static_cast<VulkanHandle>(surface);
 }
 
-void GLFWNativeWindow::makeContextCurrent()
+void GLFWNativeWindow::makeContextCurrent() noexcept
 {
     glfwMakeContextCurrent(handle_.get());
 }
 
-void GLFWNativeWindow::swapBuffers()
+void GLFWNativeWindow::swapBuffers() noexcept
 {
     glfwSwapBuffers(handle_.get());
 }
@@ -193,7 +193,7 @@ const InputStateData* GLFWNativeWindow::inputData() const noexcept
     return &storage_->inputState.data();
 }
 
-void GLFWNativeWindow::setTitle(const std::string& title)
+void GLFWNativeWindow::setTitle(const std::string& title) noexcept
 {
     glfwSetWindowTitle(handle_.get(), title.c_str());
 }
@@ -204,19 +204,19 @@ std::string GLFWNativeWindow::title() const
     return currentTitle ? std::string{ currentTitle } : std::string{};
 }
 
-void GLFWNativeWindow::setSize(int width, int height)
+void GLFWNativeWindow::setSize(int width, int height) noexcept
 {
     glfwSetWindowSize(handle_.get(), width, height);
     captureWindowedBounds();
 }
 
-void GLFWNativeWindow::setPosition(int x, int y)
+void GLFWNativeWindow::setPosition(int x, int y) noexcept
 {
     glfwSetWindowPos(handle_.get(), x, y);
     captureWindowedBounds();
 }
 
-void GLFWNativeWindow::setSizeLimits(const SizeLimits& limits)
+void GLFWNativeWindow::setSizeLimits(const SizeLimits& limits) noexcept
 {
     glfwSetWindowSizeLimits(
         handle_.get(),
@@ -226,7 +226,7 @@ void GLFWNativeWindow::setSizeLimits(const SizeLimits& limits)
         limits.maxHeight.value_or(GLFW_DONT_CARE));
 }
 
-void GLFWNativeWindow::clearSizeLimits()
+void GLFWNativeWindow::clearSizeLimits() noexcept
 {
     glfwSetWindowSizeLimits(
         handle_.get(),
@@ -236,7 +236,7 @@ void GLFWNativeWindow::clearSizeLimits()
         GLFW_DONT_CARE);
 }
 
-void GLFWNativeWindow::setAspectRatio(AspectRatio ratio)
+void GLFWNativeWindow::setAspectRatio(AspectRatio ratio) noexcept
 {
     if (ratio.numerator <= 0 || ratio.denominator <= 0) {
         clearAspectRatio();
@@ -246,17 +246,17 @@ void GLFWNativeWindow::setAspectRatio(AspectRatio ratio)
     glfwSetWindowAspectRatio(handle_.get(), ratio.numerator, ratio.denominator);
 }
 
-void GLFWNativeWindow::clearAspectRatio()
+void GLFWNativeWindow::clearAspectRatio() noexcept
 {
     glfwSetWindowAspectRatio(handle_.get(), GLFW_DONT_CARE, GLFW_DONT_CARE);
 }
 
-void GLFWNativeWindow::setResizable(bool resizable)
+void GLFWNativeWindow::setResizable(bool resizable) noexcept
 {
     glfwSetWindowAttrib(handle_.get(), GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
 }
 
-void GLFWNativeWindow::setDecorated(bool decorated)
+void GLFWNativeWindow::setDecorated(bool decorated) noexcept
 {
     glfwSetWindowAttrib(handle_.get(), GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
     decorated_ = decorated;
@@ -265,7 +265,7 @@ void GLFWNativeWindow::setDecorated(bool decorated)
     }
 }
 
-void GLFWNativeWindow::setFloating(bool floating)
+void GLFWNativeWindow::setFloating(bool floating) noexcept
 {
     glfwSetWindowAttrib(handle_.get(), GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE);
     floating_ = floating;
@@ -274,12 +274,12 @@ void GLFWNativeWindow::setFloating(bool floating)
     }
 }
 
-void GLFWNativeWindow::setOpacity(float opacity)
+void GLFWNativeWindow::setOpacity(float opacity) noexcept
 {
     glfwSetWindowOpacity(handle_.get(), std::clamp(opacity, 0.0f, 1.0f));
 }
 
-void GLFWNativeWindow::setVSync(bool enabled)
+void GLFWNativeWindow::setVSync(bool enabled) noexcept
 {
     if (!hasOpenGLContext_) {
         return;
@@ -291,13 +291,13 @@ void GLFWNativeWindow::setVSync(bool enabled)
     glfwMakeContextCurrent(previous);
 }
 
-void GLFWNativeWindow::setCursorMode(CursorMode mode)
+void GLFWNativeWindow::setCursorMode(CursorMode mode) noexcept
 {
     glfwSetInputMode(handle_.get(), GLFW_CURSOR, toGlfwCursorMode(mode));
     cursorMode_ = mode;
 }
 
-bool GLFWNativeWindow::setCursorShape(CursorShape shape)
+bool GLFWNativeWindow::setCursorShape(CursorShape shape) noexcept
 {
     UniqueGLFWcursor cursor(glfwCreateStandardCursor(toGlfwCursorShape(shape)));
     if (!cursor) {
@@ -309,7 +309,7 @@ bool GLFWNativeWindow::setCursorShape(CursorShape shape)
     return true;
 }
 
-bool GLFWNativeWindow::setCursorImage(const ImageRgba& image, int hotX, int hotY)
+bool GLFWNativeWindow::setCursorImage(const ImageRgba& image, int hotX, int hotY) noexcept
 {
     std::optional<GLFWimage> glfwImage = toGlfwImage(image);
     if (!glfwImage) {
@@ -330,19 +330,19 @@ bool GLFWNativeWindow::setCursorImage(const ImageRgba& image, int hotX, int hotY
     return true;
 }
 
-void GLFWNativeWindow::clearCursor()
+void GLFWNativeWindow::clearCursor() noexcept
 {
     glfwSetCursor(handle_.get(), nullptr);
     cursor_.reset();
 }
 
-void GLFWNativeWindow::setMousePosition(double x, double y)
+void GLFWNativeWindow::setMousePosition(double x, double y) noexcept
 {
     glfwSetCursorPos(handle_.get(), x, y);
     storage_->inputState.setMousePosition(x, y);
 }
 
-bool GLFWNativeWindow::setRawMouseMotion(bool enabled)
+bool GLFWNativeWindow::setRawMouseMotion(bool enabled) noexcept
 {
     if (enabled && glfwRawMouseMotionSupported() != GLFW_TRUE) {
         return false;
@@ -352,12 +352,12 @@ bool GLFWNativeWindow::setRawMouseMotion(bool enabled)
     return !enabled || isRawMouseMotionEnabled();
 }
 
-void GLFWNativeWindow::minimize()
+void GLFWNativeWindow::minimize() noexcept
 {
     glfwIconifyWindow(handle_.get());
 }
 
-void GLFWNativeWindow::maximize()
+void GLFWNativeWindow::maximize() noexcept
 {
     if (windowMode_ != WindowMode::Windowed) {
         setWindowMode(WindowMode::Windowed, currentMonitorId_, std::nullopt);
@@ -367,7 +367,7 @@ void GLFWNativeWindow::maximize()
     glfwMaximizeWindow(handle_.get());
 }
 
-void GLFWNativeWindow::restore()
+void GLFWNativeWindow::restore() noexcept
 {
     if (windowMode_ != WindowMode::Windowed) {
         setWindowMode(WindowMode::Windowed, currentMonitorId_, std::nullopt);
@@ -379,7 +379,7 @@ void GLFWNativeWindow::restore()
 void GLFWNativeWindow::setWindowMode(
     WindowMode mode,
     uint32_t monitorId,
-    std::optional<VideoMode> videoMode)
+    std::optional<VideoMode> videoMode) noexcept
 {
     if (mode == WindowMode::Windowed) {
         if (windowMode_ == WindowMode::Windowed) {
@@ -538,12 +538,12 @@ bool GLFWNativeWindow::setIcon(std::span<const ImageRgba> images)
     return takeGlfwError().code == GLFW_NO_ERROR;
 }
 
-void GLFWNativeWindow::clearIcon()
+void GLFWNativeWindow::clearIcon() noexcept
 {
     glfwSetWindowIcon(handle_.get(), 0, nullptr);
 }
 
-void GLFWNativeWindow::requestAttention()
+void GLFWNativeWindow::requestAttention() noexcept
 {
     glfwRequestWindowAttention(handle_.get());
 }
@@ -591,7 +591,7 @@ WindowPlacement GLFWNativeWindow::windowedPlacement() const noexcept
     return placement;
 }
 
-void GLFWNativeWindow::setWindowedPlacement(const WindowPlacement& placement)
+void GLFWNativeWindow::setWindowedPlacement(const WindowPlacement& placement) noexcept
 {
     if (placement.width <= 0 || placement.height <= 0) {
         return;

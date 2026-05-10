@@ -320,26 +320,26 @@ class InputState final
 
 public:
     /// Returns whether a key is currently down.
-    bool isKeyDown(Key key) const;
+    bool isKeyDown(Key key) const noexcept;
     /// Returns whether a key transitioned from up to down this frame.
-    bool isKeyPressed(Key key) const;
+    bool isKeyPressed(Key key) const noexcept;
     /// Returns whether a key transitioned from down to up this frame.
-    bool isKeyReleased(Key key) const;
+    bool isKeyReleased(Key key) const noexcept;
 
     /// Returns whether a mouse button is currently down.
-    bool isMouseButtonDown(MouseButton button) const;
+    bool isMouseButtonDown(MouseButton button) const noexcept;
     /// Returns whether a mouse button transitioned from up to down this frame.
-    bool isMouseButtonPressed(MouseButton button) const;
+    bool isMouseButtonPressed(MouseButton button) const noexcept;
     /// Returns whether a mouse button transitioned from down to up this frame.
-    bool isMouseButtonReleased(MouseButton button) const;
+    bool isMouseButtonReleased(MouseButton button) const noexcept;
     /// Returns the current cursor position in window coordinates.
-    std::pair<double, double> mousePosition() const;
+    std::pair<double, double> mousePosition() const noexcept;
     /// Returns cursor movement since the previous poll/update.
-    std::pair<double, double> mouseDelta() const;
+    std::pair<double, double> mouseDelta() const noexcept;
     /// Returns accumulated scroll delta since the previous poll/update.
-    std::pair<double, double> scrollDelta() const;
+    std::pair<double, double> scrollDelta() const noexcept;
     /// Returns whether the cursor is inside the window content area.
-    bool isMouseInside() const;
+    bool isMouseInside() const noexcept;
 
 private:
     explicit InputState(const backend::InputStateData* state);
@@ -539,13 +539,13 @@ public:
     }
 
     /// Returns whether an action is currently down.
-    [[nodiscard]] bool isDown(ActionId action) const;
+    [[nodiscard]] bool isDown(ActionId action) const noexcept;
     /// Returns whether an action id transitioned from up to down on the last update.
-    [[nodiscard]] bool isPressed(ActionId action) const;
+    [[nodiscard]] bool isPressed(ActionId action) const noexcept;
     /// Returns whether an action id transitioned from down to up on the last update.
-    [[nodiscard]] bool isReleased(ActionId action) const;
+    [[nodiscard]] bool isReleased(ActionId action) const noexcept;
     /// Returns the current axis value for an action id, or zero when inactive.
-    [[nodiscard]] float axisValue(ActionId action) const;
+    [[nodiscard]] float axisValue(ActionId action) const noexcept;
     /// Returns the binding for an action id, or null if it does not exist.
     [[nodiscard]] const ActionBinding* binding(ActionId action) const noexcept;
 

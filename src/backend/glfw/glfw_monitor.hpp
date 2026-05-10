@@ -16,8 +16,8 @@
 namespace cwin::backend::glfw {
 
 std::vector<GLFWmonitor*> getOrderedMonitors();
-GLFWmonitor* getMonitorById(uint32_t monitorId);
-VideoMode toVideoMode(const GLFWvidmode& mode);
+GLFWmonitor* getMonitorById(uint32_t monitorId) noexcept;
+VideoMode toVideoMode(const GLFWvidmode& mode) noexcept;
 MonitorInfo toMonitorInfo(GLFWmonitor* monitor, uint32_t id, bool primary);
 uint32_t getWindowMonitorId(GLFWwindow* window);
 

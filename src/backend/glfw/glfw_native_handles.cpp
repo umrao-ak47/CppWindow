@@ -30,7 +30,7 @@
 
 namespace cwin::backend::glfw {
 
-NativeHandles GLFWNativeWindow::nativeHandles() const
+NativeHandles GLFWNativeWindow::nativeHandles() const noexcept
 {
     NativeHandles handles{};
 

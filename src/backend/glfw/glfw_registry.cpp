@@ -31,12 +31,4 @@ void resetWindowStorage() noexcept
     g_WindowRegistry.resetAll();
 }
 
-void dispatchEventToAllWindows(const Event& event)
-{
-    g_WindowRegistry.forEach([&](WindowStorage& storage) {
-        storage.inputState.handleEvent(event);
-        storage.eventQueue.push_back(event);
-    });
-}
-
 }  // namespace cwin::backend::glfw

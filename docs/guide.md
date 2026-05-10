@@ -636,6 +636,7 @@ dispatcher
 while (!window.shouldClose()) {
     ctx.pollEvents();
     dispatcher.dispatch(window.events());
+    dispatcher.dispatch(ctx.events());
 }
 ```
 
@@ -688,6 +689,9 @@ Common event types:
 - `JoystickMoved`
 - `FilesDropped`
 
+Window-local events are read from `Window::events()`. App-level device events
+such as `Gamepad*` and `Joystick*` are read from `Context::events()`.
+
 `TextEntered` reports Unicode code points after keyboard layout and input
 method processing. Use it for text fields, and use `KeyPressed` for commands
 and shortcuts.
@@ -732,12 +736,13 @@ if (auto state = ctx.gamepadState(0)) {
 has a standard mapping. `gamepadState()` returns a value only for present
 devices with a standard mapping.
 
-Gamepad connection, button, and axis events are delivered to window event
-queues after `pollEvents()`.
+Gamepad connection, button, and axis events are app-level events delivered to
+`Context::events()` after `pollEvents()`.
 
-Raw joystick events are also delivered for every present GLFW joystick slot.
-Use `Joystick*` events when you need backend button/axis indices, and use
-`Gamepad*` events when you want GLFW's standard controller mapping.
+Raw joystick events are also delivered through `Context::events()` for every
+present GLFW joystick slot. Use `Joystick*` events when you need backend
+button/axis indices, and use `Gamepad*` events when you want GLFW's standard
+controller mapping.
 
 ## Clipboard And File Drop
 

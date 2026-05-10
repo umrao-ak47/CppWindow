@@ -67,16 +67,17 @@ std::vector<ActionInfo> ActionMap::actions() const
     actions.reserve(entries_.size());
 
     for (const Entry& entry : entries_) {
-        actions.push_back(ActionInfo{
-            .id = entry.id,
-            .name = entry.action,
-            .metadata = entry.metadata,
-            .binding = entry.binding,
-            .down = entry.down,
-            .pressed = entry.down && !entry.previousDown,
-            .released = !entry.down && entry.previousDown,
-            .axisValue = entry.axisValue,
-        });
+        actions.push_back(
+            ActionInfo{
+                .id = entry.id,
+                .name = entry.action,
+                .metadata = entry.metadata,
+                .binding = entry.binding,
+                .down = entry.down,
+                .pressed = entry.down && !entry.previousDown,
+                .released = !entry.down && entry.previousDown,
+                .axisValue = entry.axisValue,
+            });
     }
 
     return actions;
@@ -157,8 +158,7 @@ ActionMap& ActionMap::bindGamepadAxis(
     return *this;
 }
 
-ActionMap&
-ActionMap::replaceKey(ActionId action, Key key, Modifiers modifiers, bool exactModifiers)
+ActionMap& ActionMap::replaceKey(ActionId action, Key key, Modifiers modifiers, bool exactModifiers)
 {
     if (Entry* entry = findEntry(action)) {
         entry->binding.keys.clear();
@@ -309,25 +309,25 @@ void ActionMap::clearContextStates()
     contexts_.clear();
 }
 
-bool ActionMap::isDown(ActionId action) const
+bool ActionMap::isDown(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry && entry->down;
 }
 
-bool ActionMap::isPressed(ActionId action) const
+bool ActionMap::isPressed(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry && entry->down && !entry->previousDown;
 }
 
-bool ActionMap::isReleased(ActionId action) const
+bool ActionMap::isReleased(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry && !entry->down && entry->previousDown;
 }
 
-float ActionMap::axisValue(ActionId action) const
+float ActionMap::axisValue(ActionId action) const noexcept
 {
     const Entry* entry = findEntry(action);
     return entry ? entry->axisValue : 0.0f;

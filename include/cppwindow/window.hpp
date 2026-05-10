@@ -48,13 +48,13 @@ public:
     Window& operator=(Window&&) = delete;
 
     /// Returns platform-native handles for advanced integration.
-    NativeHandles nativeHandles() const;
+    NativeHandles nativeHandles() const noexcept;
     /// Creates a Vulkan surface for the given native VkInstance pointer.
     VulkanHandle createVulkanSurface(void* instance) const;
     /// Makes this window's OpenGL context current on the calling thread.
-    void makeContextCurrent();
+    void makeContextCurrent() noexcept;
     /// Swaps the front and back buffers.
-    void swapBuffers();
+    void swapBuffers() noexcept;
 
     /// Returns whether the window should close.
     bool shouldClose() const noexcept;
@@ -67,62 +67,62 @@ public:
     const InputState& input() const noexcept;
 
     /// Sets the window title.
-    void setTitle(const std::string& title);
+    void setTitle(const std::string& title) noexcept;
     /// Returns the current UTF-8 window title.
     std::string title() const;
     /// Sets the content size in screen coordinates.
-    void setSize(int width, int height);
+    void setSize(int width, int height) noexcept;
     /// Sets the window position in virtual desktop coordinates.
-    void setPosition(int x, int y);
+    void setPosition(int x, int y) noexcept;
     /// Applies optional min/max size limits.
-    void setSizeLimits(const SizeLimits& limits);
+    void setSizeLimits(const SizeLimits& limits) noexcept;
     /// Removes size limits.
-    void clearSizeLimits();
+    void clearSizeLimits() noexcept;
     /// Sets the content aspect ratio.
-    void setAspectRatio(AspectRatio ratio);
+    void setAspectRatio(AspectRatio ratio) noexcept;
     /// Removes the content aspect ratio constraint.
-    void clearAspectRatio();
+    void clearAspectRatio() noexcept;
     /// Enables or disables user resizing.
-    void setResizable(bool resizable);
+    void setResizable(bool resizable) noexcept;
     /// Enables or disables platform decorations such as title bar and border.
-    void setDecorated(bool decorated);
+    void setDecorated(bool decorated) noexcept;
     /// Enables or disables always-on-top behavior.
-    void setFloating(bool floating);
+    void setFloating(bool floating) noexcept;
     /// Sets window opacity in the platform-supported range.
-    void setOpacity(float opacity);
+    void setOpacity(float opacity) noexcept;
     /// Enables or disables swap interval synchronization.
-    void setVSync(bool enabled);
+    void setVSync(bool enabled) noexcept;
     /// Sets cursor visibility/capture mode.
-    void setCursorMode(CursorMode mode);
+    void setCursorMode(CursorMode mode) noexcept;
     /// Sets a standard platform cursor shape. Returns false when unsupported.
-    [[nodiscard]] bool setCursorShape(CursorShape shape);
+    [[nodiscard]] bool setCursorShape(CursorShape shape) noexcept;
     /// Sets a custom RGBA cursor image with hotspot coordinates. Returns false on invalid input.
-    [[nodiscard]] bool setCursorImage(const ImageRgba& image, int hotX = 0, int hotY = 0);
+    [[nodiscard]] bool setCursorImage(const ImageRgba& image, int hotX = 0, int hotY = 0) noexcept;
     /// Restores the platform default cursor image.
-    void clearCursor();
+    void clearCursor() noexcept;
     /// Sets the cursor position in window coordinates.
-    void setMousePosition(double x, double y);
+    void setMousePosition(double x, double y) noexcept;
     /// Enables or disables raw mouse motion when supported by the backend.
-    [[nodiscard]] bool setRawMouseMotion(bool enabled);
+    [[nodiscard]] bool setRawMouseMotion(bool enabled) noexcept;
     /// Minimizes the window.
-    void minimize();
+    void minimize() noexcept;
     /// Maximizes the window.
-    void maximize();
+    void maximize() noexcept;
     /// Restores the window from minimized, maximized, or fullscreen mode.
-    void restore();
+    void restore() noexcept;
     /// Changes the presentation mode, optionally targeting a monitor/video mode.
     void setWindowMode(
         WindowMode mode,
         uint32_t monitorId = 0,
-        std::optional<VideoMode> videoMode = std::nullopt);
+        std::optional<VideoMode> videoMode = std::nullopt) noexcept;
     /// Sets one window icon image. Returns false when unsupported or invalid.
     [[nodiscard]] bool setIcon(const ImageRgba& image);
     /// Sets multiple window icon images. Returns false when unsupported or invalid.
     [[nodiscard]] bool setIcons(std::span<const ImageRgba> images);
     /// Restores the platform default window icon.
-    void clearIcon();
+    void clearIcon() noexcept;
     /// Requests user attention for the window.
-    void requestAttention();
+    void requestAttention() noexcept;
     /// Requests or clears input focus where the platform permits it.
     void setFocus(bool focus) const noexcept;
     /// Shows or hides the window.
@@ -130,7 +130,7 @@ public:
     /// Returns the saved/restored windowed placement.
     WindowPlacement windowedPlacement() const noexcept;
     /// Applies a saved/restored windowed placement.
-    void setWindowedPlacement(const WindowPlacement& placement);
+    void setWindowedPlacement(const WindowPlacement& placement) noexcept;
     /// Returns the content size in screen coordinates.
     std::pair<int, int> size() const noexcept;
     /// Returns the window position in virtual desktop coordinates.
@@ -259,11 +259,13 @@ public:
     void waitEventsTimeout(double timeoutSeconds) noexcept;
     /// Wakes a thread blocked in `waitEvents` or `waitEventsTimeout`.
     void postEmptyEvent() noexcept;
+    /// Returns app-level events collected by the last context poll.
+    std::span<const Event> events() const noexcept;
 
     /// Returns a procedure loader for OpenGL or backend integration.
-    ProcLoader procLoader() const;
+    ProcLoader procLoader() const noexcept;
     /// Returns whether Vulkan presentation support is available.
-    bool isVulkanSupported() const;
+    bool isVulkanSupported() const noexcept;
     /// Returns Vulkan instance extensions required by the active window backend.
     std::vector<std::string> requiredVulkanInstanceExtensions() const;
     /// Returns metadata for all connected monitors.
@@ -273,15 +275,15 @@ public:
     /// Returns video modes for a monitor id, defaulting to the primary monitor.
     std::vector<VideoMode> videoModes(uint32_t monitorId = 0) const;
     /// Returns monitor content scale, defaulting to the primary monitor.
-    std::pair<float, float> contentScale(uint32_t monitorId = 0) const;
+    std::pair<float, float> contentScale(uint32_t monitorId = 0) const noexcept;
     /// Returns DPI/content scale conversion helper for a monitor.
-    DpiScale dpiScale(uint32_t monitorId = 0) const;
+    DpiScale dpiScale(uint32_t monitorId = 0) const noexcept;
     /// Returns connected standard gamepads.
     std::vector<GamepadInfo> gamepads() const;
     /// Returns the current state for a standard gamepad.
     std::optional<GamepadState> gamepadState(uint32_t gamepadId = 0) const;
     /// Returns whether raw mouse motion is supported by the backend/platform.
-    bool isRawMouseMotionSupported() const;
+    bool isRawMouseMotionSupported() const noexcept;
     /// Returns a localized key label for a logical key or platform scancode.
     [[nodiscard]] std::optional<std::string> keyName(Key key, int scancode = -1) const;
     /// Returns the platform scancode for a logical key, or -1 when unavailable.

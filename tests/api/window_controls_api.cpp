@@ -13,6 +13,51 @@
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Window&>().events()),
               std::span<const cwin::Event>>);
+static_assert(noexcept(std::declval<const cwin::Window&>().events()));
+static_assert(noexcept(std::declval<const cwin::Window&>().nativeHandles()));
+static_assert(noexcept(std::declval<cwin::Window&>().makeContextCurrent()));
+static_assert(noexcept(std::declval<cwin::Window&>().swapBuffers()));
+static_assert(noexcept(std::declval<cwin::Window&>().setTitle(std::declval<const std::string&>())));
+static_assert(noexcept(std::declval<cwin::Window&>().setSize(800, 600)));
+static_assert(noexcept(std::declval<cwin::Window&>().setPosition(100, 120)));
+static_assert(
+    noexcept(std::declval<cwin::Window&>().setSizeLimits(std::declval<const cwin::SizeLimits&>())));
+static_assert(noexcept(std::declval<cwin::Window&>().clearSizeLimits()));
+static_assert(noexcept(std::declval<cwin::Window&>().setAspectRatio(cwin::AspectRatio{})));
+static_assert(noexcept(std::declval<cwin::Window&>().clearAspectRatio()));
+static_assert(noexcept(std::declval<cwin::Window&>().setResizable(true)));
+static_assert(noexcept(std::declval<cwin::Window&>().setDecorated(true)));
+static_assert(noexcept(std::declval<cwin::Window&>().setFloating(false)));
+static_assert(noexcept(std::declval<cwin::Window&>().setOpacity(1.0f)));
+static_assert(noexcept(std::declval<cwin::Window&>().setVSync(true)));
+static_assert(noexcept(std::declval<cwin::Window&>().setCursorMode(cwin::CursorMode::Normal)));
+static_assert(noexcept(std::declval<cwin::Window&>().setCursorShape(cwin::CursorShape::Hand)));
+static_assert(noexcept(
+    std::declval<cwin::Window&>().setCursorImage(std::declval<const cwin::ImageRgba&>(), 0, 0)));
+static_assert(noexcept(std::declval<cwin::Window&>().clearCursor()));
+static_assert(noexcept(std::declval<cwin::Window&>().setMousePosition(0.0, 0.0)));
+static_assert(noexcept(std::declval<cwin::Window&>().setRawMouseMotion(false)));
+static_assert(noexcept(std::declval<cwin::Window&>().minimize()));
+static_assert(noexcept(std::declval<cwin::Window&>().maximize()));
+static_assert(noexcept(std::declval<cwin::Window&>().restore()));
+static_assert(noexcept(std::declval<cwin::Window&>().setWindowMode(cwin::WindowMode::Windowed)));
+static_assert(noexcept(std::declval<cwin::Window&>().setWindowedPlacement(
+    std::declval<const cwin::WindowPlacement&>())));
+static_assert(noexcept(std::declval<cwin::Window&>().clearIcon()));
+static_assert(noexcept(std::declval<cwin::Window&>().requestAttention()));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().isKeyDown(cwin::Key::A)));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().isKeyPressed(cwin::Key::A)));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().isKeyReleased(cwin::Key::A)));
+static_assert(noexcept(
+    std::declval<const cwin::Window&>().input().isMouseButtonDown(cwin::MouseButton::Left)));
+static_assert(noexcept(
+    std::declval<const cwin::Window&>().input().isMouseButtonPressed(cwin::MouseButton::Left)));
+static_assert(noexcept(
+    std::declval<const cwin::Window&>().input().isMouseButtonReleased(cwin::MouseButton::Left)));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().mousePosition()));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().mouseDelta()));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().scrollDelta()));
+static_assert(noexcept(std::declval<const cwin::Window&>().input().isMouseInside()));
 static_assert(std::is_default_constructible_v<cwin::EventDispatcher>);
 static_assert(std::is_default_constructible_v<cwin::EventDispatcher::Subscription>);
 static_assert(std::is_same_v<
@@ -62,6 +107,15 @@ static_assert(std::is_same_v<decltype(std::declval<cwin::Context&>().waitEvents(
 static_assert(
     std::is_same_v<decltype(std::declval<cwin::Context&>().waitEventsTimeout(0.1)), void>);
 static_assert(std::is_same_v<decltype(std::declval<cwin::Context&>().postEmptyEvent()), void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Context&>().events()),
+              std::span<const cwin::Event>>);
+static_assert(noexcept(std::declval<const cwin::Context&>().events()));
+static_assert(noexcept(std::declval<const cwin::Context&>().procLoader()));
+static_assert(noexcept(std::declval<const cwin::Context&>().isVulkanSupported()));
+static_assert(noexcept(std::declval<const cwin::Context&>().contentScale()));
+static_assert(noexcept(std::declval<const cwin::Context&>().dpiScale()));
+static_assert(noexcept(std::declval<const cwin::Context&>().isRawMouseMotionSupported()));
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::Context&>().setClipboardText(
                   std::declval<const std::string&>())),

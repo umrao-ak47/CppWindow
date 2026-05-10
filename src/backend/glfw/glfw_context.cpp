@@ -22,6 +22,7 @@ namespace cwin::backend::glfw {
 
 GLFWWindowContext::GLFWWindowContext()
 {
+    eventQueue_.reserve(1024);
     previousErrorCallback_ = glfwSetErrorCallback(glfwErrorCallback);
     clearGlfwError();
 
@@ -41,28 +42,23 @@ GLFWWindowContext::~GLFWWindowContext()
 
 void GLFWWindowContext::pollEvents() noexcept
 {
-    // clear old event buffers
-    resetWindowStorage();
-    // poll new events
+    resetEventQueues();
     glfwPollEvents();
-    pollJoysticks();
-    pollGamepads();
+    pollDeviceEvents();
 }
 
 void GLFWWindowContext::waitEvents() noexcept
 {
-    resetWindowStorage();
+    resetEventQueues();
     glfwWaitEvents();
-    pollJoysticks();
-    pollGamepads();
+    pollDeviceEvents();
 }
 
 void GLFWWindowContext::waitEventsTimeout(double timeoutSeconds) noexcept
 {
-    resetWindowStorage();
+    resetEventQueues();
     glfwWaitEventsTimeout(std::max(0.0, timeoutSeconds));
-    pollJoysticks();
-    pollGamepads();
+    pollDeviceEvents();
 }
 
 void GLFWWindowContext::postEmptyEvent() noexcept
@@ -70,14 +66,30 @@ void GLFWWindowContext::postEmptyEvent() noexcept
     glfwPostEmptyEvent();
 }
 
-ProcLoader GLFWWindowContext::procLoader() const
+std::span<const Event> GLFWWindowContext::events() const noexcept
+{
+    return std::span<const Event>{ eventQueue_.data(), eventQueue_.size() };
+}
+
+void GLFWWindowContext::resetEventQueues() noexcept
+{
+    eventQueue_.clear();
+    resetWindowStorage();
+}
+
+void GLFWWindowContext::pollDeviceEvents()
+{
+    deviceEvents_.poll(eventQueue_);
+}
+
+ProcLoader GLFWWindowContext::procLoader() const noexcept
 {
     return [](const char* name) -> ProcFunction {
         return glfwGetProcAddress(name);
     };
 }
 
-bool GLFWWindowContext::isVulkanSupported() const
+bool GLFWWindowContext::isVulkanSupported() const noexcept
 {
     return glfwVulkanSupported();
 }
@@ -137,7 +149,7 @@ std::vector<VideoMode> GLFWWindowContext::videoModes(uint32_t monitorId) const
     return result;
 }
 
-std::pair<float, float> GLFWWindowContext::contentScale(uint32_t monitorId) const
+std::pair<float, float> GLFWWindowContext::contentScale(uint32_t monitorId) const noexcept
 {
     GLFWmonitor* monitor = getMonitorById(monitorId);
     if (!monitor) {
@@ -169,7 +181,7 @@ std::optional<GamepadState> GLFWWindowContext::gamepadState(uint32_t gamepadId) 
     return readStandardGamepadState(gamepadId);
 }
 
-bool GLFWWindowContext::isRawMouseMotionSupported() const
+bool GLFWWindowContext::isRawMouseMotionSupported() const noexcept
 {
     return glfwRawMouseMotionSupported() == GLFW_TRUE;
 }

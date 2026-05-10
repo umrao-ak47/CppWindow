@@ -117,6 +117,7 @@ int main()
     while (!window.shouldClose()) {
         ctx.pollEvents();
         dispatcher.dispatch(window.events());
+        dispatcher.dispatch(ctx.events());
 
         std::ostringstream title;
         title << "Gamepad";

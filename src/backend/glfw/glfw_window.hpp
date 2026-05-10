@@ -51,6 +51,7 @@ public:
     explicit WindowStorage(GLFWwindow* window)
         : inputState(window)
     {
+        eventQueue.reserve(64);
     }
 
     std::vector<Event> eventQueue;
@@ -74,10 +75,10 @@ public:
     void handleWindowedBoundsChanged();
     void registerCallbacks();
 
-    NativeHandles nativeHandles() const;
+    NativeHandles nativeHandles() const noexcept;
     VulkanHandle createVulkanSurface(void* instance) const;
-    void makeContextCurrent();
-    void swapBuffers();
+    void makeContextCurrent() noexcept;
+    void swapBuffers() noexcept;
 
     bool shouldClose() const noexcept;
     void requestClose() noexcept;
@@ -85,36 +86,37 @@ public:
     std::span<const Event> events() const noexcept;
     const InputStateData* inputData() const noexcept;
 
-    void setTitle(const std::string& title);
+    void setTitle(const std::string& title) noexcept;
     std::string title() const;
-    void setSize(int width, int height);
-    void setPosition(int x, int y);
-    void setSizeLimits(const SizeLimits& limits);
-    void clearSizeLimits();
-    void setAspectRatio(AspectRatio ratio);
-    void clearAspectRatio();
-    void setResizable(bool resizable);
-    void setDecorated(bool decorated);
-    void setFloating(bool floating);
-    void setOpacity(float opacity);
-    void setVSync(bool enabled);
-    void setCursorMode(CursorMode mode);
-    bool setCursorShape(CursorShape shape);
-    bool setCursorImage(const ImageRgba& image, int hotX, int hotY);
-    void clearCursor();
-    void setMousePosition(double x, double y);
-    bool setRawMouseMotion(bool enabled);
-    void minimize();
-    void maximize();
-    void restore();
-    void setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode);
+    void setSize(int width, int height) noexcept;
+    void setPosition(int x, int y) noexcept;
+    void setSizeLimits(const SizeLimits& limits) noexcept;
+    void clearSizeLimits() noexcept;
+    void setAspectRatio(AspectRatio ratio) noexcept;
+    void clearAspectRatio() noexcept;
+    void setResizable(bool resizable) noexcept;
+    void setDecorated(bool decorated) noexcept;
+    void setFloating(bool floating) noexcept;
+    void setOpacity(float opacity) noexcept;
+    void setVSync(bool enabled) noexcept;
+    void setCursorMode(CursorMode mode) noexcept;
+    bool setCursorShape(CursorShape shape) noexcept;
+    bool setCursorImage(const ImageRgba& image, int hotX, int hotY) noexcept;
+    void clearCursor() noexcept;
+    void setMousePosition(double x, double y) noexcept;
+    bool setRawMouseMotion(bool enabled) noexcept;
+    void minimize() noexcept;
+    void maximize() noexcept;
+    void restore() noexcept;
+    void
+    setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode) noexcept;
     bool setIcon(std::span<const ImageRgba> images);
-    void clearIcon();
-    void requestAttention();
+    void clearIcon() noexcept;
+    void requestAttention() noexcept;
     void setFocus(bool focus) const noexcept;
     void setVisible(bool visible) const noexcept;
     WindowPlacement windowedPlacement() const noexcept;
-    void setWindowedPlacement(const WindowPlacement& placement);
+    void setWindowedPlacement(const WindowPlacement& placement) noexcept;
     std::pair<int, int> size() const noexcept;
     std::pair<int, int> position() const noexcept;
     std::pair<uint32_t, uint32_t> framebufferSize() const noexcept;
@@ -132,7 +134,7 @@ public:
     bool isVisible() const noexcept;
 
 private:
-    void captureWindowedBounds();
+    void captureWindowedBounds() noexcept;
 
     UniqueGLFWwindow handle_{};
     UniqueGLFWcursor cursor_{};

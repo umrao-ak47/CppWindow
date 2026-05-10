@@ -32,8 +32,7 @@ public:
     WindowStorageRegistry& operator=(WindowStorageRegistry&&) = delete;
 
     // Stores weak references to window-owned storage and compacts expired
-    // entries during resetAll(). Storage reset and forEach callbacks are invoked
-    // while the registry mutex is held, so they must not re-enter this registry.
+    // entries during resetAll().
     void registerStorage(const std::shared_ptr<T>& storage)
     {
         std::scoped_lock lock(mtx_);
@@ -69,22 +68,6 @@ public:
         }
 
         tail_ = newTail;
-    }
-
-    // Visits live entries without compacting expired entries. The callback is
-    // called while the registry mutex is held; re-entering this registry from
-    // the callback can deadlock.
-    template <typename Fn>
-        requires std::invocable<Fn&, T&>
-    void forEach(Fn&& fn)
-    {
-        std::scoped_lock lock(mtx_);
-
-        for (std::size_t i = 0; i < tail_; ++i) {
-            if (auto storage = storageRefs_[i].lock()) {
-                fn(*storage);
-            }
-        }
     }
 
 private:

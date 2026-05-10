@@ -35,16 +35,35 @@ std::vector<GLFWmonitor*> getOrderedMonitors()
     return ordered;
 }
 
-GLFWmonitor* getMonitorById(uint32_t monitorId)
+GLFWmonitor* getMonitorById(uint32_t monitorId) noexcept
 {
-    auto monitors = getOrderedMonitors();
-    if (monitorId >= monitors.size()) {
+    int count = 0;
+    GLFWmonitor** monitors = glfwGetMonitors(&count);
+    if (!monitors || count <= 0) {
         return nullptr;
     }
-    return monitors[monitorId];
+
+    GLFWmonitor* primary = glfwGetPrimaryMonitor();
+    if (monitorId == 0) {
+        return primary ? primary : monitors[0];
+    }
+
+    uint32_t currentId = primary ? 1 : 0;
+    for (int i = 0; i < count; ++i) {
+        if (!monitors[i] || monitors[i] == primary) {
+            continue;
+        }
+
+        if (currentId == monitorId) {
+            return monitors[i];
+        }
+        ++currentId;
+    }
+
+    return nullptr;
 }
 
-VideoMode toVideoMode(const GLFWvidmode& mode)
+VideoMode toVideoMode(const GLFWvidmode& mode) noexcept
 {
     return {
         .width = mode.width,

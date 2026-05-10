@@ -355,7 +355,7 @@ public:
     /// Returns whether this event currently stores payload type `T`.
     template <typename T>
         requires EventSubtypeOf<T, Event>
-    [[nodiscard]] bool is() const
+    [[nodiscard]] bool is() const noexcept
     {
         return std::holds_alternative<T>(m_data);
     }
@@ -363,7 +363,7 @@ public:
     /// Returns a pointer to payload type `T`, or null when another type is stored.
     template <typename T>
         requires EventSubtypeOf<T, Event>
-    [[nodiscard]] T* getIf()
+    [[nodiscard]] T* getIf() noexcept
     {
         return std::get_if<T>(&m_data);
     }
@@ -371,21 +371,23 @@ public:
     /// Returns a const pointer to payload type `T`, or null when another type is stored.
     template <typename T>
         requires EventSubtypeOf<T, Event>
-    [[nodiscard]] const T* getIf() const
+    [[nodiscard]] const T* getIf() const noexcept
     {
         return std::get_if<T>(&m_data);
     }
 
     /// Visits the stored payload with `std::visit`.
     template <typename Visitor>
-    decltype(auto) visit(Visitor&& visitor) noexcept
+    decltype(auto) visit(Visitor&& visitor) noexcept(
+        noexcept(std::visit(std::forward<Visitor>(visitor), m_data)))
     {
         return std::visit(std::forward<Visitor>(visitor), m_data);
     }
 
     /// Visits the stored payload with `std::visit`.
     template <typename Visitor>
-    decltype(auto) visit(Visitor&& visitor) const noexcept
+    decltype(auto) visit(Visitor&& visitor) const
+        noexcept(noexcept(std::visit(std::forward<Visitor>(visitor), m_data)))
     {
         return std::visit(std::forward<Visitor>(visitor), m_data);
     }
@@ -412,8 +414,8 @@ concept EventHandlerFor =
 /// Persistent typed event dispatcher.
 ///
 /// Register handlers once, then call `dispatch()` with the current frame's
-/// `Window::events()` span after `Context::pollEvents()` or
-/// `waitEvents*()`. `EventDispatcher` does not run the loop.
+/// `Window::events()` or `Context::events()` span after `Context::pollEvents()`
+/// or `waitEvents*()`. `EventDispatcher` does not run the loop.
 class EventDispatcher final
 {
 public:

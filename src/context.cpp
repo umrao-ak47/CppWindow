@@ -57,12 +57,17 @@ void Context::postEmptyEvent() noexcept
     impl_->context.postEmptyEvent();
 }
 
-ProcLoader Context::procLoader() const
+std::span<const Event> Context::events() const noexcept
+{
+    return impl_->context.events();
+}
+
+ProcLoader Context::procLoader() const noexcept
 {
     return impl_->context.procLoader();
 }
 
-bool Context::isVulkanSupported() const
+bool Context::isVulkanSupported() const noexcept
 {
     return impl_->context.isVulkanSupported();
 }
@@ -87,12 +92,12 @@ std::vector<VideoMode> Context::videoModes(uint32_t monitorId) const
     return impl_->context.videoModes(monitorId);
 }
 
-std::pair<float, float> Context::contentScale(uint32_t monitorId) const
+std::pair<float, float> Context::contentScale(uint32_t monitorId) const noexcept
 {
     return impl_->context.contentScale(monitorId);
 }
 
-DpiScale Context::dpiScale(uint32_t monitorId) const
+DpiScale Context::dpiScale(uint32_t monitorId) const noexcept
 {
     auto [x, y] = contentScale(monitorId);
     return DpiScale{ .x = x, .y = y };
@@ -108,7 +113,7 @@ std::optional<GamepadState> Context::gamepadState(uint32_t gamepadId) const
     return impl_->context.gamepadState(gamepadId);
 }
 
-bool Context::isRawMouseMotionSupported() const
+bool Context::isRawMouseMotionSupported() const noexcept
 {
     return impl_->context.isRawMouseMotionSupported();
 }

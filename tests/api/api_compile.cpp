@@ -72,6 +72,9 @@ static_assert(cwin::EventSubtypeOf<cwin::Event::Refresh, cwin::Event>);
 static_assert(cwin::EventSubtypeOf<cwin::Event::FramebufferResized, cwin::Event>);
 static_assert(cwin::EventSubtypeOf<cwin::Event::KeyPressed, cwin::Event>);
 static_assert(!cwin::EventSubtypeOf<int, cwin::Event>);
+static_assert(noexcept(std::declval<const cwin::Event&>().is<cwin::Event::Closed>()));
+static_assert(noexcept(std::declval<cwin::Event&>().getIf<cwin::Event::Closed>()));
+static_assert(noexcept(std::declval<const cwin::Event&>().getIf<cwin::Event::Closed>()));
 
 static_assert(cwin::EventPayloadHandlerFor<ClosedHandler, cwin::Event::Closed>);
 static_assert(cwin::EventPayloadHandlerFor<VoidHandler, cwin::Event::Closed>);
@@ -107,6 +110,9 @@ static_assert(
         cwin::EventDispatcher&>);
 
 static_assert(std::is_same_v<decltype(cwin::Context::get()), cwin::Context&>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Context&>().events()),
+              std::span<const cwin::Event>>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::Context&>().monitors()),
               std::vector<cwin::MonitorInfo>>);
@@ -165,6 +171,10 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::ActionMap&>().isPressed(cwin::ActionId{ 1 })),
               bool>);
+static_assert(noexcept(std::declval<const cwin::ActionMap&>().isDown(cwin::ActionId{ 1 })));
+static_assert(noexcept(std::declval<const cwin::ActionMap&>().isPressed(cwin::ActionId{ 1 })));
+static_assert(noexcept(std::declval<const cwin::ActionMap&>().isReleased(cwin::ActionId{ 1 })));
+static_assert(noexcept(std::declval<const cwin::ActionMap&>().axisValue(cwin::ActionId{ 1 })));
 static_assert(requires(
     cwin::ActionMap actions,
     CompileInput input,

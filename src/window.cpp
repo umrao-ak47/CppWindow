@@ -48,7 +48,7 @@ Window::Window(Window&& other) noexcept
 
 Window::~Window() = default;
 
-NativeHandles Window::nativeHandles() const
+NativeHandles Window::nativeHandles() const noexcept
 {
     return state_->window.nativeHandles();
 }
@@ -58,12 +58,12 @@ VulkanHandle Window::createVulkanSurface(void* instance) const
     return state_->window.createVulkanSurface(instance);
 }
 
-void Window::makeContextCurrent()
+void Window::makeContextCurrent() noexcept
 {
     state_->window.makeContextCurrent();
 }
 
-void Window::swapBuffers()
+void Window::swapBuffers() noexcept
 {
     state_->window.swapBuffers();
 }
@@ -88,7 +88,7 @@ const InputState& Window::input() const noexcept
     return inputState_;
 }
 
-void Window::setTitle(const std::string& title)
+void Window::setTitle(const std::string& title) noexcept
 {
     state_->window.setTitle(title);
 }
@@ -98,107 +98,110 @@ std::string Window::title() const
     return state_->window.title();
 }
 
-void Window::setSize(int width, int height)
+void Window::setSize(int width, int height) noexcept
 {
     state_->window.setSize(width, height);
 }
 
-void Window::setPosition(int x, int y)
+void Window::setPosition(int x, int y) noexcept
 {
     state_->window.setPosition(x, y);
 }
 
-void Window::setSizeLimits(const SizeLimits& limits)
+void Window::setSizeLimits(const SizeLimits& limits) noexcept
 {
     state_->window.setSizeLimits(limits);
 }
 
-void Window::clearSizeLimits()
+void Window::clearSizeLimits() noexcept
 {
     state_->window.clearSizeLimits();
 }
 
-void Window::setAspectRatio(AspectRatio ratio)
+void Window::setAspectRatio(AspectRatio ratio) noexcept
 {
     state_->window.setAspectRatio(ratio);
 }
 
-void Window::clearAspectRatio()
+void Window::clearAspectRatio() noexcept
 {
     state_->window.clearAspectRatio();
 }
 
-void Window::setResizable(bool resizable)
+void Window::setResizable(bool resizable) noexcept
 {
     state_->window.setResizable(resizable);
 }
 
-void Window::setDecorated(bool decorated)
+void Window::setDecorated(bool decorated) noexcept
 {
     state_->window.setDecorated(decorated);
 }
 
-void Window::setFloating(bool floating)
+void Window::setFloating(bool floating) noexcept
 {
     state_->window.setFloating(floating);
 }
 
-void Window::setOpacity(float opacity)
+void Window::setOpacity(float opacity) noexcept
 {
     state_->window.setOpacity(opacity);
 }
 
-void Window::setVSync(bool enabled)
+void Window::setVSync(bool enabled) noexcept
 {
     state_->window.setVSync(enabled);
 }
 
-void Window::setCursorMode(CursorMode mode)
+void Window::setCursorMode(CursorMode mode) noexcept
 {
     state_->window.setCursorMode(mode);
 }
 
-bool Window::setCursorShape(CursorShape shape)
+bool Window::setCursorShape(CursorShape shape) noexcept
 {
     return state_->window.setCursorShape(shape);
 }
 
-bool Window::setCursorImage(const ImageRgba& image, int hotX, int hotY)
+bool Window::setCursorImage(const ImageRgba& image, int hotX, int hotY) noexcept
 {
     return state_->window.setCursorImage(image, hotX, hotY);
 }
 
-void Window::clearCursor()
+void Window::clearCursor() noexcept
 {
     state_->window.clearCursor();
 }
 
-void Window::setMousePosition(double x, double y)
+void Window::setMousePosition(double x, double y) noexcept
 {
     state_->window.setMousePosition(x, y);
 }
 
-bool Window::setRawMouseMotion(bool enabled)
+bool Window::setRawMouseMotion(bool enabled) noexcept
 {
     return state_->window.setRawMouseMotion(enabled);
 }
 
-void Window::minimize()
+void Window::minimize() noexcept
 {
     state_->window.minimize();
 }
 
-void Window::maximize()
+void Window::maximize() noexcept
 {
     state_->window.maximize();
 }
 
-void Window::restore()
+void Window::restore() noexcept
 {
     state_->window.restore();
 }
 
-void Window::setWindowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
+void Window::setWindowMode(
+    WindowMode mode,
+    uint32_t monitorId,
+    std::optional<VideoMode> videoMode) noexcept
 {
     state_->window.setWindowMode(mode, monitorId, videoMode);
 }
@@ -213,12 +216,12 @@ bool Window::setIcons(std::span<const ImageRgba> images)
     return state_->window.setIcon(images);
 }
 
-void Window::clearIcon()
+void Window::clearIcon() noexcept
 {
     state_->window.clearIcon();
 }
 
-void Window::requestAttention()
+void Window::requestAttention() noexcept
 {
     state_->window.requestAttention();
 }
@@ -238,7 +241,7 @@ WindowPlacement Window::windowedPlacement() const noexcept
     return state_->window.windowedPlacement();
 }
 
-void Window::setWindowedPlacement(const WindowPlacement& placement)
+void Window::setWindowedPlacement(const WindowPlacement& placement) noexcept
 {
     state_->window.setWindowedPlacement(placement);
 }
