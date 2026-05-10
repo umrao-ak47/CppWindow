@@ -7,102 +7,20 @@
 #ifndef CPPWINDOW_HEADER_GLFW_IMPL_HPP
 #define CPPWINDOW_HEADER_GLFW_IMPL_HPP
 
-#include <cppwindow/utils.hpp>
+#include "glfw_input_state.hpp"
 
 // Prevent GLFW from including OpenGL headers
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <array>
+#include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "../../window_registry.hpp"
-#include "../native_impl.hpp"
-
 namespace cwin {
 
-//----------------------------------------------------------------------------
-//  GLFW Input Mapping
-//----------------------------------------------------------------------------
-struct GlfwKeyMapTraits
-{
-    using WrapperType = Key;
-    using BackendType = int;
-
-    static constexpr Key WrapperNone = Key::Unknown;
-    static constexpr Key WrapperFirst = Key::First;
-    static constexpr Key WrapperLast = Key::Last;
-    static constexpr int BackendNone = GLFW_KEY_UNKNOWN;
-    static constexpr int BackendFirst = GLFW_KEY_SPACE;
-    static constexpr int BackendLast = GLFW_KEY_LAST;
-};
-
-struct GlfwMouseMapTraits
-{
-    using WrapperType = MouseButton;
-    using BackendType = int;
-
-    static constexpr MouseButton WrapperNone = MouseButton::Unknown;
-    static constexpr MouseButton WrapperFirst = MouseButton::First;
-    static constexpr MouseButton WrapperLast = MouseButton::Last;
-    static constexpr int BackendNone = GLFW_MOUSE_BUTTON_1;
-    static constexpr int BackendFirst = GLFW_MOUSE_BUTTON_1;
-    static constexpr int BackendLast = GLFW_MOUSE_BUTTON_LAST;
-};
-
-using KeyMapLookup = StaticLookup<GlfwKeyMapTraits>;
-using MouseMapLookup = StaticLookup<GlfwMouseMapTraits>;
-
-namespace inputmap {
-
-int toGlfwKey(Key k);
-Key toKey(int k);
-int toGlfwMouseButton(MouseButton b);
-MouseButton toMouseButton(int b);
-
-}  // namespace inputmap
-
-//----------------------------------------------------------------------------
-//  GLFW Input State
-//----------------------------------------------------------------------------
-class GLFWInputState
-{
-public:
-    GLFWInputState() = default;
-    explicit GLFWInputState(GLFWwindow* window);
-
-    void handleEvent(const Event& event);
-    void reset();
-
-    // keyboard
-    bool isKeyDown(Key key) const;
-    bool isKeyPressed(Key key) const;
-    bool isKeyReleased(Key key) const;
-
-    // mouse
-    bool isMouseButtonDown(MouseButton button) const;
-    bool isMouseButtonPressed(MouseButton button) const;
-    bool isMouseButtonReleased(MouseButton button) const;
-    std::pair<double, double> mousePosition() const;
-    void setMousePosition(double x, double y);
-    std::pair<double, double> mouseDelta() const;
-    std::pair<double, double> scrollDelta() const;
-    bool isMouseInside() const;
-
-    [[nodiscard]] const InputStateData& data() const noexcept;
-
-private:
-    bool queryMouseInside() const;
-
-    GLFWwindow* window_ = nullptr;
-    InputStateData data_{};
-};
-
-//----------------------------------------------------------------------------
-//  GLFW Window
-//----------------------------------------------------------------------------
 struct GLFWwindowDeleter
 {
     void operator()(GLFWwindow* window) const noexcept
@@ -138,7 +56,7 @@ public:
     std::vector<Event> eventQueue;
     GLFWInputState inputState;
 
-    void reset()
+    void reset() noexcept
     {
         eventQueue.clear();
         inputState.reset();

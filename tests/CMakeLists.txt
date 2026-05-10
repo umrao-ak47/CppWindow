@@ -1,4 +1,4 @@
-function(cppwindow_add_test TARGET)
+function(cppwindow_add_api_test TARGET)
     add_executable(${TARGET} ${ARGN})
 
     target_link_libraries(${TARGET}
@@ -14,35 +14,39 @@ function(cppwindow_add_test TARGET)
     add_test(NAME ${TARGET} COMMAND ${TARGET})
 endfunction()
 
-cppwindow_add_test(test_static_lookup static_lookup.cpp)
-cppwindow_add_test(test_api_compile api_compile.cpp)
-cppwindow_add_test(test_window_controls_api window_controls_api.cpp)
-cppwindow_add_test(test_app_utilities app_utilities.cpp)
+function(cppwindow_add_integration_test TARGET)
+    cppwindow_add_api_test(${TARGET} ${ARGN})
 
-cppwindow_add_test(test_runtime_smoke runtime_smoke.cpp)
+    set_tests_properties(${TARGET}
+        PROPERTIES
+            LABELS runtime
+    )
+endfunction()
+
+function(cppwindow_add_internal_test TARGET)
+    cppwindow_add_api_test(${TARGET} ${ARGN})
+
+    target_include_directories(${TARGET}
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+endfunction()
+
+# Public API and compile-surface tests.
+cppwindow_add_api_test(test_api_compile api/api_compile.cpp)
+cppwindow_add_api_test(test_window_controls_api api/window_controls_api.cpp)
+cppwindow_add_api_test(test_app_utilities api/app_utilities.cpp)
+
+# Runtime integration tests.
+cppwindow_add_integration_test(test_runtime_smoke integration/runtime_smoke.cpp)
 set_tests_properties(test_runtime_smoke
     PROPERTIES
         SKIP_RETURN_CODE 77
         TIMEOUT 15
-        LABELS runtime
 )
 
-cppwindow_add_test(test_input_helpers input_helpers.cpp)
-target_link_libraries(test_input_helpers
-    PRIVATE
-        glfw
-)
-target_include_directories(test_input_helpers
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/src
-)
-
-cppwindow_add_test(test_glfw_input_state glfw_input_state.cpp)
-target_link_libraries(test_glfw_input_state
-    PRIVATE
-        glfw
-)
-target_include_directories(test_glfw_input_state
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/src
-)
+# Internal implementation tests.
+cppwindow_add_internal_test(test_static_lookup internal/static_lookup.cpp)
+cppwindow_add_internal_test(test_window_registry internal/window_registry.cpp)
+cppwindow_add_internal_test(test_input_helpers internal/input_helpers.cpp)
+cppwindow_add_internal_test(test_glfw_input_state internal/glfw_input_state.cpp)

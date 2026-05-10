@@ -6,6 +6,8 @@
 #ifndef CPPWINDOW_HEADER_WINDOW_REGISTRY_HPP
 #define CPPWINDOW_HEADER_WINDOW_REGISTRY_HPP
 
+#include <concepts>
+#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -13,17 +15,28 @@
 namespace cwin {
 
 template <typename T>
-concept TypeHasResetFn = requires(T t) {
-    { t.reset() };
+concept Resettable = requires(T& value) {
+    { value.reset() } noexcept -> std::same_as<void>;
 };
 
-template <TypeHasResetFn T>
+template <Resettable T>
 class WindowStorageRegistry
 {
 public:
+    WindowStorageRegistry() = default;
+    ~WindowStorageRegistry() = default;
+
+    WindowStorageRegistry(const WindowStorageRegistry&) = delete;
+    WindowStorageRegistry& operator=(const WindowStorageRegistry&) = delete;
+    WindowStorageRegistry(WindowStorageRegistry&&) = delete;
+    WindowStorageRegistry& operator=(WindowStorageRegistry&&) = delete;
+
+    // Stores weak references to window-owned storage and compacts expired
+    // entries during resetAll(). Storage reset and forEach callbacks are invoked
+    // while the registry mutex is held, so they must not re-enter this registry.
     void registerStorage(const std::shared_ptr<T>& storage)
     {
-        std::lock_guard lock(mtx_);
+        std::scoped_lock lock(mtx_);
         if (tail_ < storageRefs_.size()) {
             storageRefs_[tail_] = storage;
         } else {
@@ -32,48 +45,51 @@ public:
         ++tail_;
     }
 
-    void resetAll()
+    // Calls T::reset() for each live entry and removes expired entries. reset()
+    // is called while the registry mutex is held; re-entering this registry from
+    // reset() can deadlock.
+    void resetAll() noexcept
     {
-        std::lock_guard lock(mtx_);
-        size_t newTail = 0;
+        std::scoped_lock lock(mtx_);
+        const std::size_t oldTail = tail_;
+        std::size_t newTail = 0;
 
-        for (size_t i = 0; i < tail_; ++i) {
-            if (auto s = storageRefs_[i].lock()) {
-                s->reset();
-                // keep live entries at front
+        for (std::size_t i = 0; i < oldTail; ++i) {
+            if (auto storage = storageRefs_[i].lock()) {
+                storage->reset();
                 if (i != newTail) {
-                    storageRefs_[newTail] = storageRefs_[i];
+                    storageRefs_[newTail] = std::move(storageRefs_[i]);
                 }
                 ++newTail;
             }
-            // expired entries are ignored
         }
-        // set tail to first free slot
+
+        for (std::size_t i = newTail; i < oldTail; ++i) {
+            storageRefs_[i].reset();
+        }
+
         tail_ = newTail;
     }
 
+    // Visits live entries without compacting expired entries. The callback is
+    // called while the registry mutex is held; re-entering this registry from
+    // the callback can deadlock.
     template <typename Fn>
+        requires std::invocable<Fn&, T&>
     void forEach(Fn&& fn)
     {
-        std::lock_guard lock(mtx_);
-        size_t newTail = 0;
+        std::scoped_lock lock(mtx_);
 
-        for (size_t i = 0; i < tail_; ++i) {
-            if (auto s = storageRefs_[i].lock()) {
-                fn(*s);
-                if (i != newTail) {
-                    storageRefs_[newTail] = storageRefs_[i];
-                }
-                ++newTail;
+        for (std::size_t i = 0; i < tail_; ++i) {
+            if (auto storage = storageRefs_[i].lock()) {
+                fn(*storage);
             }
         }
-
-        tail_ = newTail;
     }
 
 private:
     std::vector<std::weak_ptr<T>> storageRefs_;
-    size_t tail_ = 0;
+    std::size_t tail_ = 0;
     std::mutex mtx_;
 };
 

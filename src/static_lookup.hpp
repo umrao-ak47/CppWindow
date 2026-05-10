@@ -3,21 +3,14 @@
  * Licensed under the MIT License.
  */
 
-#ifndef CPPWINDOW_HEADER_UTILS_HPP
-#define CPPWINDOW_HEADER_UTILS_HPP
+#ifndef CPPWINDOW_HEADER_STATIC_LOOKUP_HPP
+#define CPPWINDOW_HEADER_STATIC_LOOKUP_HPP
 
 #include <array>
 #include <concepts>
 #include <cstddef>
-#include <type_traits>
 
 namespace cwin {
-
-template <class... Ts>
-struct Visitor : Ts...
-{
-    using Ts::operator()...;
-};
 
 template <typename T>
 concept Indexable = requires(T v) {

@@ -18,26 +18,24 @@ function(cppwindow_add_example TARGET)
     )
 endfunction()
 
+function(cppwindow_link_example_glad TARGET)
+    target_link_libraries(${TARGET}
+        PRIVATE
+            _cppwindow_example_glad
+    )
+endfunction()
+
 cppwindow_add_example(cppwindow_example_basic basic.cpp)
 
 cppwindow_add_example(cppwindow_example_borderless borderless.cpp)
 
 cppwindow_add_example(cppwindow_example_window_controls window_controls.cpp)
-target_link_libraries(cppwindow_example_window_controls
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_window_controls)
 
 cppwindow_add_example(cppwindow_example_fullscreen_toggle fullscreen_toggle.cpp)
-target_link_libraries(cppwindow_example_fullscreen_toggle
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_fullscreen_toggle)
 cppwindow_add_example(cppwindow_example_mouse_capture mouse_capture.cpp)
-target_link_libraries(cppwindow_example_mouse_capture
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_mouse_capture)
 
 cppwindow_add_example(cppwindow_example_text_input text_input.cpp)
 
@@ -46,10 +44,7 @@ cppwindow_add_example(cppwindow_example_gamepad gamepad.cpp)
 cppwindow_add_example(cppwindow_example_app_utilities app_utilities.cpp)
 
 cppwindow_add_example(cppwindow_example_input_helpers input_helpers.cpp)
-target_link_libraries(cppwindow_example_input_helpers
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_input_helpers)
 
 cppwindow_add_example(cppwindow_example_multi_window multi_window.cpp)
 
@@ -62,19 +57,10 @@ cppwindow_add_example(cppwindow_example_native_handles native_handles.cpp)
 cppwindow_add_example(cppwindow_example_fixed_step_loop fixed_step_loop.cpp)
 
 cppwindow_add_example(cppwindow_example_opengl opengl.cpp)
-target_link_libraries(cppwindow_example_opengl
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_opengl)
 
 cppwindow_add_example(cppwindow_example_heightmap heightmap.cpp)
-target_link_libraries(cppwindow_example_heightmap
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_heightmap)
 
 cppwindow_add_example(cppwindow_example_particles particles.cpp)
-target_link_libraries(cppwindow_example_particles
-    PRIVATE
-        _cppwindow_example_glad
-)
+cppwindow_link_example_glad(cppwindow_example_particles)

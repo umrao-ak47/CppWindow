@@ -3,13 +3,16 @@
  * Licensed under the MIT License.
  */
 
-#ifndef CPPWINDOW_HEADER_NATIVE_IMPL_HPP
-#define CPPWINDOW_HEADER_NATIVE_IMPL_HPP
+#ifndef CPPWINDOW_HEADER_BACKEND_TYPES_HPP
+#define CPPWINDOW_HEADER_BACKEND_TYPES_HPP
 
 #include <cppwindow/cppwindow.hpp>
 
 #include <bitset>
+#include <cstdint>
+#include <optional>
 #include <string>
+#include <utility>
 #include <variant>
 
 namespace cwin {
@@ -48,7 +51,7 @@ struct WindowDesc
 };
 
 //----------------------------------------------------------------------------
-//  Native Input State
+//  Backend Input State
 //----------------------------------------------------------------------------
 struct InputStateData
 {

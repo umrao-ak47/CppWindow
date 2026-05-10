@@ -2,11 +2,8 @@ PROJECT_NAME           = "CppWindow"
 PROJECT_NUMBER         = "@PROJECT_VERSION@"
 PROJECT_BRIEF          = "C++20 windowing, input, and app utility layer"
 OUTPUT_DIRECTORY       = "@CMAKE_CURRENT_BINARY_DIR@/docs"
-INPUT                  = "@CMAKE_CURRENT_SOURCE_DIR@/include/cppwindow/cppwindow.hpp" \
-                         "@CMAKE_CURRENT_SOURCE_DIR@/extras/imgui/include/cppwindow/imgui.hpp" \
-                         "@CMAKE_CURRENT_SOURCE_DIR@/extras/imgui/include/cppwindow/imgui/context.hpp" \
-                         "@CMAKE_CURRENT_SOURCE_DIR@/extras/imgui/include/cppwindow/imgui/platform.hpp" \
-                         "@CMAKE_CURRENT_SOURCE_DIR@/extras/imgui/include/cppwindow/imgui/layer.hpp" \
+INPUT                  = "@CMAKE_CURRENT_SOURCE_DIR@/include/cppwindow" \
+                         "@CMAKE_CURRENT_SOURCE_DIR@/extras/imgui/include/cppwindow" \
                          "@CMAKE_CURRENT_SOURCE_DIR@/README.md" \
                          "@CMAKE_CURRENT_SOURCE_DIR@/THIRD_PARTY_NOTICES.md" \
                          "@CMAKE_CURRENT_SOURCE_DIR@/docs/guide.md" \
@@ -14,7 +11,7 @@ INPUT                  = "@CMAKE_CURRENT_SOURCE_DIR@/include/cppwindow/cppwindow
                          "@CMAKE_CURRENT_SOURCE_DIR@/docs/api.md" \
                          "@CMAKE_CURRENT_SOURCE_DIR@/docs/release.md"
 USE_MDFILE_AS_MAINPAGE = "@CMAKE_CURRENT_SOURCE_DIR@/README.md"
-RECURSIVE              = NO
+RECURSIVE              = YES
 FILE_PATTERNS          = *.hpp *.md
 MARKDOWN_SUPPORT       = YES
 GENERATE_HTML          = YES

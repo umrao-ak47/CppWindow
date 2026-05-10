@@ -98,9 +98,27 @@ add_library(cppwindow::cppwindow ALIAS cppwindow)
 
 target_sources(cppwindow
     PRIVATE
-        src/backend/glfw/glfw_impl.cpp
+        src/backend/glfw/glfw_callbacks.cpp
+        src/backend/glfw/glfw_context.cpp
+        src/backend/glfw/glfw_cursor.cpp
+        src/backend/glfw/glfw_error.cpp
+        src/backend/glfw/glfw_gamepad.cpp
+        src/backend/glfw/glfw_input_map.cpp
+        src/backend/glfw/glfw_input_state.cpp
+        src/backend/glfw/glfw_modifiers.cpp
+        src/backend/glfw/glfw_monitor.cpp
         src/backend/glfw/glfw_native_handles.cpp
-        src/cppwindow.cpp
+        src/backend/glfw/glfw_registry.cpp
+        src/backend/glfw/glfw_window.cpp
+        src/action_map.cpp
+        src/dpi.cpp
+        src/error.cpp
+        src/gamepad.cpp
+        src/input_state.cpp
+        src/timing.cpp
+        src/window.cpp
+        src/window_builder.cpp
+        src/window_context.cpp
 )
 
 target_include_directories(cppwindow

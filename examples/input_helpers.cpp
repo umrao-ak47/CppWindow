@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "status_text.hpp"
+#include "common/opengl_status_text.hpp"
 
 using namespace cwin;
 

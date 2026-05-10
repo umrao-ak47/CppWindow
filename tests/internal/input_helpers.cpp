@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "backend/glfw/glfw_impl.hpp"
+#include "backend/glfw/glfw_input_state.hpp"
 
 static_assert(
     std::is_same_v<decltype(std::declval<cwin::Window&>().setMousePosition(0.0, 0.0)), void>);

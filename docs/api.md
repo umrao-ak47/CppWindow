@@ -1,9 +1,8 @@
 # API Reference
 
-The API reference is generated from Doxygen comments in
-[`include/cppwindow/cppwindow.hpp`](../include/cppwindow/cppwindow.hpp) and
-optional integration headers under
-[`extras/imgui/include/cppwindow`](../extras/imgui/include/cppwindow).
+The API reference is generated from Doxygen comments in public headers under
+[`include/cppwindow`](../include/cppwindow) and optional integration headers
+under [`extras/imgui/include/cppwindow`](../extras/imgui/include/cppwindow).
 
 Build it with Doxygen installed:
 
