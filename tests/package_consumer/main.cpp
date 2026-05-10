@@ -9,7 +9,8 @@
 #include <utility>
 
 #ifdef CPPWINDOW_PACKAGE_CONSUMER_USE_IMGUI
-struct PackageRenderer {
+struct PackageRenderer
+{
     void newFrame();
     void render(ImDrawData*);
 };

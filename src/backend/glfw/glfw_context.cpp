@@ -4,13 +4,15 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
+#include "glfw_context.hpp"
 
 #include <algorithm>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include "glfw_internal.hpp"
 
 namespace cwin {
 

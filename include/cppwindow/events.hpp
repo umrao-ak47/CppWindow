@@ -619,11 +619,12 @@ private:
     Subscription addHandler(std::function<void(const Event&)> handler)
     {
         const Subscription subscription = nextSubscription();
-        handlers_.push_back(HandlerEntry{
-            .subscription = subscription,
-            .handler = std::move(handler),
-            .connected = true,
-        });
+        handlers_.push_back(
+            HandlerEntry{
+                .subscription = subscription,
+                .handler = std::move(handler),
+                .connected = true,
+            });
         ++activeHandlerCount_;
         return subscription;
     }

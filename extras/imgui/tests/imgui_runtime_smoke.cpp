@@ -1,11 +1,10 @@
 #include <cppwindow/cppwindow.hpp>
 #include <cppwindow/imgui.hpp>
 
-#include "opengl_imgui_renderer.hpp"
-
 #include <imgui.h>
-
 #include <iostream>
+
+#include "opengl_imgui_renderer.hpp"
 
 namespace {
 
@@ -13,8 +12,8 @@ constexpr int SkipTest = 77;
 
 [[nodiscard]] bool isEnvironmentUnavailable(const cwin::Error& error) noexcept
 {
-    return error.code() == cwin::ErrorCode::InitializationFailed
-        || error.code() == cwin::ErrorCode::WindowCreationFailed;
+    return error.code() == cwin::ErrorCode::InitializationFailed ||
+           error.code() == cwin::ErrorCode::WindowCreationFailed;
 }
 
 int skip(const std::exception& error)
@@ -29,12 +28,13 @@ int main()
 {
     try {
         auto& context = cwin::WindowContext::get();
-        auto window = cwin::WindowBuilder{}
-                          .title("CppWindow ImGui Runtime Smoke")
-                          .size(320, 240)
-                          .hidden()
-                          .openGL({ 4, 1, true })
-                          .build();
+        auto window =
+            cwin::WindowBuilder{}
+                .title("CppWindow ImGui Runtime Smoke")
+                .size(320, 240)
+                .hidden()
+                .openGL({ 4, 1, true })
+                .build();
         window.makeContextCurrent();
         example::loadOpenGL(context);
         window.setVSync(false);

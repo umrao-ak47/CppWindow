@@ -4,9 +4,8 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
-
 #include "../../static_lookup.hpp"
+#include "glfw_internal.hpp"
 
 namespace cwin::glfw_backend {
 

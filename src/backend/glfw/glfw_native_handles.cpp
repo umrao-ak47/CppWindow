@@ -4,7 +4,7 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_impl.hpp"
+#include "glfw_window.hpp"
 
 #if defined(CPPWINDOW_PLATFORM_WINDOWS)
 #ifndef NOMINMAX

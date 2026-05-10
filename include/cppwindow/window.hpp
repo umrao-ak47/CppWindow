@@ -32,7 +32,7 @@ class WindowBuilder;
 /// Native window wrapper with graphics, event, and input controls.
 class Window final
 {
-    friend class WindowBuilder;
+    friend struct WindowAccess;
 
 public:
     /// Destroys the native window.
@@ -165,12 +165,12 @@ public:
     bool isVisible() const noexcept;
 
 private:
-    struct Impl;
+    struct State;
 
-    explicit Window(std::unique_ptr<Impl> impl);
+    explicit Window(std::unique_ptr<State> state);
 
     InputState inputState_;
-    std::unique_ptr<Impl> impl_;
+    std::unique_ptr<State> state_;
 };
 
 //----------------------------------------------------------------------------
@@ -230,8 +230,8 @@ public:
     Window build();
 
 private:
-    struct Data;
-    std::unique_ptr<Data> data_{};
+    struct State;
+    std::unique_ptr<State> state_{};
 };
 
 //----------------------------------------------------------------------------

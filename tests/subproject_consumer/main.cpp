@@ -8,8 +8,9 @@
 int main()
 {
     static_assert(std::is_same_v<decltype(cwin::WindowContext::get()), cwin::WindowContext&>);
-    static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().events()),
-                                 std::span<const cwin::Event>>);
+    static_assert(std::is_same_v<
+                  decltype(std::declval<const cwin::Window&>().events()),
+                  std::span<const cwin::Event>>);
 
     cwin::FrameTimer timer;
     const cwin::FrameTime firstFrame = timer.tick();

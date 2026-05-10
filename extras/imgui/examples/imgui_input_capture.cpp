@@ -1,11 +1,11 @@
 #include <cppwindow/cppwindow.hpp>
 #include <cppwindow/imgui.hpp>
 
-#include "opengl_imgui_renderer.hpp"
-
 #include <algorithm>
 #include <array>
 #include <imgui.h>
+
+#include "opengl_imgui_renderer.hpp"
 
 using namespace cwin;
 
@@ -13,12 +13,13 @@ int main()
 {
     auto& ctx = WindowContext::get();
 
-    auto window = WindowBuilder{}
-                      .title("ImGui Input Capture")
-                      .size(960, 540)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("ImGui Input Capture")
+            .size(960, 540)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
     window.makeContextCurrent();
     example::loadOpenGL(ctx);
 
@@ -84,8 +85,7 @@ int main()
             }
 
             const FrameTime frameTime = frameTimer.tick();
-            const float speed =
-                actions.isDown(boost) ? 0.75f : 0.35f;
+            const float speed = actions.isDown(boost) ? 0.75f : 0.35f;
             float xMovement = 0.0f;
             float yMovement = 0.0f;
             if (actions.isDown(moveLeft)) {
@@ -130,5 +130,4 @@ int main()
             frameLimiter.wait();
         }
     }
-
 }

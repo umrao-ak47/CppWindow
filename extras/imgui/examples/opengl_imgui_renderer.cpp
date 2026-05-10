@@ -1,10 +1,9 @@
 #include "opengl_imgui_renderer.hpp"
 
-#include <glad/glad.h>
-
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <glad/glad.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -24,9 +23,8 @@ struct OpenGLVersion
 
 [[nodiscard]] std::string shaderSource(const char* glslVersion, std::string_view body)
 {
-    std::string source = (glslVersion != nullptr && glslVersion[0] != '\0')
-        ? glslVersion
-        : "#version 330";
+    std::string source =
+        (glslVersion != nullptr && glslVersion[0] != '\0') ? glslVersion : "#version 330";
     source += '\n';
     source += body;
     return source;
@@ -46,8 +44,8 @@ struct OpenGLVersion
 
     if (version.major < 3 || (version.major == 3 && version.minor < 3)) {
         throw std::runtime_error(
-            "CppWindow ImGui OpenGL example renderer requires OpenGL 3.3 or newer; reported "
-            + openGLVersionString());
+            "CppWindow ImGui OpenGL example renderer requires OpenGL 3.3 or newer; reported " +
+            openGLVersionString());
     }
 
     return version;
@@ -287,7 +285,8 @@ void main()
         GLuint fragmentShader = 0;
         try {
             vertexShader = compileShader(GL_VERTEX_SHADER, shaderSource(glslVersion, VertexShader));
-            fragmentShader = compileShader(GL_FRAGMENT_SHADER, shaderSource(glslVersion, FragmentShader));
+            fragmentShader =
+                compileShader(GL_FRAGMENT_SHADER, shaderSource(glslVersion, FragmentShader));
             program = linkProgram(vertexShader, fragmentShader);
         } catch (...) {
             if (vertexShader != 0) {
@@ -323,7 +322,8 @@ void main()
         glDeleteProgram(program);
     }
 
-    void setupRenderState(const ImDrawData& drawData, int framebufferWidth, int framebufferHeight) const
+    void setupRenderState(const ImDrawData& drawData, int framebufferWidth, int framebufferHeight)
+        const
     {
         glEnable(GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
@@ -383,7 +383,8 @@ void main()
     {
         if (texture.Status == ImTextureStatus_WantCreate) {
             if (texture.Format != ImTextureFormat_RGBA32) {
-                throw std::runtime_error("CppWindow ImGui OpenGL example renderer supports RGBA32 textures only");
+                throw std::runtime_error(
+                    "CppWindow ImGui OpenGL example renderer supports RGBA32 textures only");
             }
 
             TextureUploadState uploadState;
@@ -559,8 +560,7 @@ void OpenGLImGuiRenderer::render(ImDrawData* drawData)
 
     const ImVec2 clipOffset = drawData->DisplayPos;
     const ImVec2 clipScale = drawData->FramebufferScale;
-    const GLenum indexType =
-        sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+    const GLenum indexType = sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 
     for (const ImDrawList* drawList : drawData->CmdLists) {
         const GLsizeiptr vertexBufferSize =
@@ -569,7 +569,11 @@ void OpenGLImGuiRenderer::render(ImDrawData* drawData)
             static_cast<GLsizeiptr>(drawList->IdxBuffer.Size * sizeof(ImDrawIdx));
 
         glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, drawList->VtxBuffer.Data, GL_STREAM_DRAW);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, drawList->IdxBuffer.Data, GL_STREAM_DRAW);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            indexBufferSize,
+            drawList->IdxBuffer.Data,
+            GL_STREAM_DRAW);
 
         for (const ImDrawCmd& command : drawList->CmdBuffer) {
             if (command.UserCallback != nullptr) {

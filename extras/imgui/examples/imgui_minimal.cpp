@@ -1,9 +1,9 @@
 #include <cppwindow/cppwindow.hpp>
 #include <cppwindow/imgui.hpp>
 
-#include "opengl_imgui_renderer.hpp"
-
 #include <imgui.h>
+
+#include "opengl_imgui_renderer.hpp"
 
 using namespace cwin;
 
@@ -11,12 +11,13 @@ int main()
 {
     auto& ctx = WindowContext::get();
 
-    auto window = WindowBuilder{}
-                      .title("ImGui Minimal")
-                      .size(900, 520)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("ImGui Minimal")
+            .size(900, 520)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
     window.makeContextCurrent();
     example::loadOpenGL(ctx);
 
@@ -65,5 +66,4 @@ int main()
             frameLimiter.wait();
         }
     }
-
 }

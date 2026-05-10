@@ -1,6 +1,6 @@
-#include <cassert>
-
 #include "backend/glfw/glfw_input_state.hpp"
+
+#include <cassert>
 
 int main()
 {

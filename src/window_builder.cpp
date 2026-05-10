@@ -3,45 +3,70 @@
  * Licensed under the MIT License.
  */
 
-#include "window_internal.hpp"
+#include <cppwindow/window.hpp>
 
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 
+#include "window_internal.hpp"
+
 namespace cwin {
+
+struct WindowBuilder::State
+{
+    GraphicsModeTag mode = NoneGraphicsModeTag();
+    std::string title = "CppWindow";
+    uint32_t width = 1280;
+    uint32_t height = 720;
+    std::optional<std::pair<int, int>> position;
+    bool resizable = false;
+    bool visible = true;
+    bool decorated = true;
+    bool focused = true;
+    bool floating = false;
+    std::optional<float> opacity;
+    std::optional<SizeLimits> sizeLimits;
+    std::optional<AspectRatio> aspectRatio;
+    std::optional<CursorMode> cursorMode;
+    std::optional<bool> rawMouseMotion;
+    std::optional<bool> vSync;
+    WindowMode windowMode = WindowMode::Windowed;
+    uint32_t monitorId = 0;
+    std::optional<VideoMode> videoMode;
+};
 
 //----------------------------------------------------------------------------
 //  Window Builder Implementation
 //----------------------------------------------------------------------------
 WindowBuilder::WindowBuilder()
-    : data_(std::make_unique<Data>()) {};
+    : state_(std::make_unique<State>()) {};
 
 WindowBuilder::~WindowBuilder() = default;
 
 WindowBuilder& WindowBuilder::title(std::string t)
 {
-    data_->title = std::move(t);
+    state_->title = std::move(t);
     return *this;
 }
 
 WindowBuilder& WindowBuilder::size(int w, int h)
 {
-    data_->width = w;
-    data_->height = h;
+    state_->width = w;
+    state_->height = h;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::position(int x, int y)
 {
-    data_->position = std::pair<int, int>{ x, y };
+    state_->position = std::pair<int, int>{ x, y };
     return *this;
 }
 
 WindowBuilder& WindowBuilder::openGL(OpenGLConfig cfg)
 {
-    data_->mode = OpenGLGraphicsModeTag{
+    state_->mode = OpenGLGraphicsModeTag{
         .config = cfg,
     };
     return *this;
@@ -49,15 +74,15 @@ WindowBuilder& WindowBuilder::openGL(OpenGLConfig cfg)
 
 WindowBuilder& WindowBuilder::noGraphicsApi()
 {
-    data_->mode = NoneGraphicsModeTag{};
+    state_->mode = NoneGraphicsModeTag{};
     return *this;
 }
 
 WindowBuilder& WindowBuilder::visible(bool visible)
 {
-    data_->visible = visible;
+    state_->visible = visible;
     if (!visible) {
-        data_->focused = false;
+        state_->focused = false;
     }
     return *this;
 }
@@ -69,19 +94,19 @@ WindowBuilder& WindowBuilder::hidden()
 
 WindowBuilder& WindowBuilder::resizable(bool resizable)
 {
-    data_->resizable = resizable;
+    state_->resizable = resizable;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::focused(bool focused)
 {
-    data_->focused = focused;
+    state_->focused = focused;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::decorated(bool decorated)
 {
-    data_->decorated = decorated;
+    state_->decorated = decorated;
     return *this;
 }
 
@@ -92,80 +117,79 @@ WindowBuilder& WindowBuilder::borderless()
 
 WindowBuilder& WindowBuilder::floating(bool floating)
 {
-    data_->floating = floating;
+    state_->floating = floating;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::opacity(float opacity)
 {
-    data_->opacity = opacity;
+    state_->opacity = opacity;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::sizeLimits(const SizeLimits& limits)
 {
-    data_->sizeLimits = limits;
+    state_->sizeLimits = limits;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::aspectRatio(AspectRatio ratio)
 {
-    data_->aspectRatio = ratio;
+    state_->aspectRatio = ratio;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::cursorMode(CursorMode mode)
 {
-    data_->cursorMode = mode;
+    state_->cursorMode = mode;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::rawMouseMotion(bool enabled)
 {
-    data_->rawMouseMotion = enabled;
+    state_->rawMouseMotion = enabled;
     return *this;
 }
 
 WindowBuilder& WindowBuilder::vSync(bool enabled)
 {
-    data_->vSync = enabled;
+    state_->vSync = enabled;
     return *this;
 }
 
 WindowBuilder&
 WindowBuilder::windowMode(WindowMode mode, uint32_t monitorId, std::optional<VideoMode> videoMode)
 {
-    data_->windowMode = mode;
-    data_->monitorId = monitorId;
-    data_->videoMode = videoMode;
+    state_->windowMode = mode;
+    state_->monitorId = monitorId;
+    state_->videoMode = videoMode;
     return *this;
 }
 
 Window WindowBuilder::build()
 {
     WindowDesc desc{
-        .mode = data_->mode,
-        .title = data_->title,
-        .width = data_->width,
-        .height = data_->height,
-        .position = data_->position,
-        .resizable = data_->resizable,
-        .visible = data_->visible,
-        .decorated = data_->decorated,
-        .focused = data_->focused,
-        .floating = data_->floating,
-        .opacity = data_->opacity,
-        .sizeLimits = data_->sizeLimits,
-        .aspectRatio = data_->aspectRatio,
-        .cursorMode = data_->cursorMode,
-        .rawMouseMotion = data_->rawMouseMotion,
-        .vSync = data_->vSync,
-        .windowMode = data_->windowMode,
-        .monitorId = data_->monitorId,
-        .videoMode = data_->videoMode,
+        .mode = state_->mode,
+        .title = state_->title,
+        .width = state_->width,
+        .height = state_->height,
+        .position = state_->position,
+        .resizable = state_->resizable,
+        .visible = state_->visible,
+        .decorated = state_->decorated,
+        .focused = state_->focused,
+        .floating = state_->floating,
+        .opacity = state_->opacity,
+        .sizeLimits = state_->sizeLimits,
+        .aspectRatio = state_->aspectRatio,
+        .cursorMode = state_->cursorMode,
+        .rawMouseMotion = state_->rawMouseMotion,
+        .vSync = state_->vSync,
+        .windowMode = state_->windowMode,
+        .monitorId = state_->monitorId,
+        .videoMode = state_->videoMode,
     };
-    auto impl = std::make_unique<Window::Impl>(std::move(desc));
-    return Window(std::move(impl));
+    return WindowAccess::makeWindow(std::move(desc));
 }
 
 }  // namespace cwin

@@ -303,11 +303,13 @@ int main()
     assert(clearingDispatcher.empty());
 
     cwin::EventDispatcher chainingDispatcher;
-    chainingDispatcher.each([&](const cwin::Event&) {
-        ++eachCount;
-    }).on<cwin::Event::Closed>([&] {
-        ++closedCount;
-    });
+    chainingDispatcher
+        .each([&](const cwin::Event&) {
+            ++eachCount;
+        })
+        .on<cwin::Event::Closed>([&] {
+            ++closedCount;
+        });
     assert(chainingDispatcher.handlerCount() == 2);
 
     cwin::Event shortcut = cwin::Event::KeyPressed{

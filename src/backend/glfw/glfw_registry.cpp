@@ -4,11 +4,10 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
+#include <memory>
 
 #include "../../window_registry.hpp"
-
-#include <memory>
+#include "glfw_internal.hpp"
 
 namespace cwin::glfw_backend {
 

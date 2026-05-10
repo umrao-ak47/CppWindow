@@ -8,11 +8,10 @@
 #include <algorithm>
 #include <cfloat>
 #include <chrono>
+#include <imgui.h>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-
-#include <imgui.h>
 
 namespace cwin::imgui {
 namespace {

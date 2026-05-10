@@ -9,13 +9,12 @@
 #ifndef CPPWINDOW_HEADER_IMGUI_LAYER_HPP
 #define CPPWINDOW_HEADER_IMGUI_LAYER_HPP
 
-#include <concepts>
-#include <span>
-#include <utility>
-
 #include <cppwindow/imgui/platform.hpp>
 
+#include <concepts>
 #include <imgui.h>
+#include <span>
+#include <utility>
 
 namespace cwin::imgui {
 
@@ -38,15 +37,17 @@ public:
     template <typename... Args>
         requires std::constructible_from<RendererT, Args...>
     explicit Layer(Window& window, Args&&... args)
-        : platform_(window)
-        , renderer_(std::forward<Args>(args)...)
-    {}
+        : platform_(window),
+          renderer_(std::forward<Args>(args)...)
+    {
+    }
 
     /// Creates the platform backend and takes ownership of an existing renderer.
     explicit Layer(Window& window, RendererT renderer)
-        : platform_(window)
-        , renderer_(std::move(renderer))
-    {}
+        : platform_(window),
+          renderer_(std::move(renderer))
+    {
+    }
 
     Layer(const Layer&) = delete;
     Layer& operator=(const Layer&) = delete;

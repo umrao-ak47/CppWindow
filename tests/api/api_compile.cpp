@@ -101,26 +101,24 @@ static_assert(std::is_same_v<
               decltype(std::declval<cwin::EventDispatcher&>().on<cwin::Event::Closed>(
                   std::declval<ClosedHandler>())),
               cwin::EventDispatcher&>);
-static_assert(std::is_same_v<
-              decltype(std::declval<cwin::EventDispatcher&>().each(
-                  std::declval<RawEventHandler>())),
-              cwin::EventDispatcher&>);
+static_assert(
+    std::is_same_v<
+        decltype(std::declval<cwin::EventDispatcher&>().each(std::declval<RawEventHandler>())),
+        cwin::EventDispatcher&>);
 
 static_assert(std::is_same_v<decltype(cwin::WindowContext::get()), cwin::WindowContext&>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().monitors()),
               std::vector<cwin::MonitorInfo>>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>()
-                           .requiredVulkanInstanceExtensions()),
-              std::vector<std::string>>);
+static_assert(
+    std::is_same_v<
+        decltype(std::declval<const cwin::WindowContext&>().requiredVulkanInstanceExtensions()),
+        std::vector<std::string>>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::A)),
               std::optional<std::string>>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().keyName(
-                  cwin::Key::Unknown,
-                  42)),
+              decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::Unknown, 42)),
               std::optional<std::string>>);
 static_assert(std::is_same_v<
               decltype(std::declval<const cwin::WindowContext&>().keyScancode(cwin::Key::A)),
@@ -136,15 +134,13 @@ static_assert(std::is_same_v<
               decltype(std::declval<const cwin::ActionMap&>().actions()),
               std::vector<cwin::ActionInfo>>);
 static_assert(std::is_same_v<
-              decltype(std::declval<cwin::ActionMap&>().setMetadata(
-                  cwin::ActionId{ 1 },
-                  cwin::ActionMetadata{})),
+              decltype(std::declval<cwin::ActionMap&>()
+                           .setMetadata(cwin::ActionId{ 1 }, cwin::ActionMetadata{})),
               cwin::ActionMap&>);
-static_assert(std::is_same_v<
-              decltype(std::declval<cwin::ActionMap&>().bindKey(
-                  cwin::ActionId{ 1 },
-                  cwin::Key::Space)),
-              cwin::ActionMap&>);
+static_assert(
+    std::is_same_v<
+        decltype(std::declval<cwin::ActionMap&>().bindKey(cwin::ActionId{ 1 }, cwin::Key::Space)),
+        cwin::ActionMap&>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().bindKeyCombo(
                   cwin::ActionId{ 1 },
@@ -179,12 +175,10 @@ static_assert(requires(
     actions.update(input, gamepad);
 });
 
-static_assert(std::is_same_v<
-              decltype(std::declval<cwin::WindowBuilder&>()
-                           .size(640, 480)
-                           .title("app")
-                           .noGraphicsApi()),
-              cwin::WindowBuilder&>);
+static_assert(
+    std::is_same_v<
+        decltype(std::declval<cwin::WindowBuilder&>().size(640, 480).title("app").noGraphicsApi()),
+        cwin::WindowBuilder&>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::WindowBuilder&>().windowMode(
                   cwin::WindowMode::BorderlessFullscreen,

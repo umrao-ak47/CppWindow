@@ -13,9 +13,9 @@
 #define CPPWINDOW_HEADER_CPPWINDOW_HPP
 
 #include <cppwindow/core.hpp>
-#include <cppwindow/timing.hpp>
-#include <cppwindow/input.hpp>
 #include <cppwindow/events.hpp>
+#include <cppwindow/input.hpp>
+#include <cppwindow/timing.hpp>
 #include <cppwindow/window.hpp>
 
 #endif

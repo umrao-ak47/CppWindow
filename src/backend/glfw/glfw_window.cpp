@@ -4,7 +4,7 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
+#include "glfw_window.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -12,6 +12,8 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include "glfw_internal.hpp"
 
 // Manually forward declare the Vulkan types GLFW needs.
 typedef struct VkInstance_T* VkInstance;

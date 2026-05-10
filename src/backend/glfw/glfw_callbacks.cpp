@@ -4,12 +4,12 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
-
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "glfw_internal.hpp"
 
 namespace cwin::glfw_backend {
 

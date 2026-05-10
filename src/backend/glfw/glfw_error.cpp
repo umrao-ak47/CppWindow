@@ -4,10 +4,10 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
-
 #include <string>
 #include <utility>
+
+#include "glfw_internal.hpp"
 
 namespace cwin::glfw_backend {
 

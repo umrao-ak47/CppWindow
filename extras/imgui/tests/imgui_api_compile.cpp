@@ -5,7 +5,8 @@
 #include <type_traits>
 #include <utility>
 
-struct TestRenderer {
+struct TestRenderer
+{
     void newFrame();
     void render(ImDrawData*);
 };
@@ -15,18 +16,16 @@ static_assert(std::is_constructible_v<cwin::imgui::Context>);
 static_assert(std::is_constructible_v<cwin::imgui::Context, cwin::imgui::ContextOptions>);
 static_assert(!std::is_copy_constructible_v<cwin::imgui::Context>);
 static_assert(!std::is_move_constructible_v<cwin::imgui::Context>);
-static_assert(std::is_same_v<decltype(std::declval<const cwin::imgui::Context&>().handle()),
-                             ImGuiContext*>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::imgui::Context&>().makeCurrent()),
-              void>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::imgui::Context&>().handle()), ImGuiContext*>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::imgui::Context&>().makeCurrent()), void>);
 
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::imgui::Platform&>().handleEvents(
                   std::declval<std::span<const cwin::Event>>())),
               void>);
-static_assert(
-    std::is_same_v<decltype(std::declval<cwin::imgui::Platform&>().newFrame()), void>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::imgui::Platform&>().newFrame()), void>);
 static_assert(
     std::is_same_v<decltype(std::declval<const cwin::imgui::Platform&>().wantsMouse()), bool>);
 static_assert(
@@ -37,18 +36,16 @@ static_assert(std::is_same_v<
               decltype(std::declval<cwin::imgui::Platform&>().setMouseCursorUpdatesEnabled(true)),
               void>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::imgui::Platform&>()
-                           .mouseCursorUpdatesEnabled()),
+              decltype(std::declval<const cwin::imgui::Platform&>().mouseCursorUpdatesEnabled()),
               bool>);
-static_assert(
-    std::is_same_v<decltype(std::declval<cwin::imgui::Layer<TestRenderer>&>().handleEvents(
-                       std::declval<std::span<const cwin::Event>>())),
-                   void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<cwin::imgui::Layer<TestRenderer>&>().handleEvents(
+                  std::declval<std::span<const cwin::Event>>())),
+              void>);
 static_assert(
     std::is_same_v<decltype(std::declval<cwin::imgui::Layer<TestRenderer>&>().newFrame()), void>);
-static_assert(std::is_same_v<
-              decltype(std::declval<cwin::imgui::Layer<TestRenderer>&>().render()),
-              void>);
+static_assert(
+    std::is_same_v<decltype(std::declval<cwin::imgui::Layer<TestRenderer>&>().render()), void>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::imgui::Layer<TestRenderer>&>().renderer()),
               TestRenderer&>);

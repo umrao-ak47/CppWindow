@@ -4,7 +4,6 @@
 #include <cppwindow/cppwindow.hpp>
 
 #include <imgui.h>
-
 #include <memory>
 
 namespace example {

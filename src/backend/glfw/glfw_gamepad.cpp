@@ -4,8 +4,6 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#include "glfw_internal.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -14,6 +12,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "glfw_internal.hpp"
 
 namespace cwin::glfw_backend {
 
@@ -112,8 +112,7 @@ std::optional<GamepadState> readStandardGamepadState(uint32_t gamepadId)
     }
 
     for (size_t i = 0; i < GamepadButtonCount; ++i) {
-        state.buttons[i] =
-            glfwState.buttons[toGlfwGamepadButton(toGamepadButton(i))] == GLFW_PRESS;
+        state.buttons[i] = glfwState.buttons[toGlfwGamepadButton(toGamepadButton(i))] == GLFW_PRESS;
     }
 
     for (size_t i = 0; i < GamepadAxisCount; ++i) {

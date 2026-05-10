@@ -5,7 +5,7 @@
 
 #include <cppwindow/cppwindow.hpp>
 
-#include "backend/backend_types.hpp"
+#include "backend/input_state_data.hpp"
 
 namespace cwin {
 

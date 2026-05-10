@@ -4,14 +4,18 @@
  * * Note: The implementation utilizes GLFW (zlib license).
  */
 
-#ifndef CPPWINDOW_HEADER_GLFW_IMPL_HPP
-#define CPPWINDOW_HEADER_GLFW_IMPL_HPP
+#ifndef CPPWINDOW_HEADER_GLFW_WINDOW_HPP
+#define CPPWINDOW_HEADER_GLFW_WINDOW_HPP
 
+#include "../window_desc.hpp"
 #include "glfw_input_state.hpp"
 
 // Prevent GLFW from including OpenGL headers
+#ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
+#endif
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
@@ -149,39 +153,6 @@ private:
     int windowedY_ = 0;
     int windowedWidth_ = 1280;
     int windowedHeight_ = 720;
-};
-
-//----------------------------------------------------------------------------
-//  GLFW Context
-//----------------------------------------------------------------------------
-class GLFWWindowContext
-{
-public:
-    GLFWWindowContext();
-    ~GLFWWindowContext();
-
-    void pollEvents() noexcept;
-    void waitEvents() noexcept;
-    void waitEventsTimeout(double timeoutSeconds) noexcept;
-    void postEmptyEvent() noexcept;
-
-    ProcLoader procLoader() const;
-    bool isVulkanSupported() const;
-    std::vector<std::string> requiredVulkanExtensions() const;
-    std::vector<MonitorInfo> monitors() const;
-    std::optional<MonitorInfo> primaryMonitor() const;
-    std::vector<VideoMode> videoModes(uint32_t monitorId) const;
-    std::pair<float, float> contentScale(uint32_t monitorId) const;
-    std::vector<GamepadInfo> gamepads() const;
-    std::optional<GamepadState> gamepadState(uint32_t gamepadId) const;
-    bool isRawMouseMotionSupported() const;
-    std::optional<std::string> keyName(Key key, int scancode) const;
-    int keyScancode(Key key) const noexcept;
-    bool setClipboardText(std::string_view text) const;
-    std::optional<std::string> clipboardText() const;
-
-private:
-    GLFWerrorfun previousErrorCallback_ = nullptr;
 };
 
 }  // namespace cwin

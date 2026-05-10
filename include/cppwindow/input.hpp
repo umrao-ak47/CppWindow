@@ -262,9 +262,8 @@ enum class GamepadAxis : uint8_t
 };
 
 /// Number of standard gamepad button slots.
-inline constexpr std::size_t GamepadButtonCount{
-    static_cast<std::size_t>(GamepadButton::Last) + 1
-};
+inline constexpr std::size_t GamepadButtonCount{ static_cast<std::size_t>(GamepadButton::Last) +
+                                                 1 };
 /// Number of standard gamepad axis slots.
 inline constexpr std::size_t GamepadAxisCount{ static_cast<std::size_t>(GamepadAxis::Last) + 1 };
 /// Maximum gamepad slots scanned by the backend.

@@ -7,12 +7,12 @@
 #ifndef CPPWINDOW_HEADER_GLFW_INTERNAL_HPP
 #define CPPWINDOW_HEADER_GLFW_INTERNAL_HPP
 
-#include "glfw_impl.hpp"
-
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include "glfw_window.hpp"
 
 namespace cwin::glfw_backend {
 

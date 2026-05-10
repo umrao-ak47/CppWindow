@@ -8,8 +8,8 @@ constexpr int SkipTest = 77;
 
 [[nodiscard]] bool isEnvironmentUnavailable(const cwin::Error& error) noexcept
 {
-    return error.code() == cwin::ErrorCode::InitializationFailed
-        || error.code() == cwin::ErrorCode::WindowCreationFailed;
+    return error.code() == cwin::ErrorCode::InitializationFailed ||
+           error.code() == cwin::ErrorCode::WindowCreationFailed;
 }
 
 int skip(const std::exception& error)
@@ -25,12 +25,13 @@ int main()
     try {
         auto& context = cwin::WindowContext::get();
 
-        auto utilityWindow = cwin::WindowBuilder{}
-                                 .title("CppWindow Runtime Smoke")
-                                 .size(320, 240)
-                                 .hidden()
-                                 .noGraphicsApi()
-                                 .build();
+        auto utilityWindow =
+            cwin::WindowBuilder{}
+                .title("CppWindow Runtime Smoke")
+                .size(320, 240)
+                .hidden()
+                .noGraphicsApi()
+                .build();
 
         if (utilityWindow.isVisible()) {
             std::cerr << "Hidden utility window was reported visible\n";
@@ -75,12 +76,13 @@ int main()
             return 1;
         }
 
-        auto glWindow = cwin::WindowBuilder{}
-                            .title("CppWindow OpenGL Smoke")
-                            .size(64, 64)
-                            .hidden()
-                            .openGL({ 4, 1, true })
-                            .build();
+        auto glWindow =
+            cwin::WindowBuilder{}
+                .title("CppWindow OpenGL Smoke")
+                .size(64, 64)
+                .hidden()
+                .openGL({ 4, 1, true })
+                .build();
         glWindow.makeContextCurrent();
 
         const auto loader = context.procLoader();

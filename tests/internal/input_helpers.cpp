@@ -460,11 +460,7 @@ void testActionMapAxesContextsAndRebinding()
     actions.bindKey(jumpId, cwin::Key::Space)
         .bindMouseButton(fireId, cwin::MouseButton::Left)
         .bindGamepadAxis(moveXId, cwin::GamepadAxis::LeftX, 0.25f)
-        .bindGamepadAxis(
-            moveLeftId,
-            cwin::GamepadAxis::LeftX,
-            0.25f,
-            cwin::AxisDirection::Negative)
+        .bindGamepadAxis(moveLeftId, cwin::GamepadAxis::LeftX, 0.25f, cwin::AxisDirection::Negative)
         .setContext(jumpId, "gameplay")
         .setContext(fireId, "gameplay")
         .setContext(moveXId, "gameplay")

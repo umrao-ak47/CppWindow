@@ -7,9 +7,11 @@
 #ifndef CPPWINDOW_HEADER_GLFW_INPUT_STATE_HPP
 #define CPPWINDOW_HEADER_GLFW_INPUT_STATE_HPP
 
-#include "../backend_types.hpp"
+#include <cppwindow/events.hpp>
 
 #include <utility>
+
+#include "../input_state_data.hpp"
 
 struct GLFWwindow;
 

@@ -9,11 +9,11 @@
 #ifndef CPPWINDOW_HEADER_IMGUI_PLATFORM_HPP
 #define CPPWINDOW_HEADER_IMGUI_PLATFORM_HPP
 
+#include <cppwindow/cppwindow.hpp>
+
 #include <chrono>
 #include <span>
 #include <string>
-
-#include <cppwindow/cppwindow.hpp>
 
 namespace cwin::imgui {
 
