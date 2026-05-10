@@ -23,7 +23,7 @@ int skip(const std::exception& error)
 int main()
 {
     try {
-        auto& context = cwin::WindowContext::get();
+        auto& context = cwin::Context::get();
 
         auto utilityWindow =
             cwin::WindowBuilder{}

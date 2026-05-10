@@ -35,7 +35,7 @@ void simulate(Simulation& simulation, double dt)
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
     auto window =
         WindowBuilder{}.title("Fixed Step Loop").size(860, 360).noGraphicsApi().resizable().build();
 

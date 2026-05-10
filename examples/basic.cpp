@@ -7,7 +7,7 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
     auto window = WindowBuilder{}.title("Basic Example").size(1280, 720).build();
     EventDispatcher dispatcher;

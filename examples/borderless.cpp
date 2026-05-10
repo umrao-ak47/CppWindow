@@ -6,14 +6,15 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("Borderless Example")
-                      .size(1280, 720)
-                      .openGL({ 4, 1, true })
-                      .borderless()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("Borderless Example")
+            .size(1280, 720)
+            .openGL({ 4, 1, true })
+            .borderless()
+            .build();
     window.makeContextCurrent();
 
     const bool useVSync = true;

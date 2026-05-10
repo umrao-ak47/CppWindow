@@ -10,7 +10,7 @@ Use `pollEvents()` once per frame, dispatch events after polling, then update
 and render from the current input snapshot.
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 auto window = cwin::WindowBuilder{}
                   .title("Game")
                   .size(1280, 720)
@@ -80,7 +80,7 @@ For mostly-idle tools, use `waitEventsTimeout()` so the app sleeps until input
 arrives but still wakes for autosave, animations, or background polling.
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 auto window = cwin::WindowBuilder{}
                   .title("Tool")
                   .size(1200, 800)
@@ -109,7 +109,7 @@ while (!window.shouldClose()) {
 }
 ```
 
-Call `WindowContext::postEmptyEvent()` from another thread when it needs to
+Call `Context::postEmptyEvent()` from another thread when it needs to
 wake a waiting UI loop.
 
 ## ImGui Tool Loop

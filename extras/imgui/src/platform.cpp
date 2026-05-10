@@ -516,13 +516,13 @@ bool Platform::mouseCursorUpdatesEnabled() const noexcept
 const char* Platform::clipboardText(void* userData)
 {
     auto* platform = static_cast<Platform*>(userData);
-    platform->clipboardText_ = WindowContext::get().clipboardText().value_or(std::string{});
+    platform->clipboardText_ = cwin::Context::get().clipboardText().value_or(std::string{});
     return platform->clipboardText_.c_str();
 }
 
 void Platform::setClipboardText(void*, const char* text)
 {
-    (void)WindowContext::get().setClipboardText(
+    (void)cwin::Context::get().setClipboardText(
         text != nullptr ? std::string{ text } : std::string{});
 }
 

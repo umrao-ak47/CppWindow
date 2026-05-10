@@ -178,7 +178,7 @@ struct VideoMode
     int refreshRate = 0;
 };
 
-/// Monitor metadata returned by `WindowContext`.
+/// Monitor metadata returned by `Context`.
 struct MonitorInfo
 {
     /// Stable id for the current monitor list ordering.

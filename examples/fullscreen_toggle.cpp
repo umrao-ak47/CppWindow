@@ -20,14 +20,15 @@ enum class DemoMode
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("Fullscreen Toggle")
-                      .size(960, 540)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("Fullscreen Toggle")
+            .size(960, 540)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
     window.makeContextCurrent();
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {

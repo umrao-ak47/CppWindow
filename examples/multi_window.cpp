@@ -47,20 +47,12 @@ void updateWindowTitle(Window& window, std::string_view name, int presses)
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto left = WindowBuilder{}
-                    .title("Left Window")
-                    .size(560, 360)
-                    .noGraphicsApi()
-                    .resizable()
-                    .build();
-    auto right = WindowBuilder{}
-                     .title("Right Window")
-                     .size(560, 360)
-                     .noGraphicsApi()
-                     .resizable()
-                     .build();
+    auto left =
+        WindowBuilder{}.title("Left Window").size(560, 360).noGraphicsApi().resizable().build();
+    auto right =
+        WindowBuilder{}.title("Right Window").size(560, 360).noGraphicsApi().resizable().build();
 
     left.setPosition(120, 160);
     right.setPosition(720, 160);

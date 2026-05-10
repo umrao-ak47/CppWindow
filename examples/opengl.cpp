@@ -8,14 +8,15 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("OpenGL Example")
-                      .size(1280, 720)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("OpenGL Example")
+            .size(1280, 720)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
     window.makeContextCurrent();
 
     // Load OpenGL

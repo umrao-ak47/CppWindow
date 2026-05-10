@@ -33,7 +33,7 @@ void printNativeHandles(const Window& window)
     std::cout << "display handle: " << handles.display << "\n";
 }
 
-void printVulkanInfo(const WindowContext& ctx)
+void printVulkanInfo(const Context& ctx)
 {
     std::cout << "vulkan supported: " << ctx.isVulkanSupported() << "\n";
 
@@ -48,7 +48,7 @@ void printVulkanInfo(const WindowContext& ctx)
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
     auto window =
         WindowBuilder{}.title("Native Handles").size(760, 360).noGraphicsApi().resizable().build();
 

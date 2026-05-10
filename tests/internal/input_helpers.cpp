@@ -21,7 +21,7 @@ static_assert(std::is_same_v<
               decltype(std::declval<cwin::WindowBuilder&>().rawMouseMotion()),
               cwin::WindowBuilder&>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().isRawMouseMotionSupported()),
+              decltype(std::declval<const cwin::Context&>().isRawMouseMotionSupported()),
               bool>);
 
 namespace {

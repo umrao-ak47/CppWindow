@@ -27,7 +27,7 @@ int skip(const std::exception& error)
 int main()
 {
     try {
-        auto& context = cwin::WindowContext::get();
+        auto& context = cwin::Context::get();
         auto window =
             cwin::WindowBuilder{}
                 .title("CppWindow ImGui Runtime Smoke")

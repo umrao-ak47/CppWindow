@@ -54,7 +54,7 @@ target_link_libraries(my_app PRIVATE cppwindow::cppwindow)
 Public methods use `lowerCamelCase`. State queries use noun-style accessors
 such as `window.input()`, `window.framebufferSize()`, `ctx.monitors()`, and
 `actions.binding(id)`. Boolean state uses `isX()` or `hasX()`. The main
-exceptions are `WindowContext::get()` for the singleton context and
+exceptions are `Context::get()` for the singleton context and
 `Event::getIf<T>()`, which follows the `std::get_if` naming pattern.
 
 ## Build This Repository
@@ -143,15 +143,16 @@ cmake --build --preset docs
 
 ## Minimal Window
 
-Use `WindowBuilder` to create a window. Use `WindowContext::get()` to poll
-platform events.
+Initialize the process-wide `Context`, then use `WindowBuilder` to create
+windows. Keep the context reference for polling platform events and accessing
+platform services.
 
 ```cpp
 #include <cppwindow/cppwindow.hpp>
 
 int main()
 {
-    auto& ctx = cwin::WindowContext::get();
+    auto& ctx = cwin::Context::get();
 
     auto window = cwin::WindowBuilder{}
                       .title("CppWindow App")
@@ -210,7 +211,7 @@ CppWindow can create an OpenGL context. You still need an OpenGL loader such
 as GLAD.
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 
 auto window = cwin::WindowBuilder{}
                   .title("OpenGL App")
@@ -255,7 +256,7 @@ auto [framebufferWidth, framebufferHeight] =
     dpi.windowSizeToFramebuffer(uiWidth, uiHeight);
 ```
 
-`Window::dpiScale()` uses the window content scale. `WindowContext` also
+`Window::dpiScale()` uses the window content scale. `Context` also
 offers `dpiScale(monitorId)` for monitor-level conversions.
 
 ## Vulkan Windows
@@ -274,7 +275,7 @@ auto window = cwin::WindowBuilder{}
 Query required instance extensions from the context:
 
 ```cpp
-auto extensions = cwin::WindowContext::get().requiredVulkanInstanceExtensions();
+auto extensions = cwin::Context::get().requiredVulkanInstanceExtensions();
 ```
 
 After creating the Vulkan instance, create the window surface:
@@ -320,7 +321,7 @@ Mouse control helpers live on `Window`:
 ```cpp
 window.setMousePosition(640.0, 360.0);
 
-if (cwin::WindowContext::get().isRawMouseMotionSupported()) {
+if (cwin::Context::get().isRawMouseMotionSupported()) {
     window.setCursorMode(cwin::CursorMode::Captured);
     window.setRawMouseMotion(true);
 }
@@ -701,7 +702,7 @@ if (const auto* key = event.getIf<cwin::Event::KeyPressed>()) {
 }
 ```
 
-Use `WindowContext::keyName(key, scancode)` when UI needs the platform/localized
+Use `Context::keyName(key, scancode)` when UI needs the platform/localized
 label for a key, and `keyScancode(key)` when storing platform scancode-based
 bindings.
 
@@ -711,7 +712,7 @@ CppWindow exposes standard-mapped gamepads through GLFW's gamepad mapping
 layer. This gives stable button and axis names across common controllers.
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 
 for (const auto& gamepad : ctx.gamepads()) {
     std::cout << gamepad.id << ": " << gamepad.name << "\n";
@@ -740,10 +741,10 @@ Use `Joystick*` events when you need backend button/axis indices, and use
 
 ## Clipboard And File Drop
 
-Clipboard text is available on `WindowContext`:
+Clipboard text is available on `Context`:
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 
 if (!ctx.setClipboardText("Copied from my app")) {
     // Clipboard write was rejected by the platform/backend.
@@ -908,10 +909,10 @@ If you want smooth app switching and stable desktop scaling, use
 
 ## Monitors
 
-Use `WindowContext` to inspect monitors and video modes:
+Use `Context` to inspect monitors and video modes:
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 
 for (const auto& monitor : ctx.monitors()) {
     std::cout << monitor.id << ": " << monitor.name << "\n";
@@ -1021,7 +1022,7 @@ surface creation failure.
 
 ```cpp
 try {
-    auto& ctx = cwin::WindowContext::get();
+    auto& ctx = cwin::Context::get();
     auto window = cwin::WindowBuilder{}.title("App").noGraphicsApi().build();
 } catch (const cwin::Error& error) {
     std::cerr << error.what() << "\n";

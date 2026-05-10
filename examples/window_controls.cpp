@@ -83,14 +83,15 @@ cwin::ImageRgba imageFrom(const std::vector<uint8_t>& pixels, uint32_t width, ui
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("Window Controls")
-                      .size(960, 540)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("Window Controls")
+            .size(960, 540)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
     window.makeContextCurrent();
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {

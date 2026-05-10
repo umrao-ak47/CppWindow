@@ -42,7 +42,7 @@ public:
     bool isRawMouseMotionSupported() const;
     std::optional<std::string> keyName(Key key, int scancode) const;
     int keyScancode(Key key) const noexcept;
-    bool setClipboardText(std::string_view text) const;
+    bool setClipboardText(std::string_view text);
     std::optional<std::string> clipboardText() const;
 
 private:

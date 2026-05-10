@@ -38,14 +38,10 @@ std::string toUtf8(const std::u32string& text)
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("Text Input")
-                      .size(720, 360)
-                      .noGraphicsApi()
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}.title("Text Input").size(720, 360).noGraphicsApi().resizable().build();
 
     std::cout << "Controls:\n"
               << "  Type text: append to title\n"

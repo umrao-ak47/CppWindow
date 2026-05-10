@@ -13,7 +13,7 @@ void printVideoMode(const VideoMode& mode)
               << " rgb(" << mode.redBits << ", " << mode.greenBits << ", " << mode.blueBits << ")";
 }
 
-void printMonitors(const WindowContext& ctx)
+void printMonitors(const Context& ctx)
 {
     const auto monitors = ctx.monitors();
     std::cout << "Monitors: " << monitors.size() << "\n";
@@ -47,13 +47,9 @@ void printMonitors(const WindowContext& ctx)
 
 int main()
 {
-    auto& ctx = WindowContext::get();
-    auto window = WindowBuilder{}
-                      .title("Monitor Info")
-                      .size(820, 420)
-                      .noGraphicsApi()
-                      .resizable()
-                      .build();
+    auto& ctx = Context::get();
+    auto window =
+        WindowBuilder{}.title("Monitor Info").size(820, 420).noGraphicsApi().resizable().build();
 
     std::cout << "Controls:\n"
               << "  M: print monitor info again\n"

@@ -283,14 +283,15 @@ static GLuint createProgram()
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("Particle Fountain (OpenGL 4.1)")
-                      .size(1280, 720)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("Particle Fountain (OpenGL 4.1)")
+            .size(1280, 720)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
 
     window.makeContextCurrent();
 

@@ -7,7 +7,7 @@
 
 int main()
 {
-    static_assert(std::is_same_v<decltype(cwin::WindowContext::get()), cwin::WindowContext&>);
+    static_assert(std::is_same_v<decltype(cwin::Context::get()), cwin::Context&>);
     static_assert(std::is_same_v<
                   decltype(std::declval<const cwin::Window&>().events()),
                   std::span<const cwin::Event>>);

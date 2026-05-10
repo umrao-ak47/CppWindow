@@ -412,7 +412,7 @@ concept EventHandlerFor =
 /// Persistent typed event dispatcher.
 ///
 /// Register handlers once, then call `dispatch()` with the current frame's
-/// `Window::events()` span after `WindowContext::pollEvents()` or
+/// `Window::events()` span after `Context::pollEvents()` or
 /// `waitEvents*()`. `EventDispatcher` does not run the loop.
 class EventDispatcher final
 {

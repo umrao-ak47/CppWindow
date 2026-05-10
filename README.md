@@ -106,7 +106,7 @@ Example targets include `cppwindow_example_imgui_minimal`,
 
 int main()
 {
-    auto& ctx = cwin::WindowContext::get();
+    auto& ctx = cwin::Context::get();
 
     cwin::Window window =
         cwin::WindowBuilder{}
@@ -156,7 +156,7 @@ CppWindow creates the context, but you must load OpenGL functions.
 Example using GLAD:
 
 ```cpp
-auto& ctx = cwin::WindowContext::get();
+auto& ctx = cwin::Context::get();
 
 auto window =
     cwin::WindowBuilder{}
@@ -172,7 +172,7 @@ Render loop:
 ```cpp
 while (!window.shouldClose())
 {
-    cwin::WindowContext::get().pollEvents();
+    cwin::Context::get().pollEvents();
 
     glClearColor(0.f,0.f,0.f,1.f);
     glClear(GL_COLOR_BUFFER_BIT);

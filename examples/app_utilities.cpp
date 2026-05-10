@@ -9,14 +9,10 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("App Utilities")
-                      .size(840, 420)
-                      .noGraphicsApi()
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}.title("App Utilities").size(840, 420).noGraphicsApi().resizable().build();
 
     std::cout << "Controls:\n"
               << "  C: copy text\n"

@@ -115,7 +115,7 @@ void logEvent(const Event& event)
             std::cout << " codepoint=" << static_cast<uint32_t>(payload.unicode);
         } else if constexpr (
             std::is_same_v<T, Event::KeyPressed> || std::is_same_v<T, Event::KeyReleased>) {
-            auto& ctx = WindowContext::get();
+            auto& ctx = Context::get();
             const auto name = ctx.keyName(payload.key, payload.scancode);
             std::cout << " key=" << enumIndex(payload.key) << " scancode=" << payload.scancode;
             if (name) {
@@ -171,13 +171,9 @@ void logEvent(const Event& event)
 
 int main()
 {
-    auto& ctx = WindowContext::get();
-    auto window = WindowBuilder{}
-                      .title("Event Viewer")
-                      .size(900, 520)
-                      .noGraphicsApi()
-                      .resizable()
-                      .build();
+    auto& ctx = Context::get();
+    auto window =
+        WindowBuilder{}.title("Event Viewer").size(900, 520).noGraphicsApi().resizable().build();
 
     std::cout << "Controls:\n"
               << "  Move window: log move events\n"

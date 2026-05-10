@@ -11,7 +11,7 @@ using namespace cwin;
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
     auto window =
         WindowBuilder{}

@@ -188,7 +188,7 @@ static GLuint createProgram()
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
     auto window = WindowBuilder{}
                       .title("Orbit Camera + Vertex Heightmap (GL 4.1)")

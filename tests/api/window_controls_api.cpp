@@ -29,9 +29,8 @@ static_assert(std::is_same_v<
               bool>);
 static_assert(
     std::is_same_v<decltype(std::declval<const cwin::Window&>().dpiScale()), cwin::DpiScale>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().dpiScale()),
-              cwin::DpiScale>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::Context&>().dpiScale()), cwin::DpiScale>);
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::Window&>().setCursorShape(cwin::CursorShape::Hand)),
               bool>);
@@ -58,28 +57,25 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().clearCursor()), void>);
 static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().clearIcon()), void>);
 static_assert(std::is_same_v<decltype(std::declval<cwin::Window&>().requestAttention()), void>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::Context&>().pollEvents()), void>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::Context&>().waitEvents()), void>);
 static_assert(
-    std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().waitEvents()), void>);
+    std::is_same_v<decltype(std::declval<cwin::Context&>().waitEventsTimeout(0.1)), void>);
+static_assert(std::is_same_v<decltype(std::declval<cwin::Context&>().postEmptyEvent()), void>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().waitEventsTimeout(0.1)),
-              void>);
-static_assert(
-    std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().postEmptyEvent()), void>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().setClipboardText(
+              decltype(std::declval<cwin::Context&>().setClipboardText(
                   std::declval<const std::string&>())),
               bool>);
 static_assert(
-    std::is_same_v<decltype(std::declval<const cwin::WindowContext&>().hasClipboardText()), bool>);
+    std::is_same_v<decltype(std::declval<const cwin::Context&>().hasClipboardText()), bool>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().clipboardText()),
+              decltype(std::declval<const cwin::Context&>().clipboardText()),
               std::optional<std::string>>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::A)),
+              decltype(std::declval<const cwin::Context&>().keyName(cwin::Key::A)),
               std::optional<std::string>>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().keyScancode(cwin::Key::A)),
-              int>);
+static_assert(
+    std::is_same_v<decltype(std::declval<const cwin::Context&>().keyScancode(cwin::Key::A)), int>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isResizable()), bool>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isDecorated()), bool>);
 static_assert(std::is_same_v<decltype(std::declval<const cwin::Window&>().isFloating()), bool>);

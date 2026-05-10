@@ -117,7 +117,7 @@ target_sources(cppwindow
         src/timing.cpp
         src/window.cpp
         src/window_builder.cpp
-        src/window_context.cpp
+        src/context.cpp
 )
 
 target_include_directories(cppwindow

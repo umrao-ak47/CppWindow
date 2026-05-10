@@ -52,14 +52,15 @@ void drawInputPanel(
 
 int main()
 {
-    auto& ctx = WindowContext::get();
+    auto& ctx = Context::get();
 
-    auto window = WindowBuilder{}
-                      .title("Input Helpers")
-                      .size(900, 480)
-                      .openGL({ 4, 1, true })
-                      .resizable()
-                      .build();
+    auto window =
+        WindowBuilder{}
+            .title("Input Helpers")
+            .size(900, 480)
+            .openGL({ 4, 1, true })
+            .resizable()
+            .build();
     window.makeContextCurrent();
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(ctx.procLoader()))) {

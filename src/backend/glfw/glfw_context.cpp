@@ -194,7 +194,7 @@ int GLFWWindowContext::keyScancode(Key key) const noexcept
     return glfwGetKeyScancode(glfwKey);
 }
 
-bool GLFWWindowContext::setClipboardText(std::string_view text) const
+bool GLFWWindowContext::setClipboardText(std::string_view text)
 {
     const std::string ownedText{ text };
     clearGlfwError();

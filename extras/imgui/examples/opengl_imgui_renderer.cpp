@@ -473,7 +473,7 @@ void main()
     }
 };
 
-void loadOpenGL(cwin::WindowContext& context)
+void loadOpenGL(cwin::Context& context)
 {
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(context.procLoader()))) {
         throw std::runtime_error("Failed to initialize GLAD");

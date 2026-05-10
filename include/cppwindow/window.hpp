@@ -4,7 +4,7 @@
  */
 
 /// @file window.hpp
-/// @brief Window, window builder, and process-wide window context APIs.
+/// @brief Window, window builder, and process-wide context APIs.
 
 #ifndef CPPWINDOW_HEADER_WINDOW_HPP
 #define CPPWINDOW_HEADER_WINDOW_HPP
@@ -235,30 +235,30 @@ private:
 };
 
 //----------------------------------------------------------------------------
-//  Window Context
+//  Context
 //----------------------------------------------------------------------------
 /// Process-wide windowing context and platform service entry point.
-class WindowContext final
+class Context final
 {
 public:
     /// Returns the process-wide context singleton.
-    static WindowContext& get();
+    static Context& get();
 
     /// Destroys the windowing context after owned windows are gone.
-    ~WindowContext();
+    ~Context();
     /// The context is a singleton and cannot be copied.
-    WindowContext(const WindowContext&) = delete;
+    Context(const Context&) = delete;
     /// The context is a singleton and cannot be assigned.
-    WindowContext& operator=(const WindowContext&) = delete;
+    Context& operator=(const Context&) = delete;
 
     /// Polls platform events and updates window/input state.
-    void pollEvents() const noexcept;
+    void pollEvents() noexcept;
     /// Waits until at least one platform event is available, then updates state.
-    void waitEvents() const noexcept;
+    void waitEvents() noexcept;
     /// Waits up to `timeoutSeconds` for events, then updates state.
-    void waitEventsTimeout(double timeoutSeconds) const noexcept;
+    void waitEventsTimeout(double timeoutSeconds) noexcept;
     /// Wakes a thread blocked in `waitEvents` or `waitEventsTimeout`.
-    void postEmptyEvent() const noexcept;
+    void postEmptyEvent() noexcept;
 
     /// Returns a procedure loader for OpenGL or backend integration.
     ProcLoader procLoader() const;
@@ -287,7 +287,7 @@ public:
     /// Returns the platform scancode for a logical key, or -1 when unavailable.
     [[nodiscard]] int keyScancode(Key key) const noexcept;
     /// Sets the platform clipboard text. Returns false when the backend reports failure.
-    [[nodiscard]] bool setClipboardText(std::string_view text) const;
+    [[nodiscard]] bool setClipboardText(std::string_view text);
     /// Returns whether clipboard text is currently available and non-empty.
     [[nodiscard]] bool hasClipboardText() const;
     /// Returns platform clipboard text, or null when the backend reports failure.
@@ -296,7 +296,7 @@ public:
 private:
     struct Impl;
 
-    WindowContext();
+    Context();
 
     std::unique_ptr<Impl> impl_{};
 };

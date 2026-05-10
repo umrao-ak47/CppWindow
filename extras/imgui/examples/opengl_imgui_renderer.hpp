@@ -8,7 +8,7 @@
 
 namespace example {
 
-void loadOpenGL(cwin::WindowContext& context);
+void loadOpenGL(cwin::Context& context);
 
 class OpenGLImGuiRenderer final
 {

@@ -106,23 +106,21 @@ static_assert(
         decltype(std::declval<cwin::EventDispatcher&>().each(std::declval<RawEventHandler>())),
         cwin::EventDispatcher&>);
 
-static_assert(std::is_same_v<decltype(cwin::WindowContext::get()), cwin::WindowContext&>);
+static_assert(std::is_same_v<decltype(cwin::Context::get()), cwin::Context&>);
 static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().monitors()),
+              decltype(std::declval<const cwin::Context&>().monitors()),
               std::vector<cwin::MonitorInfo>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Context&>().requiredVulkanInstanceExtensions()),
+              std::vector<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Context&>().keyName(cwin::Key::A)),
+              std::optional<std::string>>);
+static_assert(std::is_same_v<
+              decltype(std::declval<const cwin::Context&>().keyName(cwin::Key::Unknown, 42)),
+              std::optional<std::string>>);
 static_assert(
-    std::is_same_v<
-        decltype(std::declval<const cwin::WindowContext&>().requiredVulkanInstanceExtensions()),
-        std::vector<std::string>>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::A)),
-              std::optional<std::string>>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().keyName(cwin::Key::Unknown, 42)),
-              std::optional<std::string>>);
-static_assert(std::is_same_v<
-              decltype(std::declval<const cwin::WindowContext&>().keyScancode(cwin::Key::A)),
-              int>);
+    std::is_same_v<decltype(std::declval<const cwin::Context&>().keyScancode(cwin::Key::A)), int>);
 
 static_assert(std::is_same_v<
               decltype(std::declval<cwin::ActionMap&>().defineAction("jump")),
